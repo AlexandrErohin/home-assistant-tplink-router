@@ -31,7 +31,7 @@ Have [HACS](https://hacs.xyz/) installed, this will allow you to update easily.
 4. Click on `+ Explore & Download Repositories`, search for `TP-Link Router`.
 5. Search for `TP-Link Router`.
 6. Navigate to `TP-Link Router` integration
-7. Press `download` and in the next window also press `DOWNLOAD`.
+7. Press `DOWNLOAD` and in the next window also press `DOWNLOAD`.
 8. After download, restart Home Assistant.
 
 ### Manual
