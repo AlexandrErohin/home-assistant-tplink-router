@@ -1,0 +1,10 @@
+{
+    "domain": "tplink_router",
+    "name": "TP-Link Router",
+    "documentation": "https://github.com/AlexandrErohin/home-assistant-tplink_router",
+    "requirements": ["tplinkrouterc6u>=0.0.1"],
+    "version": "0.0.1",
+    "config_flow": true,
+    "codeowners": ["@AlexandrErohin"]
+  }
+  

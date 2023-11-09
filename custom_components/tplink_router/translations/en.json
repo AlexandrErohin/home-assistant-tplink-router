@@ -1,0 +1,15 @@
+{
+  "config": {
+    "step": {
+      "user": {
+        "description": "Integration config",
+        "data": {
+          "host": "IP address",
+          "username": "Login",
+          "password": "Password",
+          "scan_interval": "Scan interval for updates in seconds"
+        }
+      }
+    }
+  }
+}
