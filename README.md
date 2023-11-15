@@ -43,6 +43,8 @@ Have [HACS](https://hacs.xyz/) installed, this will allow you to update easily.
 ## Configuration
 TP-Link Router is configured via the GUI. See [the HA docs](https://www.home-assistant.io/getting-started/integration/) for more details.
 
+The default data is preset already
+
 <img src="https://raw.githubusercontent.com/AlexandrErohin/home-assistant-tplink-router/master/docs/media/config_flow.png" width="48%">
 
 1. Go to the <b>Settings</b>-><b>Devices & services</b>.
