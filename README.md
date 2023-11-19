@@ -1,5 +1,5 @@
 # Tp-Link router integration for Home Assistant
-Home Assistant component for complete router administration of the TP-Link Archer C6U a and Archer AX10 based on the [TP-Link Router API](https://github.com/AlexandrErohin/TP-Link-Archer-C6U)
+Home Assistant component for complete router administration of the TP-Link Archer C6U and Archer AX10 based on the [TP-Link Router API](https://github.com/AlexandrErohin/TP-Link-Archer-C6U)
 
 <img src="https://raw.githubusercontent.com/AlexandrErohin/home-assistant-tplink-router/master/docs/media/sensor.png" width="48%"> <img src="https://raw.githubusercontent.com/AlexandrErohin/home-assistant-tplink-router/master/docs/media/switch.png" width="48%">
 
