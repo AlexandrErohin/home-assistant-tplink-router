@@ -1,13 +1,9 @@
 # Tp-Link router integration for Home Assistant
-Home Assistant component for complete router administration of the TP-Link Archer C6U and Archer AX10 based on the [TP-Link Router API](https://github.com/AlexandrErohin/TP-Link-Archer-C6U)
+Home Assistant component for TP-Link router administration based on the [TP-Link Router API](https://github.com/AlexandrErohin/TP-Link-Archer-C6U)
+
+See [Supported routers](#supports)
 
 <img src="https://raw.githubusercontent.com/AlexandrErohin/home-assistant-tplink-router/master/docs/media/sensor.png" width="48%"> <img src="https://raw.githubusercontent.com/AlexandrErohin/home-assistant-tplink-router/master/docs/media/switch.png" width="48%">
-
-## Supports
-- Archer C6U
-- Archer AX10
-
-Please let me know if you have succeed in using this for other model
 
 ## Components
 ### Switches
@@ -57,3 +53,36 @@ The default data is preset already
 2. Click on `+ ADD INTEGRATION`, search for `TP-Link Router`.
 3. Fill IP address and Password.
 4. Click `SUBMIT`
+
+## <a id="supports">Supported routers</a>
+### Fully tested
+- Archer AX10
+- Archer C6
+- Archer C6U
+
+### Not fully tested
+- AD7200 V2
+- Archer A6 (V2 and V3)
+- Archer A7 V5
+- Archer A9 V6
+- Archer A10 (V1 and V2)
+- Archer A20 (V1, V3)
+- Archer AX50 V1
+- Archer AX3000 V1 (V2 - should work, but not have been tested)
+- Archer AX6000 V1
+- Archer C6 V4
+- Archer C7 (V4 and V5)
+- Archer C8 (V3 and V4)
+- Archer C9 (V4 and V5)
+- Archer C59 V2
+- Archer C90 V6
+- Archer C900 V1
+- Archer C1200 V3 (V2 - should work, but not have been tested)
+- Archer C1900 V2
+- Archer C2300 (V1, V2)
+- Archer C4000 (V2 and V3)
+- Archer C5400 V2
+- Archer C5400X V1
+- TL-WR1043N V5
+
+Please let me know if you have tested integration with one of this or other model. Open an issue with info about router's model, hardware and firmware versions.
