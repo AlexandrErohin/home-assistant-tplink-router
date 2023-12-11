@@ -4,10 +4,11 @@
       "user": {
         "description": "Integration config",
         "data": {
-          "host": "IP address",
+          "host": "Host",
           "username": "Login",
           "password": "Password",
-          "scan_interval": "Scan interval for updates in seconds"
+          "scan_interval": "Scan interval for updates in seconds",
+          "verify_ssl": "Verify ssl for https connection"
         }
       }
     }

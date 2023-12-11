@@ -3,7 +3,7 @@ Home Assistant component for TP-Link router administration based on the [TP-Link
 
 See [Supported routers](#supports)
 
-<img src="https://raw.githubusercontent.com/AlexandrErohin/home-assistant-tplink-router/master/docs/media/sensor.png" width="48%"> <img src="https://raw.githubusercontent.com/AlexandrErohin/home-assistant-tplink-router/master/docs/media/switch.png" width="48%">
+<img src="https://raw.githubusercontent.com/AlexandrErohin/home-assistant-tplink-router/master/docs/media/sensors.png" width="70%">
 
 ## Components
 ### Switches
@@ -18,6 +18,8 @@ See [Supported routers](#supports)
  - Total amount of main wifi clients
  - Total amount of guest wifi clients
  - Total amount of all connected clients
+ - CPU used
+ - Memory used
 
 ### Device Tracker
  - Track clients by MAC address across 2.4Ghz, 5Ghz guest and main wifi with connection information
@@ -45,22 +47,24 @@ Have [HACS](https://hacs.xyz/) installed, this will allow you to update easily.
 ## Configuration
 TP-Link Router is configured via the GUI. See [the HA docs](https://www.home-assistant.io/getting-started/integration/) for more details.
 
-The default data is preset already
+The default data is preset already.
+
+If you use `https` connection to your router you may get error `certificate verify failed: EE certificate key too weak`. To fix this - unset `Verify ssl`
 
 <img src="https://raw.githubusercontent.com/AlexandrErohin/home-assistant-tplink-router/master/docs/media/config_flow.png" width="48%">
 
 1. Go to the <b>Settings</b>-><b>Devices & services</b>.
 2. Click on `+ ADD INTEGRATION`, search for `TP-Link Router`.
-3. Fill IP address and Password.
+3. Fill Password.
 4. Click `SUBMIT`
 
 ## <a id="supports">Supported routers</a>
-### Fully tested
-- Archer AX10
-- Archer C6
-- Archer C6U
+### Fully tested Hardware Versions
+- Archer AX10 v1.0
+- Archer C6 v2.0
+- Archer C6U v1.0
 
-### Not fully tested
+### Not fully tested Hardware Versions
 - AD7200 V2
 - Archer A6 (V2 and V3)
 - Archer A7 V5
@@ -68,7 +72,7 @@ The default data is preset already
 - Archer A10 (V1 and V2)
 - Archer A20 (V1, V3)
 - Archer AX50 V1
-- Archer AX3000 V1 (V2 - should work, but not have been tested)
+- Archer AX3000 V1
 - Archer AX6000 V1
 - Archer C6 V4
 - Archer C7 (V4 and V5)

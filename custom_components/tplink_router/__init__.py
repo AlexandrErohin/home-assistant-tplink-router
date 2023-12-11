@@ -3,6 +3,7 @@ from homeassistant.const import (
     CONF_PASSWORD,
     CONF_USERNAME,
     CONF_SCAN_INTERVAL,
+    CONF_VERIFY_SSL,
     Platform,
 )
 from homeassistant.core import HomeAssistant
@@ -27,10 +28,13 @@ async def async_setup_entry(hass: HomeAssistant, config_entry: ConfigEntry) -> b
 
     # Construct the device
     host = config_entry.data[CONF_HOST]
+    if not (host.startswith('http://') or host.startswith('https://')):
+        host = "http://{}".format(host)
     password = config_entry.data[CONF_PASSWORD]
     username = config_entry.data[CONF_USERNAME]
-    device = TplinkRouter(host, password, username, _LOGGER)
-    info = await device.get_full_info()
+    verify_ssl = config_entry.data[CONF_VERIFY_SSL] if CONF_VERIFY_SSL in config_entry.data else True
+    device = TplinkRouter(host, password, username, _LOGGER, verify_ssl)
+    info = await hass.async_add_executor_job(device.get_full_info)
 
     # Create device coordinator and fetch data
     coord = TPLinkRouterCoordinator(hass, device, config_entry.data[CONF_SCAN_INTERVAL], info, _LOGGER)

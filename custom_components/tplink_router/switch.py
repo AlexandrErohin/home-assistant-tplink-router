@@ -10,13 +10,13 @@ from homeassistant.helpers.entity_platform import AddEntitiesCallback
 from .const import DOMAIN
 from homeassistant.helpers.update_coordinator import CoordinatorEntity
 from .coordinator import TPLinkRouterCoordinator
-from tplinkrouterc6u import TplinkRouter, Wifi, Status
+from tplinkrouterc6u import Wifi, Status
 from homeassistant.helpers.device_registry import DeviceInfo
 
 
 @dataclass
 class TPLinkRouterSwitchEntityDescriptionMixin:
-    method: Callable[[TplinkRouter, bool], Any]
+    method: Callable[[TPLinkRouterCoordinator, bool], Any]
     property: str
 
 
@@ -32,7 +32,7 @@ SWITCH_TYPES = (
         icon="mdi:wifi",
         entity_category=EntityCategory.CONFIG,
         property='guest_2g_enable',
-        method=lambda router, value: router.set_wifi(Wifi.WIFI_GUEST_2G, value),
+        method=lambda coordinator, value: coordinator.set_wifi(Wifi.WIFI_GUEST_2G, value),
     ),
     TPLinkRouterSwitchEntityDescription(
         key="wifi_guest_5g",
@@ -40,7 +40,7 @@ SWITCH_TYPES = (
         icon="mdi:wifi",
         entity_category=EntityCategory.CONFIG,
         property='guest_5g_enable',
-        method=lambda router, value: router.set_wifi(Wifi.WIFI_GUEST_5G, value),
+        method=lambda coordinator, value: coordinator.set_wifi(Wifi.WIFI_GUEST_5G, value),
     ),
     TPLinkRouterSwitchEntityDescription(
         key="wifi_24g",
@@ -48,7 +48,7 @@ SWITCH_TYPES = (
         icon="mdi:wifi",
         entity_category=EntityCategory.CONFIG,
         property='wifi_2g_enable',
-        method=lambda router, value: router.set_wifi(Wifi.WIFI_2G, value),
+        method=lambda coordinator, value: coordinator.set_wifi(Wifi.WIFI_2G, value),
     ),
     TPLinkRouterSwitchEntityDescription(
         key="wifi_5g",
@@ -56,7 +56,7 @@ SWITCH_TYPES = (
         icon="mdi:wifi",
         entity_category=EntityCategory.CONFIG,
         property='wifi_5g_enable',
-        method=lambda router, value: router.set_wifi(Wifi.WIFI_5G, value),
+        method=lambda coordinator, value: coordinator.set_wifi(Wifi.WIFI_5G, value),
     ),
 )
 
@@ -99,12 +99,12 @@ class TPLinkRouterSwitchEntity(
 
     async def async_turn_on(self, **kwargs: Any) -> None:
         """Turn the entity on."""
-        await self.entity_description.method(self.coordinator.router, True)
+        await self.entity_description.method(self.coordinator, True)
         setattr(self.coordinator.status, self.entity_description.property, True)
         self.async_write_ha_state()
 
     async def async_turn_off(self, **kwargs: Any) -> None:
         """Turn the entity off."""
-        await self.entity_description.method(self.coordinator.router, False)
+        await self.entity_description.method(self.coordinator, False)
         setattr(self.coordinator.status, self.entity_description.property, False)
         self.async_write_ha_state()

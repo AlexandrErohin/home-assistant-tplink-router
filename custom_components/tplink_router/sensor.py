@@ -2,10 +2,12 @@ from dataclasses import dataclass
 from collections.abc import Callable
 from typing import Any
 from homeassistant.components.sensor import (
+    SensorDeviceClass,
     SensorStateClass,
     SensorEntity,
     SensorEntityDescription,
 )
+from homeassistant.const import PERCENTAGE, UnitOfInformation
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import HomeAssistant, callback
 from homeassistant.helpers.device_registry import DeviceInfo
@@ -54,6 +56,25 @@ SENSOR_TYPES: tuple[TPLinkRouterSensorEntityDescription, ...] = (
         icon="mdi:account-multiple",
         state_class=SensorStateClass.TOTAL,
         value=lambda status: status.clients_total,
+    ),
+    TPLinkRouterSensorEntityDescription(
+        key="cpu_used",
+        name="CPU used",
+        icon="mdi:cpu-64-bit",
+        state_class=SensorStateClass.MEASUREMENT,
+        native_unit_of_measurement=PERCENTAGE,
+        suggested_display_precision=1,
+        value=lambda status: (status.cpu_usage * 100) if status.cpu_usage >= 0 else 0,
+    ),
+    TPLinkRouterSensorEntityDescription(
+        key="memory_used",
+        name="Memory used",
+        icon="mdi:memory",
+        native_unit_of_measurement=UnitOfInformation.MEGABYTES,
+        device_class=SensorDeviceClass.DATA_SIZE,
+        state_class=SensorStateClass.MEASUREMENT,
+        suggested_display_precision=2,
+        value=lambda status: status.mem_usage,
     ),
 )
 

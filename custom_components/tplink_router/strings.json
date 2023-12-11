@@ -8,7 +8,8 @@
           "host": "[%key:common::config_flow::data::host%]",
           "username": "[%key:common::config_flow::data::username%]",
           "password": "[%key:common::config_flow::data::password%]",
-          "scan_interval": "[%key:common::config_flow::data::scan_interval%]"
+          "scan_interval": "[%key:common::config_flow::data::scan_interval%]",
+          "verify_ssl": "[%key:common::config_flow::data::verify_ssl%]"
         }
       }
     }

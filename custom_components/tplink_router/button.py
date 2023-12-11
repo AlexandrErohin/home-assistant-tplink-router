@@ -16,13 +16,12 @@ from homeassistant.helpers.entity_platform import AddEntitiesCallback
 from homeassistant.helpers.update_coordinator import CoordinatorEntity
 from .const import DOMAIN
 from .coordinator import TPLinkRouterCoordinator
-from tplinkrouterc6u import TplinkRouter
 from homeassistant.helpers.device_registry import DeviceInfo
 
 
 @dataclass
 class TPLinkRouterButtonEntityDescriptionMixin:
-    method: Callable[[TplinkRouter], Any]
+    method: Callable[[TPLinkRouterCoordinator], Any]
 
 
 @dataclass
@@ -38,7 +37,7 @@ BUTTON_TYPES = (
         name="Reboot",
         device_class=ButtonDeviceClass.RESTART,
         entity_category=EntityCategory.CONFIG,
-        method=lambda router: router.reboot(),
+        method=lambda coordinator: coordinator.reboot(),
     ),
 )
 
@@ -74,4 +73,4 @@ class TPLinkRouterButtonEntity(CoordinatorEntity[TPLinkRouterCoordinator], Butto
 
     async def async_press(self) -> None:
         """Execute the button action."""
-        await self.entity_description.method(self.coordinator.router)
+        await self.entity_description.method(self.coordinator)
