@@ -1,12 +1,12 @@
 {
     "domain": "tplink_router",
     "name": "TP-Link Router",
-    "documentation": "https://github.com/AlexandrErohin/home-assistant-tplink-router",
-    "issue_tracker": "https://github.com/AlexandrErohin/home-assistant-tplink-router/issues",
-    "iot_class": "local_polling",
-    "requirements": ["tplinkrouterc6u>=1.0.0"],
-    "version": "1.0.0",
+    "codeowners": ["@AlexandrErohin"],
     "config_flow": true,
-    "codeowners": ["@AlexandrErohin"]
+    "documentation": "https://github.com/AlexandrErohin/home-assistant-tplink-router",
+    "iot_class": "local_polling",
+    "issue_tracker": "https://github.com/AlexandrErohin/home-assistant-tplink-router/issues",
+    "requirements": ["tplinkrouterc6u>=1.0.0"],
+    "version": "1.0.0"
   }
   
