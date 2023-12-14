@@ -114,3 +114,8 @@ class TPLinkRouterSensor(
         """Handle updated data from the coordinator."""
         self._attr_native_value = self.entity_description.value(self.coordinator.status)
         self.async_write_ha_state()
+
+    @property
+    def available(self) -> bool:
+        """Return True if entity is available."""
+        return self.entity_description.value(self.coordinator.status) is not None
