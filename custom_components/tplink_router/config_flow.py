@@ -41,10 +41,12 @@ class ConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
                 user_input[CONF_VERIFY_SSL],
             )
             try:
-                await self.hass.async_add_executor_job(router.test_connect)
-                return self.async_create_entry(title=user_input["host"], data=user_input)
+                if await self.hass.async_add_executor_job(router.authorize):
+                    return self.async_create_entry(title=user_input["host"], data=user_input)
+                else:
+                    errors['base'] = 'Cannot connect to the router, check logs for more info'
             except Exception as error:
-                _LOGGER.error(error)
+                _LOGGER.error('TplinkRouter Integration Exception - {}'.format(error))
                 errors['base'] = str(error)
 
         return self.async_show_form(step_id="user", data_schema=STEP_USER_DATA_SCHEMA, errors=errors)
