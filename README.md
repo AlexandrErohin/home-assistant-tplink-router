@@ -63,6 +63,7 @@ If you use `https` connection to your router you may get error `certificate veri
 - Archer AX10 v1.0
 - Archer C6 v2.0
 - Archer C6U v1.0
+- Archer C7 v5.0
 
 ### Not fully tested Hardware Versions
 - AD7200 V2
@@ -75,7 +76,7 @@ If you use `https` connection to your router you may get error `certificate veri
 - Archer AX3000 V1
 - Archer AX6000 V1
 - Archer C6 V4
-- Archer C7 (V4 and V5)
+- Archer C7 V4
 - Archer C8 (V3 and V4)
 - Archer C9 (V4 and V5)
 - Archer C59 V2
