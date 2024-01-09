@@ -64,7 +64,7 @@ SENSOR_TYPES: tuple[TPLinkRouterSensorEntityDescription, ...] = (
         state_class=SensorStateClass.MEASUREMENT,
         native_unit_of_measurement=PERCENTAGE,
         suggested_display_precision=1,
-        value=lambda status: (status.cpu_usage * 100) if status.cpu_usage >= 0 else 0,
+        value=lambda status: (status.cpu_usage * 100) if status.cpu_usage is not None else None,
     ),
     TPLinkRouterSensorEntityDescription(
         key="memory_used",

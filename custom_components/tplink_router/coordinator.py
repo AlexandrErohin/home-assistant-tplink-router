@@ -19,7 +19,7 @@ class TPLinkRouterCoordinator(DataUpdateCoordinator):
         self.firmware = info[0]
         self.status = info[1]
         self.device_info = DeviceInfo(
-            configuration_url=f"http://{router.host}/",
+            configuration_url=router.host,
             connections={(CONNECTION_NETWORK_MAC, self.status.macaddr)},
             identifiers={(DOMAIN, self.status.macaddr)},
             manufacturer="TPLink",
