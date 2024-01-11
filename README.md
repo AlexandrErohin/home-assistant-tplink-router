@@ -12,6 +12,8 @@ See [Supported routers](#supports)
  - 5Ghz main wifi Enable/Disable
  - 2.4Ghz guest wifi Enable/Disable
  - 5Ghz guest wifi Enable/Disable
+ - 2.4Ghz IoT wifi network Enable/Disable
+ - 5Ghz IoT wifi network Enable/Disable
 
 ### Sensors
  - Total amount of wired clients

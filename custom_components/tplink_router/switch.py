@@ -58,6 +58,22 @@ SWITCH_TYPES = (
         property='wifi_5g_enable',
         method=lambda coordinator, value: coordinator.set_wifi(Wifi.WIFI_5G, value),
     ),
+    TPLinkRouterSwitchEntityDescription(
+        key="iot_24g",
+        name="IoT WIFI 2.4G",
+        icon="mdi:wifi",
+        entity_category=EntityCategory.CONFIG,
+        property='iot_2g_enable',
+        method=lambda coordinator, value: coordinator.set_wifi(Wifi.WIFI_IOT_2G, value),
+    ),
+    TPLinkRouterSwitchEntityDescription(
+        key="iot_5g",
+        name="IoT WIFI 5G",
+        icon="mdi:wifi",
+        entity_category=EntityCategory.CONFIG,
+        property='iot_5g_enable',
+        method=lambda coordinator, value: coordinator.set_wifi(Wifi.WIFI_IOT_5G, value),
+    ),
 )
 
 
@@ -96,6 +112,11 @@ class TPLinkRouterSwitchEntity(
     def is_on(self) -> bool:
         """Return true if switch is on."""
         return getattr(self.coordinator.status, self.entity_description.property)
+
+    @property
+    def available(self) -> bool:
+        """Return True if entity is available."""
+        return getattr(self.coordinator.status, self.entity_description.property) is not None
 
     async def async_turn_on(self, **kwargs: Any) -> None:
         """Turn the entity on."""
