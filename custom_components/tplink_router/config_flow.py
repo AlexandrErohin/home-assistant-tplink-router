@@ -8,7 +8,6 @@ from .const import DOMAIN
 from homeassistant.const import (
     CONF_HOST,
     CONF_PASSWORD,
-    CONF_USERNAME,
     CONF_SCAN_INTERVAL,
     CONF_VERIFY_SSL,
 )
@@ -17,7 +16,6 @@ from tplinkrouterc6u import TplinkRouter
 STEP_USER_DATA_SCHEMA = vol.Schema(
     {
         vol.Required(CONF_HOST, default='http://192.168.0.1'): str,
-        vol.Required(CONF_USERNAME, default='admin'): cv.string,
         vol.Required(CONF_PASSWORD): cv.string,
         vol.Required(CONF_SCAN_INTERVAL, default=30): int,
         vol.Required(CONF_VERIFY_SSL, default=True): cv.boolean,
@@ -34,11 +32,10 @@ class ConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
         errors = {}
         if user_input is not None:
             router = TplinkRouter(
-                user_input[CONF_HOST],
-                user_input[CONF_PASSWORD],
-                user_input[CONF_USERNAME],
-                _LOGGER,
-                user_input[CONF_VERIFY_SSL],
+                host=user_input[CONF_HOST],
+                password=user_input[CONF_PASSWORD],
+                logger=_LOGGER,
+                verify_ssl=user_input[CONF_VERIFY_SSL],
             )
             try:
                 if await self.hass.async_add_executor_job(router.authorize):

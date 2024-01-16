@@ -51,14 +51,18 @@ TP-Link Router is configured via the GUI. See [the HA docs](https://www.home-ass
 
 The default data is preset already.
 
-If you use `https` connection to your router you may get error `certificate verify failed: EE certificate key too weak`. To fix this - unset `Verify ssl`
-
 <img src="https://raw.githubusercontent.com/AlexandrErohin/home-assistant-tplink-router/master/docs/media/config_flow.png" width="48%">
 
 1. Go to the <b>Settings</b>-><b>Devices & services</b>.
 2. Click on `+ ADD INTEGRATION`, search for `TP-Link Router`.
 3. Fill Password.
 4. Click `SUBMIT`
+
+NOTE!
+1. If you use `https` connection to your router you may get error `certificate verify failed: EE certificate key too weak`. To fix this - unset `Verify ssl`
+1. Use Local Password which is for Log In with Local Password
+
+<img src="https://raw.githubusercontent.com/AlexandrErohin/home-assistant-tplink-router/master/docs/media/router.png" width="20%">
 
 ## <a id="supports">Supported routers</a>
 ### Fully tested Hardware Versions
