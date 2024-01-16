@@ -62,7 +62,7 @@ NOTE!
 1. If you use `https` connection to your router you may get error `certificate verify failed: EE certificate key too weak`. To fix this - unset `Verify ssl`
 1. Use Local Password which is for Log In with Local Password
 
-<img src="https://raw.githubusercontent.com/AlexandrErohin/home-assistant-tplink-router/master/docs/media/router.png" width="20%">
+<img src="https://raw.githubusercontent.com/AlexandrErohin/home-assistant-tplink-router/master/docs/media/router.png" width="30%">
 
 ## <a id="supports">Supported routers</a>
 ### Fully tested Hardware Versions
