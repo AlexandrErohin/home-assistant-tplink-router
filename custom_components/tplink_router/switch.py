@@ -87,7 +87,7 @@ async def async_setup_entry(
     switches = []
 
     for description in SWITCH_TYPES:
-        switches.append(TPLinkRouterSwitchEntity(coordinator, description, coordinator.device_info))
+        switches.append(TPLinkRouterSwitchEntity(coordinator, description))
     async_add_entities(switches, False)
 
 
@@ -100,12 +100,11 @@ class TPLinkRouterSwitchEntity(
             self,
             coordinator: TPLinkRouterCoordinator,
             description: TPLinkRouterSwitchEntityDescription,
-            device_info: DeviceInfo,
     ) -> None:
         super().__init__(coordinator)
 
-        self._attr_device_info = device_info
-        self._attr_unique_id = description.key
+        self._attr_device_info = coordinator.device_info
+        self._attr_unique_id = f"{coordinator.unique_id}_{DOMAIN}_{description.key}"
         self.entity_description = description
 
     @property

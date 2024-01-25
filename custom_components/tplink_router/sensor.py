@@ -87,7 +87,7 @@ async def async_setup_entry(
     sensors = []
 
     for description in SENSOR_TYPES:
-        sensors.append(TPLinkRouterSensor(coordinator, description, coordinator.device_info))
+        sensors.append(TPLinkRouterSensor(coordinator, description))
     async_add_entities(sensors, False)
 
 
@@ -101,12 +101,11 @@ class TPLinkRouterSensor(
             self,
             coordinator: TPLinkRouterCoordinator,
             description: TPLinkRouterSensorEntityDescription,
-            device_info: DeviceInfo,
     ) -> None:
-        """Initialize."""
         super().__init__(coordinator)
-        self._attr_device_info = device_info
-        self._attr_unique_id = description.key
+
+        self._attr_device_info = coordinator.device_info
+        self._attr_unique_id = f"{coordinator.unique_id}_{DOMAIN}_{description.key}"
         self.entity_description = description
 
     @callback

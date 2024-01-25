@@ -52,7 +52,7 @@ async def async_setup_entry(
     buttons = []
 
     for description in BUTTON_TYPES:
-        buttons.append(TPLinkRouterButtonEntity(coordinator, description, coordinator.device_info))
+        buttons.append(TPLinkRouterButtonEntity(coordinator, description))
     async_add_entities(buttons, False)
 
 
@@ -63,14 +63,12 @@ class TPLinkRouterButtonEntity(CoordinatorEntity[TPLinkRouterCoordinator], Butto
             self,
             coordinator: TPLinkRouterCoordinator,
             description: TPLinkButtonEntityDescription,
-            device_info: DeviceInfo,
     ) -> None:
         super().__init__(coordinator)
 
-        self._attr_device_info = device_info
-        self._attr_unique_id = description.key
+        self._attr_device_info = coordinator.device_info
+        self._attr_unique_id = f"{coordinator.unique_id}_{DOMAIN}_{description.key}"
         self.entity_description = description
 
     async def async_press(self) -> None:
-        """Execute the button action."""
         await self.entity_description.method(self.coordinator)

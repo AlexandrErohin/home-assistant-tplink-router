@@ -60,7 +60,8 @@ The default data is preset already.
 
 NOTE!
 1. If you use `https` connection to your router you may get error `certificate verify failed: EE certificate key too weak`. To fix this - unset `Verify ssl`
-1. Use Local Password which is for Log In with Local Password
+2. Use Local Password which is for Log In with Local Password
+3. The TP-Link Web Interface only supports upto 1 user logged in at a time (for security reasons, apparently). So you will be logged out from router web interface when the integration updates data
 
 <img src="https://raw.githubusercontent.com/AlexandrErohin/home-assistant-tplink-router/master/docs/media/router.png" width="30%">
 
@@ -68,9 +69,12 @@ NOTE!
 ### Fully tested Hardware Versions
 - Archer A7 V5
 - Archer AX10 v1.0
+- Archer AX20 v1.0
+- Archer AX50 v1.0
 - Archer AX55 V1.60
 - Archer AX73 V1
 - Archer AX3000 V1
+- Archer AX6000 V1
 - Archer AX11000 V1
 - Archer C6 v2.0
 - Archer C6 v3.0
@@ -83,8 +87,6 @@ NOTE!
 - Archer A9 V6
 - Archer A10 (V1 and V2)
 - Archer A20 (V1, V3)
-- Archer AX50 V1
-- Archer AX6000 V1
 - Archer C7 V4
 - Archer C8 (V3 and V4)
 - Archer C9 (V4 and V5)

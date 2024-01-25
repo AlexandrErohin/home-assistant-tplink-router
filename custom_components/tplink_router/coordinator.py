@@ -1,4 +1,5 @@
 from datetime import timedelta
+from logging import Logger
 from homeassistant.helpers.update_coordinator import DataUpdateCoordinator
 from tplinkrouterc6u import TplinkRouter, Firmware, Status, Wifi
 from homeassistant.core import HomeAssistant
@@ -13,9 +14,11 @@ class TPLinkRouterCoordinator(DataUpdateCoordinator):
             router: TplinkRouter,
             update_interval: int,
             info: tuple[Firmware, Status],
-            logger,
+            logger: Logger,
+            unique_id: str
     ) -> None:
         self.router = router
+        self.unique_id = unique_id
         self.firmware = info[0]
         self.status = info[1]
         self.device_info = DeviceInfo(

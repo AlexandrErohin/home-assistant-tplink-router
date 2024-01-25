@@ -104,7 +104,7 @@ class TPLinkTracker(CoordinatorEntity, ScannerEntity):
     @property
     def unique_id(self) -> str:
         """Return an unique identifier for this device."""
-        return f"_{DOMAIN}_{self.mac_address}"
+        return f"{self.coordinator.unique_id}_{DOMAIN}_{self.mac_address}"
 
     @property
     def icon(self) -> str:
