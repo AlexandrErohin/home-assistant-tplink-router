@@ -1,0 +1,82 @@
+# Make new release based on conventional commits
+name: Create release
+
+on:
+  push:
+    branches:
+      - master
+  workflow_dispatch:
+
+jobs:
+  changes:
+    name: "Create changelog and tag"
+    runs-on: ubuntu-latest
+    outputs:
+      skipped: ${{ steps.changelog.outputs.skipped }}
+      clean_changelog: ${{ steps.changelog.outputs.clean_changelog }}
+      tag: ${{ steps.changelog.outputs.tag }}
+
+    steps:
+    - name: checkout
+      uses: actions/checkout@v2
+      id: checkout
+
+    - name: Conventional Changelog Action
+      id: changelog
+      uses: TriPSs/conventional-changelog-action@v3
+      with:
+        github-token: ${{ secrets.github_token }}
+        output-file: "false"
+        skip-version-file:   "true"
+        skip-commit: "true"
+  release:
+    name: "Create release"
+    needs: [ changes, version ]
+    if: ${{ needs.changes.outputs.skipped == 'false' }}
+    runs-on: ubuntu-latest
+
+    steps:      
+    - name: Create Release
+      id: release
+      uses: actions/create-release@v1      
+      env:
+        GITHUB_TOKEN: ${{ secrets.github_token }}
+      with:
+        tag_name: ${{ needs.changes.outputs.tag }}
+        release_name: ${{ needs.changes.outputs.tag }}
+        body: |
+          [![GitHub release (by tag)](https://img.shields.io/github/downloads/${{ github.repository }}/${{ needs.changes.outputs.tag }}/total?style=plastic)]()
+          ${{ needs.changes.outputs.clean_changelog }}
+
+  add_archive_to_release:
+    name: "Add release archive"
+    needs: [ 'changes', 'release' ]
+    if: ${{ needs.changes.outputs.skipped == 'false' }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: "Check out repository"
+        uses: actions/checkout@v1
+        with:
+          ref:  "${{ needs.changes.outputs.tag }}"
+      - name: "Set package name"
+        working-directory: ./custom_components
+        run: |
+          echo "package=$(ls -F | grep \/$ | sed -n "s/\///g;1p")" >> $GITHUB_ENV
+      - name: "Set variables"
+        working-directory: ./custom_components
+        run: |
+          echo "archive=${{ env.package }}.zip" >> $GITHUB_ENV
+          echo "basedir=$(pwd)/${{ env.package }}" >> $GITHUB_ENV
+          env
+      - name: "Zip component dir"
+        working-directory: ./custom_components/${{ env.package }}
+        run: |
+          zip ${{ env.archive }} -r ./
+      - name: "Upload zip to release"
+        uses: svenstaro/upload-release-action@v2
+        with:
+          repo_token: ${{ secrets.github_token }}
+          file: ${{ env.basedir }}/${{ env.archive }}
+          asset_name: ${{ env.archive }}
+          tag: ${{ needs.changes.outputs.tag }}
+          overwrite: true
