@@ -70,6 +70,7 @@ NOTE!
 - Archer A7 V5
 - Archer AX10 v1.0
 - Archer AX20 v1.0
+- Archer AX21 v1.20
 - Archer AX50 v1.0
 - Archer AX55 V1.60
 - Archer AX73 V1
