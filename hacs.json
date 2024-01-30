@@ -2,7 +2,5 @@
   "name": "TP-Link Router",
   "homeassistant": "2023.9.3",
   "hide_default_branch": true,
-  "zip_release": true,
-  "filename": "tplink_router.zip",
   "render_readme": true
 }
