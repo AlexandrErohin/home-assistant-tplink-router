@@ -4,7 +4,10 @@ from homeassistant.helpers.update_coordinator import DataUpdateCoordinator
 from tplinkrouterc6u import TplinkRouter, Firmware, Status, Wifi
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers.device_registry import CONNECTION_NETWORK_MAC, DeviceInfo
-from .const import DOMAIN
+from .const import (
+    DOMAIN,
+    DEFAULT_NAME,
+)
 
 
 class TPLinkRouterCoordinator(DataUpdateCoordinator):
@@ -23,11 +26,11 @@ class TPLinkRouterCoordinator(DataUpdateCoordinator):
         self.status = info[1]
         self.device_info = DeviceInfo(
             configuration_url=router.host,
-            connections={(CONNECTION_NETWORK_MAC, self.status.macaddr)},
-            identifiers={(DOMAIN, self.status.macaddr)},
+            connections={(CONNECTION_NETWORK_MAC, self.status.lan_macaddr)},
+            identifiers={(DOMAIN, self.status.lan_macaddr)},
             manufacturer="TPLink",
             model=self.firmware.model,
-            name="TPLinkRouter",
+            name=DEFAULT_NAME,
             sw_version=self.firmware.firmware_version,
             hw_version=self.firmware.hardware_version,
         )
