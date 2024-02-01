@@ -81,6 +81,7 @@ NOTE!
 - Archer C6 v3.0
 - Archer C6U v1.0
 - Archer C7 v5.0
+- TL-WA3001 v1.0
 
 ### Not fully tested Hardware Versions
 - AD7200 V2
