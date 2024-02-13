@@ -1,7 +1,8 @@
+from __future__ import annotations
 from datetime import timedelta
 from logging import Logger
 from homeassistant.helpers.update_coordinator import DataUpdateCoordinator
-from tplinkrouterc6u import TplinkRouter, Firmware, Status, Wifi
+from tplinkrouterc6u import TplinkRouterProvider, AbstractRouter, Firmware, Status, Wifi
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers.device_registry import CONNECTION_NETWORK_MAC, DeviceInfo
 from .const import (
@@ -14,7 +15,7 @@ class TPLinkRouterCoordinator(DataUpdateCoordinator):
     def __init__(
             self,
             hass: HomeAssistant,
-            router: TplinkRouter,
+            router: AbstractRouter,
             update_interval: int,
             info: tuple[Firmware, Status],
             logger: Logger,
@@ -41,6 +42,12 @@ class TPLinkRouterCoordinator(DataUpdateCoordinator):
             name=DOMAIN,
             update_interval=timedelta(seconds=update_interval),
         )
+
+    @staticmethod
+    async def get_client(hass: HomeAssistant, host: str, password: str, logger: Logger,
+                         verify_ssl: bool) -> AbstractRouter:
+        return await hass.async_add_executor_job(TplinkRouterProvider.get_client, host, password, 'admin',
+                                                 logger, verify_ssl)
 
     async def reboot(self) -> None:
         await self.hass.async_add_executor_job(self.router.reboot)

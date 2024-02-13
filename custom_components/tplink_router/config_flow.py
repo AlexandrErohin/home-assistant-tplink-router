@@ -5,13 +5,13 @@ import voluptuous as vol
 from homeassistant import config_entries
 import homeassistant.helpers.config_validation as cv
 from .const import DOMAIN
+from .coordinator import TPLinkRouterCoordinator
 from homeassistant.const import (
     CONF_HOST,
     CONF_PASSWORD,
     CONF_SCAN_INTERVAL,
     CONF_VERIFY_SSL,
 )
-from tplinkrouterc6u import TplinkRouter
 
 STEP_USER_DATA_SCHEMA = vol.Schema(
     {
@@ -31,7 +31,8 @@ class ConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
         """Handle the initial step."""
         errors = {}
         if user_input is not None:
-            router = TplinkRouter(
+            router = await TPLinkRouterCoordinator.get_client(
+                hass=self.hass,
                 host=user_input[CONF_HOST],
                 password=user_input[CONF_PASSWORD],
                 logger=_LOGGER,

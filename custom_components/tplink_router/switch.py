@@ -11,7 +11,6 @@ from .const import DOMAIN
 from homeassistant.helpers.update_coordinator import CoordinatorEntity
 from .coordinator import TPLinkRouterCoordinator
 from tplinkrouterc6u import Wifi, Status
-from homeassistant.helpers.device_registry import DeviceInfo
 
 
 @dataclass

@@ -32,6 +32,8 @@ See [Supported routers](#supports)
 
 Have [HACS](https://hacs.xyz/) installed, this will allow you to update easily.
 
+[![Install quickly via a HACS link](https://my.home-assistant.io/badges/hacs_repository.svg)](https://my.home-assistant.io/redirect/hacs_repository/?owner=AlexandrErohin&repository=home-assistant-tplink-router&category=integration)
+
 1. Go to the <b>Hacs</b>-><b>Integrations</b>.
 2. Add this repository (https://github.com/AlexandrErohin/home-assistant-tplink-router) as a [custom repository](https://hacs.xyz/docs/faq/custom_repositories/)
 4. Click on `+ Explore & Download Repositories`, search for `TP-Link Router`.
@@ -61,9 +63,20 @@ The default data is preset already.
 NOTE!
 1. If you use `https` connection to your router you may get error `certificate verify failed: EE certificate key too weak`. To fix this - unset `Verify ssl`
 2. Use Local Password which is for Log In with Local Password
-3. The TP-Link Web Interface only supports upto 1 user logged in at a time (for security reasons, apparently). So you will be logged out from router web interface when the integration updates data
 
 <img src="https://raw.githubusercontent.com/AlexandrErohin/home-assistant-tplink-router/master/docs/media/router.png" width="30%">
+
+3. If you got error - `You need to use web encrypted password instead. Check the documentation!` Read [web encrypted password](#encrypted_pass)
+4. The TP-Link Web Interface only supports upto 1 user logged in at a time (for security reasons, apparently). So you will be logged out from router web interface when the integration updates data
+
+### <a id="encrypted_pass">Web Encrypted Password</a>
+If you got error - `You need to use web encrypted password instead. Check the documentation!`
+1. Go to the login page of your router. (default: 192.168.0.1).
+2. Type in the password you use to login into the password field.
+3. Click somewhere else on the page so that the password field is not selected anymore.
+4. Open the JavaScript console of your browser (usually by pressing F12 and then clicking on "Console").
+5. Type `document.getElementById("login-password").value;`
+6. Copy the returned value as password and use it.
 
 ## <a id="supports">Supported routers</a>
 ### Fully tested Hardware Versions
@@ -73,10 +86,12 @@ NOTE!
 - Archer AX21 v1.20
 - Archer AX50 v1.0
 - Archer AX55 V1.60
+- Archer AX72 V1
 - Archer AX73 V1
 - Archer AX3000 V1
 - Archer AX6000 V1
 - Archer AX11000 V1
+- Archer C1200 v2.0 (You need to use [web encrypted password](#encrypted_pass))
 - Archer C6 v2.0
 - Archer C6 v3.0
 - Archer C6U v1.0
@@ -95,7 +110,7 @@ NOTE!
 - Archer C59 V2
 - Archer C90 V6
 - Archer C900 V1
-- Archer C1200 V3 (V2 - should work, but not have been tested)
+- Archer C1200 V3
 - Archer C1900 V2
 - Archer C2300 (V1, V2)
 - Archer C4000 (V2 and V3)
@@ -104,3 +119,6 @@ NOTE!
 - TL-WR1043N V5
 
 Please let me know if you have tested integration with one of this or other model. Open an issue with info about router's model, hardware and firmware versions.
+
+## <a id="add_support">Adding Support For More Models</a>
+Guidelines [CONTRIBUTING.md](https://github.com/AlexandrErohin/TP-Link-Archer-C6U/blob/master/CONTRIBUTING.md)

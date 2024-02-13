@@ -10,7 +10,6 @@ from homeassistant.helpers import entity_registry as er
 from homeassistant.config_entries import ConfigEntry
 from .const import DOMAIN
 import logging
-from tplinkrouterc6u import TplinkRouter
 from .coordinator import TPLinkRouterCoordinator
 from .sensor import SENSOR_TYPES
 from .button import BUTTON_TYPES
@@ -44,7 +43,8 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     if not (host.startswith('http://') or host.startswith('https://')):
         host = "http://{}".format(host)
     verify_ssl = entry.data[CONF_VERIFY_SSL] if CONF_VERIFY_SSL in entry.data else True
-    device = TplinkRouter(
+    device = await TPLinkRouterCoordinator.get_client(
+        hass=hass,
         host=host,
         password=entry.data[CONF_PASSWORD],
         logger=_LOGGER,
