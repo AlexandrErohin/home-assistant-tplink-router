@@ -96,6 +96,7 @@ If you got error - `You need to use web encrypted password instead. Check the do
 - Archer C6 v3.0
 - Archer C6U v1.0
 - Archer C7 v5.0
+- Archer MR200 v5.3
 - TL-WA3001 v1.0
 
 ### Not fully tested Hardware Versions

@@ -31,18 +31,16 @@ class ConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
         """Handle the initial step."""
         errors = {}
         if user_input is not None:
-            router = await TPLinkRouterCoordinator.get_client(
-                hass=self.hass,
-                host=user_input[CONF_HOST],
-                password=user_input[CONF_PASSWORD],
-                logger=_LOGGER,
-                verify_ssl=user_input[CONF_VERIFY_SSL],
-            )
             try:
-                if await self.hass.async_add_executor_job(router.authorize):
-                    return self.async_create_entry(title=user_input["host"], data=user_input)
-                else:
-                    errors['base'] = 'Cannot connect to the router, check logs for more info'
+                router = await TPLinkRouterCoordinator.get_client(
+                    hass=self.hass,
+                    host=user_input[CONF_HOST],
+                    password=user_input[CONF_PASSWORD],
+                    logger=_LOGGER,
+                    verify_ssl=user_input[CONF_VERIFY_SSL],
+                )
+                await self.hass.async_add_executor_job(router.authorize)
+                return self.async_create_entry(title=user_input["host"], data=user_input)
             except Exception as error:
                 _LOGGER.error('TplinkRouter Integration Exception - {}'.format(error))
                 errors['base'] = str(error)
