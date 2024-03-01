@@ -12,5 +12,19 @@
         }
       }
     }
+  },
+  "options": {
+    "step": {
+      "init": {
+        "description": "Edit parameters for the router.",
+        "data": {
+          "host": "Host",
+          "username": "Login",
+          "password": "Password",
+          "scan_interval": "Scan interval for updates in seconds",
+          "verify_ssl": "Verify ssl for https connection"
+        }
+      }
+    }
   }
 }

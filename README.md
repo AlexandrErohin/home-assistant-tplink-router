@@ -26,6 +26,8 @@ See [Supported routers](#supports)
 ### Device Tracker
  - Track clients by MAC address across 2.4Ghz, 5Ghz guest and main wifi with connection information
 
+To find your device - Go to `Developer tools` and search for your MAC address - you’ll find sensor like `device_tracker.YOUR_MAC` or `device_tracker.YOUR_PHONE_NAME`.
+
 ## Installation
 
 ### HACS (recommended)
@@ -78,6 +80,20 @@ If you got error - `You need to use web encrypted password instead. Check the do
 5. Type `document.getElementById("login-password").value;`
 6. Copy the returned value as password and use it.
 
+### Edit Configuration
+You may edit configuration data like:
+1. Router url
+2. Password
+3. Scan interval
+4. Verify https
+
+To do that:
+
+1. Go to the <b>Settings</b>-><b>Devices & services</b>.
+2. Search for `TP-Link Router`, and click on it.
+3. Click on `CONFIGURE`
+4. Edit the options you need and click `SUBMIT`
+
 ## <a id="supports">Supported routers</a>
 ### Fully tested Hardware Versions
 - Archer A7 V5
@@ -96,8 +112,11 @@ If you got error - `You need to use web encrypted password instead. Check the do
 - Archer C6 v3.0
 - Archer C6U v1.0
 - Archer C7 v5.0
+- Archer MR200 v5
 - Archer MR200 v5.3
+- Archer MR600
 - TL-WA3001 v1.0
+- TL-MR6400 v5
 
 ### Not fully tested Hardware Versions
 - AD7200 V2
@@ -117,6 +136,7 @@ If you got error - `You need to use web encrypted password instead. Check the do
 - Archer C4000 (V2 and V3)
 - Archer C5400 V2
 - Archer C5400X V1
+- TD-W9960 v1
 - TL-WR1043N V5
 
 Please let me know if you have tested integration with one of this or other model. Open an issue with info about router's model, hardware and firmware versions.

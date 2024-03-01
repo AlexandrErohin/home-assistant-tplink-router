@@ -117,7 +117,12 @@ class TPLinkTracker(CoordinatorEntity, ScannerEntity):
         wifi = 'host' if self.device.type in [Wifi.WIFI_2G, Wifi.WIFI_5G] else 'guest'
         band = '2.4G' if self.device.type in [Wifi.WIFI_2G, Wifi.WIFI_GUEST_2G] else '5G'
 
-        return {'wifi': wifi, 'band': band}
+        return {
+            'wifi': wifi,
+            'band': band,
+            'packets_sent': self.device.packets_sent,
+            'packets_received': self.device.packets_received
+        }
 
     @property
     def entity_registry_enabled_default(self) -> bool:
