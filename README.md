@@ -101,9 +101,12 @@ To do that:
 - Archer AX20 v1.0
 - Archer AX21 v1.20
 - Archer AX50 v1.0
+- Archer AX55 v1.0
 - Archer AX55 V1.60
 - Archer AX72 V1
 - Archer AX73 V1
+- Archer AX75 V1
+- Archer AXE75 V1
 - Archer AX3000 V1
 - Archer AX6000 V1
 - Archer AX11000 V1
