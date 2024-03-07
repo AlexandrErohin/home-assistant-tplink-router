@@ -3,17 +3,20 @@ Home Assistant component for TP-Link router administration based on the [TP-Link
 
 See [Supported routers](#supports)
 
-<img src="https://raw.githubusercontent.com/AlexandrErohin/home-assistant-tplink-router/master/docs/media/sensors.png" width="70%">
+<img src="https://raw.githubusercontent.com/AlexandrErohin/home-assistant-tplink-router/master/docs/media/sensors.png" width="48%"> <img src="https://raw.githubusercontent.com/AlexandrErohin/home-assistant-tplink-router/master/docs/media/switches.png" width="48%">
 
 ## Components
 ### Switches
  - Router Reboot
  - 2.4Ghz main wifi Enable/Disable
  - 5Ghz main wifi Enable/Disable
+ - 6Ghz main wifi Enable/Disable
  - 2.4Ghz guest wifi Enable/Disable
  - 5Ghz guest wifi Enable/Disable
+ - 6Ghz guest wifi Enable/Disable
  - 2.4Ghz IoT wifi network Enable/Disable
  - 5Ghz IoT wifi network Enable/Disable
+ - 6Ghz IoT wifi network Enable/Disable
 
 ### Sensors
  - Total amount of wired clients
@@ -24,7 +27,7 @@ See [Supported routers](#supports)
  - Memory used
 
 ### Device Tracker
- - Track clients by MAC address across 2.4Ghz, 5Ghz guest and main wifi with connection information
+ - Track clients by MAC address across 2.4Ghz, 5Ghz, 6Ghz guest and main wifi with connection information
 
 To find your device - Go to `Developer tools` and search for your MAC address - you’ll find sensor like `device_tracker.YOUR_MAC` or `device_tracker.YOUR_PHONE_NAME`.
 

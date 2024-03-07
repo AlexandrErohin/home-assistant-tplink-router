@@ -42,6 +42,14 @@ SWITCH_TYPES = (
         method=lambda coordinator, value: coordinator.set_wifi(Wifi.WIFI_GUEST_5G, value),
     ),
     TPLinkRouterSwitchEntityDescription(
+        key="wifi_guest_6g",
+        name="Guest WIFI 6G",
+        icon="mdi:wifi",
+        entity_category=EntityCategory.CONFIG,
+        property='guest_6g_enable',
+        method=lambda coordinator, value: coordinator.set_wifi(Wifi.WIFI_GUEST_6G, value),
+    ),
+    TPLinkRouterSwitchEntityDescription(
         key="wifi_24g",
         name="WIFI 2.4G",
         icon="mdi:wifi",
@@ -58,6 +66,14 @@ SWITCH_TYPES = (
         method=lambda coordinator, value: coordinator.set_wifi(Wifi.WIFI_5G, value),
     ),
     TPLinkRouterSwitchEntityDescription(
+        key="wifi_6g",
+        name="WIFI 6G",
+        icon="mdi:wifi",
+        entity_category=EntityCategory.CONFIG,
+        property='wifi_6g_enable',
+        method=lambda coordinator, value: coordinator.set_wifi(Wifi.WIFI_6G, value),
+    ),
+    TPLinkRouterSwitchEntityDescription(
         key="iot_24g",
         name="IoT WIFI 2.4G",
         icon="mdi:wifi",
@@ -72,6 +88,14 @@ SWITCH_TYPES = (
         entity_category=EntityCategory.CONFIG,
         property='iot_5g_enable',
         method=lambda coordinator, value: coordinator.set_wifi(Wifi.WIFI_IOT_5G, value),
+    ),
+    TPLinkRouterSwitchEntityDescription(
+        key="iot_6g",
+        name="IoT WIFI 6G",
+        icon="mdi:wifi",
+        entity_category=EntityCategory.CONFIG,
+        property='iot_6g_enable',
+        method=lambda coordinator, value: coordinator.set_wifi(Wifi.WIFI_IOT_6G, value),
     ),
 )
 
