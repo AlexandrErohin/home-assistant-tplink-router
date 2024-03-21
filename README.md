@@ -120,8 +120,12 @@ To do that:
 - Archer C7 v5.0
 - Archer MR200 v5
 - Archer MR200 v5.3
-- Archer MR600
+- Archer MR600 v1
+- Archer VR900v
+- Deco M4 2.0
+- Deco M4R 2.0
 - TL-WA3001 v1.0
+- TL-MR105
 - TL-MR6400 v5
 
 ### Not fully tested Hardware Versions

@@ -6,7 +6,6 @@ from homeassistant.const import (
     Platform,
 )
 from homeassistant.core import HomeAssistant
-from homeassistant.helpers import entity_registry as er
 from homeassistant.config_entries import ConfigEntry
 from .const import DOMAIN
 import logging
@@ -26,18 +25,6 @@ _LOGGER = logging.getLogger(__name__)
 
 
 async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
-    # Remove all old sensors from registry if they exist
-    ent_reg = er.async_get(hass)
-    for description in SENSOR_TYPES:
-        if entity_id := ent_reg.async_get_entity_id('sensor', DOMAIN, description.key):
-            ent_reg.async_remove(entity_id)
-    for description in BUTTON_TYPES:
-        if entity_id := ent_reg.async_get_entity_id('button', DOMAIN, description.key):
-            ent_reg.async_remove(entity_id)
-    for description in SWITCH_TYPES:
-        if entity_id := ent_reg.async_get_entity_id('switch', DOMAIN, description.key):
-            ent_reg.async_remove(entity_id)
-
     # Construct the device
     host = entry.data[CONF_HOST]
     if not (host.startswith('http://') or host.startswith('https://')):
