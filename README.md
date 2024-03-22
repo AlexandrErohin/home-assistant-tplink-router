@@ -118,6 +118,7 @@ To do that:
 - Archer C6 v3.0
 - Archer C6U v1.0
 - Archer C7 v5.0
+- Archer C2300 v1.0
 - Archer MR200 v5
 - Archer MR200 v5.3
 - Archer MR600 v1
