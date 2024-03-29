@@ -101,6 +101,7 @@ To do that:
 ### Fully tested Hardware Versions
 - Archer A7 V5
 - Archer AX10 v1.0
+- Archer AX12 v1.0
 - Archer AX20 v1.0
 - Archer AX21 v1.20
 - Archer AX50 v1.0
@@ -125,6 +126,7 @@ To do that:
 - Archer VR900v
 - Deco M4 2.0
 - Deco M4R 2.0
+- Deco XE75
 - TL-WA3001 v1.0
 - TL-MR105
 - TL-MR6400 v5
