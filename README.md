@@ -20,6 +20,7 @@ See [Supported routers](#supports)
 
 ### Sensors
  - Total amount of wired clients
+ - Total amount of IoT clients
  - Total amount of main wifi clients
  - Total amount of guest wifi clients
  - Total amount of all connected clients
@@ -123,13 +124,13 @@ To do that:
 - Archer MR200 v5
 - Archer MR200 v5.3
 - Archer MR600 v1
+- Archer MR600 v3
 - Archer VR900v
 - Deco M4 2.0
 - Deco M4R 2.0
-- Deco XE75
+- Deco XE75 2.0
 - TL-WA3001 v1.0
 - TL-MR105
-- TL-MR6400 v5
 
 ### Not fully tested Hardware Versions
 - AD7200 V2

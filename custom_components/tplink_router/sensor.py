@@ -50,6 +50,13 @@ SENSOR_TYPES: tuple[TPLinkRouterSensorEntityDescription, ...] = (
         value=lambda status: status.wired_total,
     ),
     TPLinkRouterSensorEntityDescription(
+        key="iot_clients_total",
+        name="Total IoT clients",
+        icon="mdi:account-multiple",
+        state_class=SensorStateClass.TOTAL,
+        value=lambda status: status.iot_clients_total,
+    ),
+    TPLinkRouterSensorEntityDescription(
         key="clients_total",
         name="Total clients",
         icon="mdi:account-multiple",
