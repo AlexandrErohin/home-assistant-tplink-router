@@ -76,11 +76,10 @@ SENSOR_TYPES: tuple[TPLinkRouterSensorEntityDescription, ...] = (
         key="memory_used",
         name="Memory used",
         icon="mdi:memory",
-        native_unit_of_measurement=UnitOfInformation.MEGABYTES,
-        device_class=SensorDeviceClass.DATA_SIZE,
         state_class=SensorStateClass.MEASUREMENT,
-        suggested_display_precision=2,
-        value=lambda status: status.mem_usage,
+        native_unit_of_measurement=PERCENTAGE,
+        suggested_display_precision=1,
+        value=lambda status: (status.mem_usage * 100) if status.mem_usage is not None else None,
     ),
 )
 

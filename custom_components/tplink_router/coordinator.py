@@ -3,7 +3,7 @@ from datetime import timedelta
 from logging import Logger
 from collections.abc import Callable
 from homeassistant.helpers.update_coordinator import DataUpdateCoordinator
-from tplinkrouterc6u import TplinkRouterProvider, AbstractRouter, Firmware, Status, Wifi
+from tplinkrouterc6u import TplinkRouterProvider, AbstractRouter, Firmware, Status, Connection
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers.device_registry import CONNECTION_NETWORK_MAC, DeviceInfo
 from .const import (
@@ -61,7 +61,7 @@ class TPLinkRouterCoordinator(DataUpdateCoordinator):
     async def reboot(self) -> None:
         await self.hass.async_add_executor_job(TPLinkRouterCoordinator.request, self.router, self.router.reboot)
 
-    async def set_wifi(self, wifi: Wifi, enable: bool) -> None:
+    async def set_wifi(self, wifi: Connection, enable: bool) -> None:
         def callback():
             self.router.set_wifi(wifi, enable)
 

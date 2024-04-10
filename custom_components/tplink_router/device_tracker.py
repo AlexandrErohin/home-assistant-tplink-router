@@ -9,7 +9,7 @@ from homeassistant.helpers.entity_platform import AddEntitiesCallback
 from homeassistant.helpers.update_coordinator import CoordinatorEntity
 from .coordinator import TPLinkRouterCoordinator
 from .const import DOMAIN
-from tplinkrouterc6u import Device, Wifi
+from tplinkrouterc6u import Device, Connection
 
 MAC_ADDR: TypeAlias = str
 
@@ -114,12 +114,9 @@ class TPLinkTracker(CoordinatorEntity, ScannerEntity):
     @property
     def extra_state_attributes(self) -> dict[str, str]:
         """Return the attributes."""
-        wifi = 'host' if self.device.type in [Wifi.WIFI_2G, Wifi.WIFI_5G] else 'guest'
-        band = '2.4G' if self.device.type in [Wifi.WIFI_2G, Wifi.WIFI_GUEST_2G] else '5G'
-
         return {
-            'wifi': wifi,
-            'band': band,
+            'connection': self.device.type.get_type(),
+            'band': self.device.type.get_band(),
             'packets_sent': self.device.packets_sent,
             'packets_received': self.device.packets_received
         }

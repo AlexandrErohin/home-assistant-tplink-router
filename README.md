@@ -8,9 +8,9 @@ See [Supported routers](#supports)
 ## Components
 ### Switches
  - Router Reboot
- - 2.4Ghz main wifi Enable/Disable
- - 5Ghz main wifi Enable/Disable
- - 6Ghz main wifi Enable/Disable
+ - 2.4Ghz host wifi Enable/Disable
+ - 5Ghz host wifi Enable/Disable
+ - 6Ghz host wifi Enable/Disable
  - 2.4Ghz guest wifi Enable/Disable
  - 5Ghz guest wifi Enable/Disable
  - 6Ghz guest wifi Enable/Disable
@@ -21,14 +21,14 @@ See [Supported routers](#supports)
 ### Sensors
  - Total amount of wired clients
  - Total amount of IoT clients
- - Total amount of main wifi clients
+ - Total amount of host wifi clients
  - Total amount of guest wifi clients
  - Total amount of all connected clients
  - CPU used
  - Memory used
 
 ### Device Tracker
- - Track clients by MAC address across 2.4Ghz, 5Ghz, 6Ghz guest and main wifi with connection information
+ - Track connected to router devices by MAC address with connection information
 
 To find your device - Go to `Developer tools` and search for your MAC address - you’ll find sensor like `device_tracker.YOUR_MAC` or `device_tracker.YOUR_PHONE_NAME`.
 
@@ -105,6 +105,7 @@ To do that:
 - Archer AX12 v1.0
 - Archer AX20 v1.0
 - Archer AX21 v1.20
+- Archer AX23 v1.0
 - Archer AX50 v1.0
 - Archer AX55 v1.0
 - Archer AX55 V1.60
