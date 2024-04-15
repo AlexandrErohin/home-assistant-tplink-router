@@ -72,7 +72,7 @@ class OptionsFlow(config_entries.OptionsFlowWithConfigEntry):
                     verify_ssl=user_input[CONF_VERIFY_SSL],
                 )
                 await self.hass.async_add_executor_job(router.authorize)
-                self.config_entry.data = user_input
+                self.hass.config_entries.async_update_entry(self.config_entry, data=user_input)
                 return self.async_create_entry(title=user_input["host"], data=user_input)
             except Exception as error:
                 _LOGGER.error('TplinkRouter Integration Exception - {}'.format(error))
