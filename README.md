@@ -129,10 +129,17 @@ To do that:
 - Archer VR900v
 - Deco M4 2.0
 - Deco M4R 2.0
+- Deco M5
 - Deco M9 Pro
+- Deco P7
+- Deco X20 
+- Deco X60 
+- Deco X90
 - Deco XE75 2.0
 - TL-WA3001 v1.0
 - TL-MR105
+- TL-MR6400 v5
+- TL-MR6400 v5.3
 
 ### Not fully tested Hardware Versions
 - AD7200 V2
