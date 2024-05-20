@@ -113,13 +113,16 @@ class TPLinkTracker(CoordinatorEntity, ScannerEntity):
 
     @property
     def extra_state_attributes(self) -> dict[str, str]:
-        """Return the attributes."""
-        return {
+        attributes = {
             'connection': self.device.type.get_type(),
             'band': self.device.type.get_band(),
             'packets_sent': self.device.packets_sent,
             'packets_received': self.device.packets_received
         }
+        if self.device.down_speed is not None or self.device.up_speed is not None:
+            attributes['up_speed'] = self.device.up_speed
+            attributes['down_speed'] = self.device.down_speed
+        return attributes
 
     @property
     def entity_registry_enabled_default(self) -> bool:
