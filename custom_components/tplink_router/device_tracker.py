@@ -8,7 +8,12 @@ from homeassistant.core import HomeAssistant, callback
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 from homeassistant.helpers.update_coordinator import CoordinatorEntity
 from .coordinator import TPLinkRouterCoordinator
-from .const import DOMAIN
+from .const import (
+    DOMAIN,
+    EVENT_NEW_DEVICE,
+    EVENT_ONLINE,
+    EVENT_OFFLINE,
+)
 from tplinkrouterc6u import Device, Connection
 
 MAC_ADDR: TypeAlias = str
@@ -40,13 +45,18 @@ def update_items(
     """Update tracked device state from the hub."""
     new_tracked: list[TPLinkTracker] = []
     active: list[MAC_ADDR] = []
+    fire_event = tracked != {}
     for device in coordinator.status.devices:
         active.append(device.macaddr)
         if device.macaddr not in tracked:
             tracked[device.macaddr] = TPLinkTracker(coordinator, device)
             new_tracked.append(tracked[device.macaddr])
+            if fire_event:
+                coordinator.hass.bus.fire(EVENT_NEW_DEVICE, tracked[device.macaddr].data)
         else:
             tracked[device.macaddr].device = device
+            if fire_event and not tracked[device.macaddr].active:
+                coordinator.hass.bus.fire(EVENT_ONLINE, tracked[device.macaddr].data)
             tracked[device.macaddr].active = True
 
     if new_tracked:
@@ -55,6 +65,7 @@ def update_items(
     for mac in tracked:
         if mac not in active:
             tracked[mac].active = False
+            coordinator.hass.bus.fire(EVENT_OFFLINE, tracked[mac].data)
 
 
 class TPLinkTracker(CoordinatorEntity, ScannerEntity):
@@ -123,6 +134,14 @@ class TPLinkTracker(CoordinatorEntity, ScannerEntity):
             attributes['up_speed'] = self.device.up_speed
             attributes['down_speed'] = self.device.down_speed
         return attributes
+
+    @property
+    def data(self) -> dict[str, str]:
+        return dict(self.extra_state_attributes.items() | {
+            'hostname': self.hostname,
+            'ip_address': self.ip_address,
+            'mac_address': self.mac_address,
+        }.items())
 
     @property
     def entity_registry_enabled_default(self) -> bool:

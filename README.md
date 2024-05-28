@@ -6,6 +6,11 @@ See [Supported routers](#supports)
 <img src="https://raw.githubusercontent.com/AlexandrErohin/home-assistant-tplink-router/master/docs/media/sensors.png" width="48%"> <img src="https://raw.githubusercontent.com/AlexandrErohin/home-assistant-tplink-router/master/docs/media/switches.png" width="48%">
 
 ## Components
+### Events
+ - tplink_router_new_device: Fired when a new device appears in your network
+ - tplink_router_device_offline: Fired when a device becomes offline
+ - tplink_router_device_online: Fired when a device becomes online
+
 ### Switches
  - Router Reboot
  - 2.4Ghz host wifi Enable/Disable
@@ -31,6 +36,32 @@ See [Supported routers](#supports)
  - Track connected to router devices by MAC address with connection information
 
 To find your device - Go to `Developer tools` and search for your MAC address - you’ll find sensor like `device_tracker.YOUR_MAC` or `device_tracker.YOUR_PHONE_NAME`.
+
+It will also fire Home Assistant event when a device connects to router
+
+### Notification
+To receive notifications of appearing a new device in your network, or becoming device online\offline add following lines to your `configuration.yaml` file:
+```yaml
+automation:
+  - alias: "New network device"
+    trigger:
+      platform: event
+      event_type: tplink_router_new_device
+    action:
+      service: notify.mobile_app_<device_name>
+      data:
+        content: >-
+          New device appear {{ trigger.event.data.hostname }} with IP {{ trigger.event.data.ip_address }}
+```
+
+All available fields in `trigger.event.data`:
+- hostname
+- ip_address
+- mac_address
+- connection
+- band
+- packets_sent
+- packets_received
 
 ## Installation
 
