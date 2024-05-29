@@ -63,7 +63,7 @@ def update_items(
         async_add_entities(new_tracked)
 
     for mac in tracked:
-        if mac not in active:
+        if mac not in active and tracked[mac].active:
             tracked[mac].active = False
             coordinator.hass.bus.fire(EVENT_OFFLINE, tracked[mac].data)
 
