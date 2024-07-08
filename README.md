@@ -148,6 +148,7 @@ To do that:
 - Archer AX3000 V1
 - Archer AX6000 V1
 - Archer AX11000 V1
+- Archer BE805 v1.0
 - Archer C1200 v2.0 (You need to use [web encrypted password](#encrypted_pass))
 - Archer C2300 v1.0 (You need to use [web encrypted password](#encrypted_pass))
 - Archer C6 v2.0
