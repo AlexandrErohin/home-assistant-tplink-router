@@ -138,6 +138,7 @@ To do that:
 - Archer AX10 v1.0
 - Archer AX12 v1.0
 - Archer AX20 v1.0
+- Archer AX20 v3.0
 - Archer AX21 v1.20
 - Archer AX23 v1.0
 - Archer AX50 v1.0
@@ -159,6 +160,7 @@ To do that:
 - Archer C6 v3.0
 - Archer C6U v1.0
 - Archer C7 v5.0
+- Archer GX90 v1.0
 - Archer MR200 v5
 - Archer MR200 v5.3
 - Archer MR600 v1
