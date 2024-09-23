@@ -159,6 +159,7 @@ To do that:
 - Archer C6 (v2.0, v3.0)
 - Archer C6U v1.0
 - Archer C7 (v4.0, v5.0)
+- Archer C5400X V1
 - Archer MR200 (v5, v5.3)
 - Archer MR600 (v1, v3)
 - Archer VR2100v v1
@@ -193,7 +194,6 @@ To do that:
 - Archer C2300 V2
 - Archer C4000 (V2 and V3)
 - Archer C5400 V2
-- Archer C5400X V1
 - TD-W9960 v1
 - TL-WR1043N V5
 
