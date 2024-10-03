@@ -174,9 +174,10 @@ To do that:
 - Deco X60 
 - Deco X90
 - Deco XE75 2.0
-- TL-WA3001 v1.0
+- TD-W9960 (v1, V1.20)
 - TL-MR105
 - TL-MR6400 (v5, v5.3)
+- TL-WA3001 v1.0
 
 ### Not fully tested Hardware Versions
 - AD7200 V2
@@ -195,7 +196,6 @@ To do that:
 - Archer C2300 V2
 - Archer C4000 (V2 and V3)
 - Archer C5400 V2
-- TD-W9960 v1
 - TL-WR1043N V5
 
 Please let me know if you have tested integration with one of this or other model. Open an issue with info about router's model, hardware and firmware versions.
