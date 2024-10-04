@@ -169,11 +169,13 @@ To do that:
 - Deco M4R 2.0
 - Deco M5 v3
 - Deco M9 Pro
+- Deco M9 Plus 1.0
 - Deco P7
-- Deco X20 
-- Deco X60 
+- Deco X20
+- Deco X50 v1.3
+- Deco X60 V3
 - Deco X90
-- Deco XE75 2.0
+- Deco XE75 (v1.0, v2.0)
 - TD-W9960 (v1, V1.20)
 - TL-MR105
 - TL-MR6400 (v5, v5.3)
