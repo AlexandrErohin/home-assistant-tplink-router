@@ -177,6 +177,7 @@ To do that:
 - Deco X90
 - Deco XE75 (v1.0, v2.0)
 - TD-W9960 (v1, V1.20)
+- TL-MR100 v2.0
 - TL-MR105
 - TL-MR6400 (v5, v5.3)
 - TL-WA3001 v1.0
