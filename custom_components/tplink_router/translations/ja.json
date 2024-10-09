@@ -1,0 +1,30 @@
+{
+  "config": {
+    "step": {
+      "user": {
+        "description": "統合の設定",
+        "data": {
+          "host": "ホスト",
+          "username": "ログイン",
+          "password": "パスワード",
+          "scan_interval": "更新のスキャン間隔(秒）",
+          "verify_ssl": "https接続でSSLを検証する"
+        }
+      }
+    }
+  },
+  "options": {
+    "step": {
+      "init": {
+        "description": "ルーターのパラメーターを編集します。",
+        "data": {
+          "host": "ホスト",
+          "username": "ログイン",
+          "password": "パスワード",
+          "scan_interval": "更新のスキャン間隔(秒）",
+          "verify_ssl": "https接続でSSLを検証する"
+        }
+      }
+    }
+  }
+}
