@@ -72,15 +72,9 @@ All available fields in `trigger.event.data`:
 
 Have [HACS](https://hacs.xyz/) installed, this will allow you to update easily.
 
-[![Install quickly via a HACS link](https://my.home-assistant.io/badges/hacs_repository.svg)](https://my.home-assistant.io/redirect/hacs_repository/?owner=AlexandrErohin&repository=home-assistant-tplink-router&category=integration)
+<a href="https://my.home-assistant.io/redirect/hacs_repository/?owner=AlexandrErohin&repository=home-assistant-tplink-router&category=integration" target="_blank"><img src="https://my.home-assistant.io/badges/hacs_repository.svg" alt="Open your Home Assistant instance and open a repository inside the Home Assistant Community Store." /></a>
 
-1. Go to the <b>Hacs</b>-><b>Integrations</b>.
-2. Add this repository (https://github.com/AlexandrErohin/home-assistant-tplink-router) as a [custom repository](https://hacs.xyz/docs/faq/custom_repositories/)
-4. Click on `+ Explore & Download Repositories`, search for `TP-Link Router`.
-5. Search for `TP-Link Router`.
-6. Navigate to `TP-Link Router` integration
-7. Press `DOWNLOAD` and in the next window also press `DOWNLOAD`.
-8. After download, restart Home Assistant.
+or go to <b>Hacs</b> and search for `TP-Link Router`.
 
 ### Manual
 
