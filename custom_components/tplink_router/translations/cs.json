@@ -1,0 +1,30 @@
+{
+  "config": {
+    "step": {
+      "user": {
+        "description": "Nastavení integrace",
+        "data": {
+          "host": "Host",
+          "username": "Login",
+          "password": "Heslo",
+          "scan_interval": "Interval skenování v sekundách",
+          "verify_ssl": "Kontrolovat ssl pro HTTPS připojení"
+        }
+      }
+    }
+  },
+  "options": {
+    "step": {
+      "init": {
+        "description": "Upravit parametry nastavení.",
+        "data": {
+          "host": "Host",
+          "username": "Login",
+          "password": "Heslo",
+          "scan_interval": "Interval skenování v sekundách",
+          "verify_ssl": "Kontrolovat ssl pro HTTPS připojení"
+        }
+      }
+    }
+  }
+}
