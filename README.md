@@ -176,6 +176,7 @@ To do that:
 - TL-MR100 v2.0
 - TL-MR105
 - TL-MR6400 (v5, v5.3)
+- TL-MR6500v
 - TL-WA3001 v1.0
 
 ### Not fully tested Hardware Versions
