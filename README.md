@@ -140,8 +140,9 @@ To do that:
 - Archer AX11000 V1
 - Archer BE800 v1.0
 - Archer BE805 v1.0
+- Archer BE3600 1.6
 - Archer C1200 (v1.0, v2.0)
-- Archer C2300 v1.0
+- Archer C2300 (v1.0, v2.0)
 - Archer C6 (v2.0, v3.0)
 - Archer C6U v1.0
 - Archer C7 (v4.0, v5.0)
