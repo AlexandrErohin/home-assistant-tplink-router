@@ -100,17 +100,7 @@ NOTE!
 
 <img src="https://raw.githubusercontent.com/AlexandrErohin/home-assistant-tplink-router/master/docs/media/router.png" width="30%">
 
-3. If you got error - `You need to use web encrypted password instead. Check the documentation!` Read [web encrypted password](#encrypted_pass)
-4. The TP-Link Web Interface only supports upto 1 user logged in at a time (for security reasons, apparently). So you will be logged out from router web interface when the integration updates data
-
-### <a id="encrypted_pass">Web Encrypted Password</a>
-If you got error - `You need to use web encrypted password instead. Check the documentation!`
-1. Go to the login page of your router. (default: 192.168.0.1).
-2. Type in the password you use to login into the password field.
-3. Click somewhere else on the page so that the password field is not selected anymore.
-4. Open the JavaScript console of your browser (usually by pressing F12 and then clicking on "Console").
-5. Type `document.getElementById("login-password").value;`
-6. Copy the returned value as password and use it.
+3. The TP-Link Web Interface only supports upto 1 user logged in at a time (for security reasons, apparently). So you will be logged out from router web interface when the integration updates data
 
 ### Edit Configuration
 You may edit configuration data like:
@@ -150,8 +140,8 @@ To do that:
 - Archer AX11000 V1
 - Archer BE800 v1.0
 - Archer BE805 v1.0
-- Archer C1200 (v1.0, v2.0) (You need to use [web encrypted password](#encrypted_pass))
-- Archer C2300 v1.0 (You need to use [web encrypted password](#encrypted_pass))
+- Archer C1200 (v1.0, v2.0)
+- Archer C2300 v1.0
 - Archer C6 (v2.0, v3.0)
 - Archer C6U v1.0
 - Archer C7 (v4.0, v5.0)
