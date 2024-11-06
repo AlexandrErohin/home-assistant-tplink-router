@@ -96,11 +96,21 @@ The default data is preset already.
 
 NOTE!
 1. If you use `https` connection to your router you may get error `certificate verify failed: EE certificate key too weak`. To fix this - unset `Verify ssl`
-2. Use Local Password which is for Log In with Local Password
+2. Use Local Password which is for Log In with Local Password. Login with TP-LINK ID doesnt work
 
 <img src="https://raw.githubusercontent.com/AlexandrErohin/home-assistant-tplink-router/master/docs/media/router.png" width="30%">
 
-3. The TP-Link Web Interface only supports upto 1 user logged in at a time (for security reasons, apparently). So you will be logged out from router web interface when the integration updates data
+3. If you got error - `use web encrypted password instead. Check the documentation!` Read [web encrypted password](#encrypted_pass)
+4. The TP-Link Web Interface only supports upto 1 user logged in at a time (for security reasons, apparently). So you will be logged out from router web interface when the integration updates data
+
+### <a id="encrypted_pass">Web Encrypted Password</a>
+If you got error - `use web encrypted password instead. Check the documentation!`
+1. Go to the login page of your router. (default: 192.168.0.1).
+2. Type in the password you use to login into the password field.
+3. Click somewhere else on the page so that the password field is not selected anymore.
+4. Open the JavaScript console of your browser (usually by pressing F12 and then clicking on "Console").
+5. Type `document.getElementById("login-password").value;`
+6. Copy the returned value as password and use it.
 
 ### Edit Configuration
 You may edit configuration data like:
@@ -182,7 +192,6 @@ To do that:
 - Archer C900 V1
 - Archer C1200 V3
 - Archer C1900 V2
-- Archer C2300 V2
 - Archer C4000 (V2 and V3)
 - Archer C5400 V2
 - TL-WR1043N V5
