@@ -160,8 +160,9 @@ To do that:
 - Archer GX90 v1.0
 - Archer MR200 (v5, v5.3)
 - Archer MR600 (v1, v2, v3)
-- Archer VR2100v v1
+- Archer VR600 v3
 - Archer VR900v
+- Archer VR2100v v1
 - Deco M4 2.0
 - Deco M4R 2.0
 - Deco M5 v3
