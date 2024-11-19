@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import Any, TypeAlias
+from typing import TypeAlias
 from homeassistant.components.device_tracker.config_entry import ScannerEntity
 from homeassistant.components.device_tracker.const import SourceType
 from homeassistant.config_entries import ConfigEntry
@@ -14,7 +14,7 @@ from .const import (
     EVENT_ONLINE,
     EVENT_OFFLINE,
 )
-from tplinkrouterc6u import Device, Connection
+from tplinkrouterc6u import Device
 
 MAC_ADDR: TypeAlias = str
 

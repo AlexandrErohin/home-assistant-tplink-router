@@ -12,9 +12,6 @@ import logging
 from tplinkrouterc6u import TPLinkMRClient
 from .coordinator import TPLinkRouterCoordinator
 from homeassistant.helpers import device_registry
-from .sensor import SENSOR_TYPES
-from .button import BUTTON_TYPES
-from .switch import SWITCH_TYPES
 
 PLATFORMS: list[Platform] = [
     Platform.DEVICE_TRACKER,
@@ -73,6 +70,7 @@ async def async_unload_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
 
 async def async_reload_entry(hass: HomeAssistant, config_entry: ConfigEntry) -> None:
     await hass.config_entries.async_reload(config_entry.entry_id)
+
 
 def register_services(hass: HomeAssistant, coord: TPLinkRouterCoordinator) -> None:
 

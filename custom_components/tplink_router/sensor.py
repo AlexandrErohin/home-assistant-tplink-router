@@ -2,12 +2,11 @@ from dataclasses import dataclass
 from collections.abc import Callable
 from typing import Any
 from homeassistant.components.sensor import (
-    SensorDeviceClass,
     SensorStateClass,
     SensorEntity,
     SensorEntityDescription,
 )
-from homeassistant.const import PERCENTAGE, UnitOfInformation
+from homeassistant.const import PERCENTAGE
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import HomeAssistant, callback
 from .const import DOMAIN

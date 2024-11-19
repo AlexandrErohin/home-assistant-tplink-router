@@ -37,7 +37,7 @@ class TPLinkRouterCoordinator(DataUpdateCoordinator):
             hw_version=firmware.hardware_version,
         )
 
-        self.scan_stopped_at: datetime|None = None
+        self.scan_stopped_at: datetime | None = None
 
         super().__init__(
             hass,
