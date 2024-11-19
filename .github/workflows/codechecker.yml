@@ -1,4 +1,4 @@
-name: Python Package
+name: Code Checker
 on:
   pull_request:
   push:
