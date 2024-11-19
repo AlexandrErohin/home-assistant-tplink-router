@@ -16,6 +16,8 @@ See [Supported routers](#supports)
 
 ### Switches
  - Router Reboot
+ - Router data fetching - you may disable router data fetching before accessing the router, so it wont logging your out.
+If you forget to enable it back - it would be automatically enable after 20 minutes
  - 2.4Ghz host wifi Enable/Disable
  - 5Ghz host wifi Enable/Disable
  - 6Ghz host wifi Enable/Disable
@@ -42,6 +44,9 @@ To find your device - Go to `Developer tools` and search for your MAC address - 
 
 It will also fire Home Assistant event when a device connects to router
 
+### Services
+ - Send SMS message - Available only for MR LTE routers
+
 ### Notification
 To receive notifications of appearing a new device in your network, or becoming device online\offline add following lines to your `configuration.yaml` file:
 ```yaml
@@ -65,6 +70,20 @@ All available fields in `trigger.event.data`:
 - band
 - packets_sent
 - packets_received
+
+### Send SMS only for MR LTE routers
+To send SMS add following lines to your automation in yaml:
+```yaml
+...
+action:
+  - service: tplink_router.send_sms
+    data:
+      number: ""pass phone number here"
+      text: "pass text here"
+      device: "pass tplink router device id here"
+```
+
+Device id is required because user may have several routers that could send SMS - so you need to select the needed router
 
 ## Installation
 
@@ -159,6 +178,7 @@ To do that:
 - Archer C5400X V1
 - Archer GX90 v1.0
 - Archer MR200 (v5, v5.3)
+- Archer MR550 v1
 - Archer MR600 (v1, v2, v3)
 - Archer VR600 v3
 - Archer VR900v
@@ -180,6 +200,7 @@ To do that:
 - TL-MR105
 - TL-MR6400 (v5, v5.3)
 - TL-MR6500v
+- TL-XDR3010 V2
 - TL-WA3001 v1.0
 
 ### Not fully tested Hardware Versions

@@ -1,6 +1,7 @@
 from __future__ import annotations
 from collections.abc import Callable
 from dataclasses import dataclass
+from datetime import datetime
 from typing import Any
 from homeassistant.components.switch import SwitchEntity, SwitchEntityDescription
 from homeassistant.config_entries import ConfigEntry
@@ -111,6 +112,9 @@ async def async_setup_entry(
 
     for description in SWITCH_TYPES:
         switches.append(TPLinkRouterSwitchEntity(coordinator, description))
+
+    switches.append(TPLinkRouterScanEntity(coordinator))
+
     async_add_entities(switches, False)
 
 
@@ -150,4 +154,37 @@ class TPLinkRouterSwitchEntity(
         """Turn the entity off."""
         await self.entity_description.method(self.coordinator, False)
         setattr(self.coordinator.status, self.entity_description.property, False)
+        self.async_write_ha_state()
+
+
+class TPLinkRouterScanEntity(
+    CoordinatorEntity[TPLinkRouterCoordinator], SwitchEntity
+):
+    entity_description: SwitchEntityDescription
+
+    def __init__(self, coordinator: TPLinkRouterCoordinator) -> None:
+        super().__init__(coordinator)
+
+        self._attr_device_info = coordinator.device_info
+        self.entity_description = SwitchEntityDescription(
+            key="scanning",
+            name="Router data fetching",
+            icon="mdi:connection",
+            entity_category=EntityCategory.CONFIG,
+        )
+        self._attr_unique_id = f"{coordinator.unique_id}_{DOMAIN}_{self.entity_description.key}"
+
+    @property
+    def is_on(self) -> bool:
+        """Return true if switch is on."""
+        return self.coordinator.scan_stopped_at is None
+
+    async def async_turn_on(self, **kwargs: Any) -> None:
+        """Turn the entity on."""
+        self.coordinator.scan_stopped_at = None
+        self.async_write_ha_state()
+
+    async def async_turn_off(self, **kwargs: Any) -> None:
+        """Turn the entity off."""
+        self.coordinator.scan_stopped_at = datetime.now()
         self.async_write_ha_state()

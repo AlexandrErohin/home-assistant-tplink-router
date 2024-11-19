@@ -5,11 +5,13 @@ from homeassistant.const import (
     CONF_VERIFY_SSL,
     Platform,
 )
-from homeassistant.core import HomeAssistant
+from homeassistant.core import HomeAssistant, ServiceCall
 from homeassistant.config_entries import ConfigEntry
 from .const import DOMAIN
 import logging
+from tplinkrouterc6u import TPLinkMRClient
 from .coordinator import TPLinkRouterCoordinator
+from homeassistant.helpers import device_registry
 from .sensor import SENSOR_TYPES
 from .button import BUTTON_TYPES
 from .switch import SWITCH_TYPES
@@ -56,6 +58,8 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     await hass.config_entries.async_forward_entry_setups(entry, PLATFORMS)
     entry.async_on_unload(entry.add_update_listener(async_reload_entry))
 
+    register_services(hass, coordinator)
+
     return True
 
 
@@ -69,3 +73,28 @@ async def async_unload_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
 
 async def async_reload_entry(hass: HomeAssistant, config_entry: ConfigEntry) -> None:
     await hass.config_entries.async_reload(config_entry.entry_id)
+
+def register_services(hass: HomeAssistant, coord: TPLinkRouterCoordinator) -> None:
+
+    if not issubclass(coord.router.__class__, TPLinkMRClient):
+        return
+
+    dr = device_registry.async_get(hass)
+
+    async def send_sms_service(service: ServiceCall) -> None:
+        device_entry = dr.async_get(service.data.get("device"))
+        if device_entry is None:
+            _LOGGER.error('TplinkRouter Integration Exception - device was not found')
+            return
+        coordinator = hass.data[DOMAIN][list(device_entry.config_entries)[0]]
+
+        if not issubclass(coordinator.router.__class__, TPLinkMRClient):
+            _LOGGER.error('TplinkRouter Integration Exception - This device cannot send SMS')
+            return
+
+        def callback():
+            coord.router.send_sms(service.data.get("number"), service.data.get("text"))
+        await hass.async_add_executor_job(TPLinkRouterCoordinator.request, coord.router, callback)
+
+    if not hass.services.has_service(DOMAIN, 'send_sms'):
+        hass.services.async_register(DOMAIN, 'send_sms', send_sms_service)

@@ -1,5 +1,5 @@
 from __future__ import annotations
-from datetime import timedelta
+from datetime import timedelta, datetime
 from logging import Logger
 from collections.abc import Callable
 from homeassistant.helpers.update_coordinator import DataUpdateCoordinator
@@ -37,6 +37,8 @@ class TPLinkRouterCoordinator(DataUpdateCoordinator):
             hw_version=firmware.hardware_version,
         )
 
+        self.scan_stopped_at: datetime|None = None
+
         super().__init__(
             hass,
             logger,
@@ -69,5 +71,8 @@ class TPLinkRouterCoordinator(DataUpdateCoordinator):
 
     async def _async_update_data(self):
         """Asynchronous update of all data."""
+        if self.scan_stopped_at is not None and self.scan_stopped_at > (datetime.now() - timedelta(minutes=20)):
+            return
+        self.scan_stopped_at = None
         self.status = await self.hass.async_add_executor_job(TPLinkRouterCoordinator.request, self.router,
                                                              self.router.get_status)

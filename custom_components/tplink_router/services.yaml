@@ -1,0 +1,14 @@
+send_sms:
+  fields:
+    number:
+      required: true
+      selector:
+        text:
+    text:
+      required: true
+      selector:
+        text:
+    device:
+      required: true
+      selector:
+        device:

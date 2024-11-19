@@ -26,5 +26,25 @@
         }
       }
     }
+  },
+  "services": {
+    "send_sms": {
+      "name": "Send SMS",
+      "description": "Send SMS",
+      "fields": {
+        "number": {
+          "name": "Phone",
+          "description": "Phone number"
+        },
+        "text": {
+          "name": "Message",
+          "description": "Text"
+        },
+        "device": {
+          "name": "Router",
+          "description": "Select the TP-Link router to send sms"
+        }
+      }
+    }
   }
 }
