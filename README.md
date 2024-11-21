@@ -202,6 +202,7 @@ To do that:
 - TL-MR6500v
 - TL-XDR3010 V2
 - TL-WA3001 v1.0
+- NX510v v1.0
 
 ### Not fully tested Hardware Versions
 - AD7200 V2
