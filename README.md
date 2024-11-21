@@ -78,12 +78,13 @@ To send SMS add following lines to your automation in yaml:
 action:
   - service: tplink_router.send_sms
     data:
-      number: ""pass phone number here"
-      text: "pass text here"
-      device: "pass tplink router device id here"
+      number: "+1234567890"
+      text: "Hello World"
+      device: pass_tplink_router_device_id_here
 ```
 
-Device id is required because user may have several routers that could send SMS - so you need to select the needed router
+Device id is required because user may have several routers that could send SMS - so you need to select the needed router.
+You can get the ID from the URL when you visit the tplink device page
 
 ## Installation
 
