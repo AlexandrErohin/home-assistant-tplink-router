@@ -13,7 +13,7 @@ See [Supported routers](#supports)
  - tplink_router_new_device: Fired when a new device appears in your network
  - tplink_router_device_offline: Fired when a device becomes offline
  - tplink_router_device_online: Fired when a device becomes online
-
+ - temp
 ### Switches
  - Router Reboot
  - Router data fetching - you may disable router data fetching before accessing the router, so it wont logging your out.
