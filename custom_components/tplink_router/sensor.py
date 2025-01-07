@@ -13,16 +13,20 @@ from .const import DOMAIN
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 from homeassistant.helpers.update_coordinator import CoordinatorEntity
 from .coordinator import TPLinkRouterCoordinator
-from tplinkrouterc6u import Status
+from tplinkrouterc6u import Status, IPv4Status
 
 
 @dataclass
 class TPLinkRouterSensorRequiredKeysMixin:
     value: Callable[[Status], Any]
 
+@dataclass 
+class TPLinkRouterIpv4SensorRequiredKeysMixin:
+    value: Callable[[IPv4Status], Any]
+
 
 @dataclass
-class TPLinkRouterSensorEntityDescription(SensorEntityDescription, TPLinkRouterSensorRequiredKeysMixin):
+class TPLinkRouterSensorEntityDescription(SensorEntityDescription, TPLinkRouterSensorRequiredKeysMixin, TPLinkRouterIpv4SensorRequiredKeysMixin):
     """A class that describes sensor entities."""
 
 
@@ -79,6 +83,12 @@ SENSOR_TYPES: tuple[TPLinkRouterSensorEntityDescription, ...] = (
         native_unit_of_measurement=PERCENTAGE,
         suggested_display_precision=1,
         value=lambda status: (status.mem_usage * 100) if status.mem_usage is not None else None,
+    ),
+    TPLinkRouterSensorEntityDescription(
+        key="ipv4_conn_type",
+        name="IPv4 Connection Type",
+        icon="mdi:4g",
+        value=lambda ipv4_status: ipv4_status.wan_ipv4_conntype,
     ),
 )
 
