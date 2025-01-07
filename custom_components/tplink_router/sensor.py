@@ -20,13 +20,14 @@ from tplinkrouterc6u import Status, IPv4Status
 class TPLinkRouterSensorRequiredKeysMixin:
     value: Callable[[Status], Any]
 
-@dataclass 
+
+@dataclass
 class TPLinkRouterIpv4SensorRequiredKeysMixin:
     value: Callable[[IPv4Status], Any]
 
 
 @dataclass
-class TPLinkRouterSensorEntityDescription(SensorEntityDescription, TPLinkRouterSensorRequiredKeysMixin, 
+class TPLinkRouterSensorEntityDescription(SensorEntityDescription, TPLinkRouterSensorRequiredKeysMixin,
                                           TPLinkRouterIpv4SensorRequiredKeysMixin):
     """A class that describes sensor entities."""
 
@@ -127,17 +128,17 @@ class TPLinkRouterSensor(
     def _handle_coordinator_update(self) -> None:
         """Handle updated data from the coordinator."""
         if self.entity_description.key.startswith("ipv4"):
-            data = self.coordinator.ipv4_status 
+            data = self.coordinator.ipv4_status
         else:
             data = self.coordinator.status
 
         self._attr_native_value = (
             self.entity_description.value(data) if data else None
         )
-        
+
         # Notify Home Assistant about the state update
         self.async_write_ha_state()
-    
+
     @property
     def available(self) -> bool:
         """Return True if entity is available."""
