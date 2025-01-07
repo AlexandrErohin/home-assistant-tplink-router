@@ -27,6 +27,7 @@ class TPLinkRouterCoordinator(DataUpdateCoordinator):
         self.router = router
         self.unique_id = unique_id
         self.status = status
+        self.ipv4_status = ipv4_status
         self.device_info = DeviceInfo(
             configuration_url=router.host,
             connections={(CONNECTION_NETWORK_MAC, self.status.lan_macaddr)},

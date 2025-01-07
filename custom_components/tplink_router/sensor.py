@@ -26,7 +26,8 @@ class TPLinkRouterIpv4SensorRequiredKeysMixin:
 
 
 @dataclass
-class TPLinkRouterSensorEntityDescription(SensorEntityDescription, TPLinkRouterSensorRequiredKeysMixin, TPLinkRouterIpv4SensorRequiredKeysMixin):
+class TPLinkRouterSensorEntityDescription(SensorEntityDescription, TPLinkRouterSensorRequiredKeysMixin, 
+                                          TPLinkRouterIpv4SensorRequiredKeysMixin):
     """A class that describes sensor entities."""
 
 
@@ -87,8 +88,8 @@ SENSOR_TYPES: tuple[TPLinkRouterSensorEntityDescription, ...] = (
     TPLinkRouterSensorEntityDescription(
         key="ipv4_conn_type",
         name="IPv4 Connection Type",
-        icon="mdi:4g",
-        value=lambda ipv4_status: ipv4_status.wan_ipv4_conntype,
+        icon="mdi:wan",
+        value=lambda ipv4_status: "WAN" if ipv4_status.wan_ipv4_conntype == "ipoe_1_d" else "4G",
     ),
 )
 
@@ -125,10 +126,24 @@ class TPLinkRouterSensor(
     @callback
     def _handle_coordinator_update(self) -> None:
         """Handle updated data from the coordinator."""
-        self._attr_native_value = self.entity_description.value(self.coordinator.status)
-        self.async_write_ha_state()
+        if self.entity_description.key.startswith("ipv4"):
+            data = self.coordinator.ipv4_status 
+        else:
+            data = self.coordinator.status
 
+        self._attr_native_value = (
+            self.entity_description.value(data) if data else None
+        )
+        
+        # Notify Home Assistant about the state update
+        self.async_write_ha_state()
+    
     @property
     def available(self) -> bool:
         """Return True if entity is available."""
-        return self.entity_description.value(self.coordinator.status) is not None
+        if self.entity_description.key.startswith("ipv4"):
+            data = self.coordinator.ipv4_status
+        else:
+            data = self.coordinator.status
+
+        return data is not None and self.entity_description.value(data) is not None
