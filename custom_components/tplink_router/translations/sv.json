@@ -1,0 +1,50 @@
+{
+  "config": {
+    "step": {
+      "user": {
+        "description": "Integrationskonfiguration",
+        "data": {
+          "host": "Host",
+          "username": "Login",
+          "password": "Lösenord",
+          "scan_interval": "Uppdateringsintervall i sekunder",
+          "verify_ssl": "Verifiera ssl för https anslutning"
+        }
+      }
+    }
+  },
+  "options": {
+    "step": {
+      "init": {
+        "description": "Ändra konfiguration för routern.",
+        "data": {
+          "host": "Host",
+          "username": "Login",
+          "password": "Lösenord",
+          "scan_interval": "Uppdateringsintervall i sekunder",
+          "verify_ssl": "Verifiera ssl för https anslutning"
+        }
+      }
+    }
+  },
+  "services": {
+    "send_sms": {
+      "name": "Skicka SMS",
+      "description": "Skicka SMS",
+      "fields": {
+        "number": {
+          "name": "Telefon",
+          "description": "Telefonnummer"
+        },
+        "text": {
+          "name": "Meddelande",
+          "description": "Text"
+        },
+        "device": {
+          "name": "Router",
+          "description": "Välj TP-Link router för att skicka sms"
+        }
+      }
+    }
+  }
+}
