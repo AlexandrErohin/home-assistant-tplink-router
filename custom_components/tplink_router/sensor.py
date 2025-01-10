@@ -91,7 +91,6 @@ SENSOR_TYPES: tuple[TPLinkRouterSensorEntityDescription, ...] = (
         name="IPv4 Connection Type",
         icon="mdi:wan",
         value=lambda ipv4_status: "WAN" if ipv4_status.wan_ipv4_conntype == "ipoe_1_d" else "4G",
-        entity_registry_enabled_default=False,
     ),
 )
 
@@ -139,13 +138,20 @@ class TPLinkRouterSensor(
 
         # Notify Home Assistant about the state update
         self.async_write_ha_state()
-
+    
     @property
     def available(self) -> bool:
         """Return True if entity is available."""
         if self.entity_description.key.startswith("ipv4"):
-            data = self.coordinator.ipv4_status
+            # Check if the router supports `get_ipv4_status` and if ipv4_status data is available
+            return (
+                hasattr(self.coordinator.router, "get_ipv4_status") and
+                self.coordinator.ipv4_status is not None and
+                self.entity_description.value(self.coordinator.ipv4_status) is not None
+            )
         else:
-            data = self.coordinator.status
-
-        return data is not None and self.entity_description.value(data) is not None
+            # General availability check for other sensors
+            return (
+                self.coordinator.status is not None and
+                self.entity_description.value(self.coordinator.status) is not None
+        )
