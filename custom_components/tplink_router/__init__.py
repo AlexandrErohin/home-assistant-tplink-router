@@ -40,6 +40,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     def callback():
         firm = client.get_firmware()
         stat = client.get_status()
+        # Check if router is ipv4_status compatible
         if hasattr(client, "get_ipv4_status"):
             ipv4_stat = client.get_ipv4_status()
         else:

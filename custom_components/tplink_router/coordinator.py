@@ -78,7 +78,9 @@ class TPLinkRouterCoordinator(DataUpdateCoordinator):
         self.scan_stopped_at = None
         self.status = await self.hass.async_add_executor_job(TPLinkRouterCoordinator.request, self.router,
                                                              self.router.get_status)
-        self.ipv4_status = None
+        # Only fetch if router is ipv4_status compatible
         if hasattr(self.router, "get_ipv4_status"):
             self.ipv4_status = await self.hass.async_add_executor_job(TPLinkRouterCoordinator.request, self.router,
-                                                                      self.router.get_ipv4_status)
+                                                                    self.router.get_ipv4_status)
+        else:
+            self.ipv4_status = None
