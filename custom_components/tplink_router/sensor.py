@@ -91,6 +91,7 @@ SENSOR_TYPES: tuple[TPLinkRouterSensorEntityDescription, ...] = (
         name="IPv4 Connection Type",
         icon="mdi:wan",
         value=lambda ipv4_status: "WAN" if ipv4_status.wan_ipv4_conntype == "ipoe_1_d" else "4G",
+        entity_registry_enabled_default=False,
     ),
 )
 
