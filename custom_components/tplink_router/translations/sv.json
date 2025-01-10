@@ -16,7 +16,7 @@
   "options": {
     "step": {
       "init": {
-        "description": "Editera parametrar för routern.",
+        "description": "Ändra konfiguration för routern.",
         "data": {
           "host": "Host",
           "username": "Login",
