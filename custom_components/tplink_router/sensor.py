@@ -96,13 +96,17 @@ SENSOR_TYPES: tuple[TPLinkRouterSensorEntityDescription, ...] = (
 
 
 async def async_setup_entry(
-        hass: HomeAssistant, entry: ConfigEntry, async_add_entities: AddEntitiesCallback
+    hass: HomeAssistant, entry: ConfigEntry, async_add_entities: AddEntitiesCallback
 ) -> None:
     coordinator = hass.data[DOMAIN][entry.entry_id]
 
     sensors = []
 
     for description in SENSOR_TYPES:
+        if description.key == "ipv4_conn_type" and not hasattr(
+            coordinator.router, "get_ipv4_status"
+        ):
+            continue
         sensors.append(TPLinkRouterSensor(coordinator, description))
     async_add_entities(sensors, False)
 
@@ -127,7 +131,7 @@ class TPLinkRouterSensor(
     @callback
     def _handle_coordinator_update(self) -> None:
         """Handle updated data from the coordinator."""
-        if self.entity_description.key.startswith("ipv4"):
+        if self.entity_description.key == "ipv4_conn_type":
             data = self.coordinator.ipv4_status
         else:
             data = self.coordinator.status
@@ -138,20 +142,18 @@ class TPLinkRouterSensor(
 
         # Notify Home Assistant about the state update
         self.async_write_ha_state()
-    
+
     @property
     def available(self) -> bool:
         """Return True if entity is available."""
         if self.entity_description.key.startswith("ipv4"):
-            # Check if the router supports `get_ipv4_status` and if ipv4_status data is available
             return (
                 hasattr(self.coordinator.router, "get_ipv4_status") and
                 self.coordinator.ipv4_status is not None and
                 self.entity_description.value(self.coordinator.ipv4_status) is not None
             )
         else:
-            # General availability check for other sensors
             return (
                 self.coordinator.status is not None and
                 self.entity_description.value(self.coordinator.status) is not None
-        )
+            )
