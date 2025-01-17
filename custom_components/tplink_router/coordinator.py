@@ -20,7 +20,7 @@ class TPLinkRouterCoordinator(DataUpdateCoordinator):
             update_interval: int,
             firmware: Firmware,
             status: Status,
-            ipv4_status: IPv4Status,
+            ipv4_status: IPv4Status | None,
             logger: Logger,
             unique_id: str
     ) -> None:
