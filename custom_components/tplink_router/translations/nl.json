@@ -1,0 +1,50 @@
+{
+  "config": {
+    "step": {
+      "user": {
+        "description": "Integratie configuratie",
+        "data": {
+          "host": "Host",
+          "username": "Gebruikersnaam",
+          "password": "Wachtwoord",
+          "scan_interval": "Scaninterval voor updates in seconden",
+          "verify_ssl": "Verifieer SSL voor https-verbinding"
+        }
+      }
+    }
+  },
+  "options": {
+    "step": {
+      "init": {
+        "description": "Parameters bewerken voor de router.",
+        "data": {
+          "host": "Host",
+          "username": "Gebruikersnaam",
+          "password": "Wachtwoord",
+          "scan_interval": "Scaninterval voor updates in seconden",
+          "verify_ssl": "Verifieer SSL voor https-verbinding"
+        }
+      }
+    }
+  },
+  "services": {
+    "send_sms": {
+      "name": "Verzend SMS",
+      "description": "Een SMS verzenden",
+      "fields": {
+        "number": {
+          "name": "Telefoon",
+          "description": "Telefoonnummer"
+        },
+        "text": {
+          "name": "Bericht",
+          "description": "Tekst"
+        },
+        "device": {
+          "name": "Router",
+          "description": "Selecteer de TP-Link-router om een sms te verzenden"
+        }
+      }
+    }
+  }
+}
