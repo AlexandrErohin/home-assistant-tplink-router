@@ -1,0 +1,30 @@
+{
+  "config": {
+    "step": {
+      "user": {
+        "description": "Configurazione dell'integrazione",
+        "data": {
+          "host": "Host",
+          "username": "Nome utente",
+          "password": "Password",
+          "scan_interval": "Intervallo di scansione per aggiornamenti in secondi",
+          "verify_ssl": "Verifica SSL per la connessione https"
+        }
+      }
+    }
+  },
+  "options": {
+    "step": {
+      "init": {
+        "description": "Modifica parametri del router",
+        "data": {
+          "host": "Host",
+          "username": "Nome utente",
+          "password": "Password",
+          "scan_interval": "Intervallo di scansione per aggiornamenti in secondi",
+          "verify_ssl": "Verifica SSL per la connessione https"
+        }
+      }
+    }
+  }
+}
