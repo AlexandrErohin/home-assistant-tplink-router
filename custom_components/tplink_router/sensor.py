@@ -13,7 +13,7 @@ from .const import DOMAIN
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 from homeassistant.helpers.update_coordinator import CoordinatorEntity
 from .coordinator import TPLinkRouterCoordinator
-from tplinkrouterc6u import Status
+from tplinkrouterc6u import Status, IPv4Status
 
 
 @dataclass
@@ -22,8 +22,26 @@ class TPLinkRouterSensorRequiredKeysMixin:
 
 
 @dataclass
-class TPLinkRouterSensorEntityDescription(SensorEntityDescription, TPLinkRouterSensorRequiredKeysMixin):
+class TPLinkRouterIpv4SensorRequiredKeysMixin:
+    value: Callable[[IPv4Status], Any]
+
+
+@dataclass
+class TPLinkRouterSensorEntityDescription(
+    SensorEntityDescription, TPLinkRouterSensorRequiredKeysMixin
+):
     """A class that describes sensor entities."""
+
+    sensor_type: str = "status"
+
+
+@dataclass
+class TPLinkRouterIpv4SensorEntityDescription(
+    SensorEntityDescription, TPLinkRouterIpv4SensorRequiredKeysMixin
+):
+    """A class that describes Ipv4Sensor entities."""
+
+    sensor_type: str = "ipv4_status"
 
 
 SENSOR_TYPES: tuple[TPLinkRouterSensorEntityDescription, ...] = (
@@ -82,9 +100,18 @@ SENSOR_TYPES: tuple[TPLinkRouterSensorEntityDescription, ...] = (
     ),
 )
 
+IPV4_SENSOR_TYPES: tuple[TPLinkRouterIpv4SensorEntityDescription, ...] = (
+    TPLinkRouterIpv4SensorEntityDescription(
+        key="ipv4_conn_type",
+        name="IPv4 Connection Type",
+        icon="mdi:wan",
+        value=lambda ipv4_status: "WAN" if ipv4_status.wan_ipv4_conntype == "ipoe_1_d" else "4G",
+    ),
+)
+
 
 async def async_setup_entry(
-        hass: HomeAssistant, entry: ConfigEntry, async_add_entities: AddEntitiesCallback
+    hass: HomeAssistant, entry: ConfigEntry, async_add_entities: AddEntitiesCallback
 ) -> None:
     coordinator = hass.data[DOMAIN][entry.entry_id]
 
@@ -92,19 +119,22 @@ async def async_setup_entry(
 
     for description in SENSOR_TYPES:
         sensors.append(TPLinkRouterSensor(coordinator, description))
+
+    if hasattr(coordinator.router, "get_ipv4_status"):
+        for description in IPV4_SENSOR_TYPES:
+            sensors.append(TPLinkRouterSensor(coordinator, description))
+
     async_add_entities(sensors, False)
 
 
-class TPLinkRouterSensor(
-    CoordinatorEntity[TPLinkRouterCoordinator], SensorEntity
-):
+class TPLinkRouterSensor(CoordinatorEntity[TPLinkRouterCoordinator], SensorEntity):
     _attr_has_entity_name = True
     entity_description: TPLinkRouterSensorEntityDescription
 
     def __init__(
-            self,
-            coordinator: TPLinkRouterCoordinator,
-            description: TPLinkRouterSensorEntityDescription,
+        self,
+        coordinator: TPLinkRouterCoordinator,
+        description: TPLinkRouterSensorEntityDescription,
     ) -> None:
         super().__init__(coordinator)
 
@@ -115,10 +145,28 @@ class TPLinkRouterSensor(
     @callback
     def _handle_coordinator_update(self) -> None:
         """Handle updated data from the coordinator."""
-        self._attr_native_value = self.entity_description.value(self.coordinator.status)
+        if self.entity_description.sensor_type == "ipv4_status":
+            data = self.coordinator.ipv4_status
+        else:
+            data = self.coordinator.status
+
+        self._attr_native_value = self.entity_description.value(data) if data else None
+
+        # Notify Home Assistant about the state update
         self.async_write_ha_state()
 
     @property
     def available(self) -> bool:
         """Return True if entity is available."""
-        return self.entity_description.value(self.coordinator.status) is not None
+        if self.entity_description.key.startswith("ipv4"):
+            return (
+                hasattr(self.coordinator.router, "get_ipv4_status")
+                and self.coordinator.ipv4_status is not None
+                and self.entity_description.value(self.coordinator.ipv4_status)
+                is not None
+            )
+        else:
+            return (
+                self.coordinator.status is not None
+                and self.entity_description.value(self.coordinator.status) is not None
+            )
