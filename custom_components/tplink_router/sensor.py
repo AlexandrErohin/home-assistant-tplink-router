@@ -122,19 +122,21 @@ async def async_setup_entry(
 
     if hasattr(coordinator.router, "get_ipv4_status"):
         for description in IPV4_SENSOR_TYPES:
-            sensors.append(TPLinkRouterSensor(coordinator, description))
+            sensors.append(TPLinkRouterSensorIPV4(coordinator, description))
 
     async_add_entities(sensors, False)
 
 
-class TPLinkRouterSensor(CoordinatorEntity[TPLinkRouterCoordinator], SensorEntity):
+class TPLinkRouterSensor(
+    CoordinatorEntity[TPLinkRouterCoordinator], SensorEntity
+):
     _attr_has_entity_name = True
     entity_description: TPLinkRouterSensorEntityDescription
 
     def __init__(
-        self,
-        coordinator: TPLinkRouterCoordinator,
-        description: TPLinkRouterSensorEntityDescription,
+            self,
+            coordinator: TPLinkRouterCoordinator,
+            description: TPLinkRouterSensorEntityDescription,
     ) -> None:
         super().__init__(coordinator)
 
@@ -145,28 +147,24 @@ class TPLinkRouterSensor(CoordinatorEntity[TPLinkRouterCoordinator], SensorEntit
     @callback
     def _handle_coordinator_update(self) -> None:
         """Handle updated data from the coordinator."""
-        if self.entity_description.sensor_type == "ipv4_status":
-            data = self.coordinator.ipv4_status
-        else:
-            data = self.coordinator.status
-
-        self._attr_native_value = self.entity_description.value(data) if data else None
-
-        # Notify Home Assistant about the state update
+        self._attr_native_value = self.entity_description.value(self.coordinator.status)
         self.async_write_ha_state()
 
     @property
     def available(self) -> bool:
         """Return True if entity is available."""
-        if self.entity_description.key.startswith("ipv4"):
-            return (
-                hasattr(self.coordinator.router, "get_ipv4_status")
-                and self.coordinator.ipv4_status is not None
-                and self.entity_description.value(self.coordinator.ipv4_status)
-                is not None
-            )
-        else:
-            return (
-                self.coordinator.status is not None
-                and self.entity_description.value(self.coordinator.status) is not None
-            )
+        return self.entity_description.value(self.coordinator.status) is not None
+
+
+class TPLinkRouterSensorIPV4(TPLinkRouterSensor):
+
+    @callback
+    def _handle_coordinator_update(self) -> None:
+        """Handle updated data from the coordinator."""
+        self._attr_native_value = self.entity_description.value(self.coordinator.ipv4_status)
+        self.async_write_ha_state()
+
+    @property
+    def available(self) -> bool:
+        """Return True if entity is available."""
+        return self.entity_description.value(self.coordinator.ipv4_status) is not None
