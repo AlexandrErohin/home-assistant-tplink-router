@@ -120,9 +120,8 @@ async def async_setup_entry(
     for description in SENSOR_TYPES:
         sensors.append(TPLinkRouterSensor(coordinator, description))
 
-    if hasattr(coordinator.router, "get_ipv4_status"):
-        for description in IPV4_SENSOR_TYPES:
-            sensors.append(TPLinkRouterSensorIPV4(coordinator, description))
+    for description in IPV4_SENSOR_TYPES:
+        sensors.append(TPLinkRouterSensorIPV4(coordinator, description))
 
     async_add_entities(sensors, False)
 
