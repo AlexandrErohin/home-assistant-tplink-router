@@ -98,14 +98,11 @@ SENSOR_TYPES: tuple[TPLinkRouterSensorEntityDescription, ...] = (
         suggested_display_precision=1,
         value=lambda status: (status.mem_usage * 100) if status.mem_usage is not None else None,
     ),
-)
-
-IPV4_SENSOR_TYPES: tuple[TPLinkRouterIpv4SensorEntityDescription, ...] = (
-    TPLinkRouterIpv4SensorEntityDescription(
-        key="ipv4_conn_type",
-        name="IPv4 Connection Type",
+    TPLinkRouterSensorEntityDescription(
+        key="conn_type",
+        name="Connection Type",
         icon="mdi:wan",
-        value=lambda ipv4_status: "WAN" if ipv4_status.wan_ipv4_conntype == "ipoe_1_d" else "4G",
+        value=lambda status: status.conn_type,
     ),
 )
 
@@ -119,9 +116,6 @@ async def async_setup_entry(
 
     for description in SENSOR_TYPES:
         sensors.append(TPLinkRouterSensor(coordinator, description))
-
-    for description in IPV4_SENSOR_TYPES:
-        sensors.append(TPLinkRouterSensorIPV4(coordinator, description))
 
     async_add_entities(sensors, False)
 
@@ -153,17 +147,3 @@ class TPLinkRouterSensor(
     def available(self) -> bool:
         """Return True if entity is available."""
         return self.entity_description.value(self.coordinator.status) is not None
-
-
-class TPLinkRouterSensorIPV4(TPLinkRouterSensor):
-
-    @callback
-    def _handle_coordinator_update(self) -> None:
-        """Handle updated data from the coordinator."""
-        self._attr_native_value = self.entity_description.value(self.coordinator.ipv4_status)
-        self.async_write_ha_state()
-
-    @property
-    def available(self) -> bool:
-        """Return True if entity is available."""
-        return self.entity_description.value(self.coordinator.ipv4_status) is not None

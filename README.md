@@ -35,7 +35,7 @@ If you forget to enable it back - it would be automatically enable after 20 minu
  - Total amount of all connected clients
  - CPU used
  - Memory used
- - IPv4 Connection Type
+ - Connection Type
 
 ### Device Tracker
  - Track connected to router devices by MAC address with connection information
@@ -184,6 +184,7 @@ To do that:
 - Archer MR600 (v1, v2, v3)
 - Archer VR600 v3
 - Archer VR900v
+- Archer VR1200v v1
 - Archer VR2100v v1
 - Archer VX1800v v1.0
 - Deco M4 2.0
