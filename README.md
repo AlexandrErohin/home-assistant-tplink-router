@@ -198,6 +198,7 @@ To do that:
 - Deco X60 V3
 - Deco X90
 - Deco XE75 (v1.0, v2.0)
+- Deco XE75PRO (v3.0)
 - EX511 v2.0
 - HX510 v1.0
 - NX510v v1.0
