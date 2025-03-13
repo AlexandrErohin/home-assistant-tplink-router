@@ -30,6 +30,6 @@ jobs:
           zip tplink_router.zip -r ./
 
       - name: "Upload the ZIP file to the release"
-        uses: softprops/action-gh-release@v2.0.8
+        uses: softprops/action-gh-release@v2
         with:
           files: ${{ github.workspace }}/custom_components/tplink_router/tplink_router.zip

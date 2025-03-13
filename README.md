@@ -1,4 +1,8 @@
 # Tp-Link router integration for Home Assistant
+[![version](https://img.shields.io/github/manifest-json/v/AlexandrErohin/home-assistant-tplink-router?filename=custom_components%2Ftplink_router%2Fmanifest.json&color=slateblue)](https://github.com/AlexandrErohin/home-assistant-tplink-router/releases/latest)
+[![HACS](https://img.shields.io/badge/HACS-Default-orange.svg?logo=HomeAssistantCommunityStore&logoColor=white)](https://github.com/hacs/integration)
+[![Community Forum](https://img.shields.io/static/v1.svg?label=Community&message=Forum&color=41bdf5&logo=HomeAssistant&logoColor=white)](https://community.home-assistant.io/t/custom-component-tp-link-router-integration)
+
 Home Assistant component for TP-Link router administration based on the [TP-Link Router API](https://github.com/AlexandrErohin/TP-Link-Archer-C6U)
 
 > [!WARNING]
@@ -177,6 +181,7 @@ To do that:
 - Archer C6 (v2.0, v3.0)
 - Archer C6U v1.0
 - Archer C7 (v4.0, v5.0)
+- Archer C80 (1.0, 2.20)
 - Archer C5400X V1
 - Archer GX90 v1.0
 - Archer MR200 (v5, v5.3, v6.0)
@@ -209,6 +214,7 @@ To do that:
 - TL-MR6500v
 - TL-WA3001 v1.0
 - TL-XDR3010 V2
+- XC220-G3v v2.30
 
 ### Not fully tested Hardware Versions
 - AD7200 V2
