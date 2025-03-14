@@ -1,9 +1,9 @@
-# Tp-Link router integration for Home Assistant
+# Tp-Link and Mercusys router integration for Home Assistant
 [![version](https://img.shields.io/github/manifest-json/v/AlexandrErohin/home-assistant-tplink-router?filename=custom_components%2Ftplink_router%2Fmanifest.json&color=slateblue)](https://github.com/AlexandrErohin/home-assistant-tplink-router/releases/latest)
 [![HACS](https://img.shields.io/badge/HACS-Default-orange.svg?logo=HomeAssistantCommunityStore&logoColor=white)](https://github.com/hacs/integration)
 [![Community Forum](https://img.shields.io/static/v1.svg?label=Community&message=Forum&color=41bdf5&logo=HomeAssistant&logoColor=white)](https://community.home-assistant.io/t/custom-component-tp-link-router-integration)
 
-Home Assistant component for TP-Link router administration based on the [TP-Link Router API](https://github.com/AlexandrErohin/TP-Link-Archer-C6U)
+Home Assistant component for TP-Link and Mercusys router administration based on the [TP-Link Router API](https://github.com/AlexandrErohin/TP-Link-Archer-C6U)
 
 > [!WARNING]
 > Please temporarily disable the integration before accessing the router admin page. TP-Link admin page only allows one user at a time. This integration will log you out of the admin page every time it scans for updates (every 30s by default).
@@ -151,8 +151,11 @@ To do that:
 4. Edit the options you need and click `SUBMIT`
 
 ## <a id="supports">Supported routers</a>
-### Fully tested Hardware Versions
+- [TP-LINK routers](#tplink)
+- [MERCUSYS routers](#mercusys)
+### <a id="tplink">TP-LINK routers</a>
 - Archer A7 V5
+- Archer A8 1.0
 - Archer A9 V6
 - Archer AX10 v1.0
 - Archer AX12 v1.0
@@ -215,24 +218,11 @@ To do that:
 - TL-WA3001 v1.0
 - TL-XDR3010 V2
 - XC220-G3v v2.30
+### <a id="mercusys">MERCUSYS routers</a>
+- MR47BE v1.0
+- H60XR 1.0
 
-### Not fully tested Hardware Versions
-- AD7200 V2
-- Archer A6 (V2 and V3)
-- Archer A10 (V1 and V2)
-- Archer A20 (V1, V3)
-- Archer C8 (V3 and V4)
-- Archer C9 (V4 and V5)
-- Archer C59 V2
-- Archer C90 V6
-- Archer C900 V1
-- Archer C1200 V3
-- Archer C1900 V2
-- Archer C4000 (V2 and V3)
-- Archer C5400 V2
-- TL-WR1043N V5
-
-Please let me know if you have tested integration with one of this or other model. Open an issue with info about router's model, hardware and firmware versions.
+Please let me know if you have tested integration with any other model. Open an issue with info about router's model, hardware and firmware versions.
 
 ## <a id="add_support">Adding Support For More Models</a>
 Guidelines [CONTRIBUTING.md](https://github.com/AlexandrErohin/TP-Link-Archer-C6U/blob/master/CONTRIBUTING.md)
