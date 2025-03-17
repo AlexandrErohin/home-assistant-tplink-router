@@ -82,13 +82,20 @@ def register_services(hass: HomeAssistant, coord: TPLinkRouterCoordinator) -> No
     dr = device_registry.async_get(hass)
 
     async def send_sms_service(service: ServiceCall) -> None:
-        device_entry = dr.async_get(service.data.get("device"))
-        if device_entry is None:
+        device = dr.async_get(service.data.get("device"))
+        if device is None:
             _LOGGER.error('TplinkRouter Integration Exception - device was not found')
             return
-        coordinator = hass.data[DOMAIN][list(device_entry.config_entries)[0]]
+        coordinator = None
+        for key in device.config_entries:
+            entry = hass.config_entries.async_get_entry(key)
+            if not entry:
+                continue
+            if entry.domain != DOMAIN or not issubclass(hass.data[DOMAIN][key].router.__class__, TPLinkMRClient):
+                continue
+            coordinator = hass.data[DOMAIN][key]
 
-        if not issubclass(coordinator.router.__class__, TPLinkMRClient):
+        if coordinator is None:
             _LOGGER.error('TplinkRouter Integration Exception - This device cannot send SMS')
             return
 
