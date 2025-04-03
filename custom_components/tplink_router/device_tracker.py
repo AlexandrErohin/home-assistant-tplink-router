@@ -55,9 +55,11 @@ def update_items(
                 coordinator.hass.bus.fire(EVENT_NEW_DEVICE, tracked[device.macaddr].data)
         else:
             tracked[device.macaddr].device = device
-            if fire_event and not tracked[device.macaddr].active:
+            if fire_event and not tracked[device.macaddr].active and device.active:
                 coordinator.hass.bus.fire(EVENT_ONLINE, tracked[device.macaddr].data)
-            tracked[device.macaddr].active = True
+            if fire_event and tracked[device.macaddr].active and not device.active:
+                coordinator.hass.bus.fire(EVENT_OFFLINE, tracked[device.macaddr].data)
+        tracked[device.macaddr].active = device.active
 
     if new_tracked:
         async_add_entities(new_tracked)
