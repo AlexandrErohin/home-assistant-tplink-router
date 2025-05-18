@@ -177,6 +177,7 @@ To do that:
 - Archer AX3000 V1
 - Archer AX6000 V1
 - Archer AX11000 V1
+- Archer BE400 v1.0
 - Archer BE550 v1.0
 - Archer BE800 v1.0
 - Archer BE805 v1.0
@@ -199,6 +200,7 @@ To do that:
 - Archer VR1200v v1
 - Archer VR2100v v1
 - Archer VX1800v v1.0
+- BE11000 2.0
 - Deco M4 2.0
 - Deco M4R 2.0
 - Deco M5 v3
@@ -224,6 +226,7 @@ To do that:
 - TL-WA3001 v1.0
 - TL-XDR3010 V2
 - TL-WDR3600 V1
+- VX420-G2h v1.1
 - XC220-G3v v2.30
 ### <a id="mercusys">MERCUSYS routers</a>
 - MR47BE v1.0
