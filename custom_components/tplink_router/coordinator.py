@@ -2,6 +2,8 @@ from __future__ import annotations
 from datetime import timedelta, datetime
 from logging import Logger
 from collections.abc import Callable
+from time import sleep
+
 from homeassistant.helpers.update_coordinator import DataUpdateCoordinator
 from tplinkrouterc6u import TplinkRouterProvider, AbstractRouter, Firmware, Status, Connection
 from homeassistant.core import HomeAssistant
@@ -82,5 +84,6 @@ class TPLinkRouterCoordinator(DataUpdateCoordinator):
                 self.status = status
                 break
             except Exception as e:
+                sleep(0.05)
                 if attempt == 2:
                     raise
