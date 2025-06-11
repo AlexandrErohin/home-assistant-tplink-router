@@ -74,5 +74,13 @@ class TPLinkRouterCoordinator(DataUpdateCoordinator):
         if self.scan_stopped_at is not None and self.scan_stopped_at > (datetime.now() - timedelta(minutes=20)):
             return
         self.scan_stopped_at = None
-        self.status = await self.hass.async_add_executor_job(TPLinkRouterCoordinator.request, self.router,
-                                                             self.router.get_status)
+        for attempt in range(3):
+            try:
+                status = await self.hass.async_add_executor_job(
+                    TPLinkRouterCoordinator.request, self.router, self.router.get_status
+                )
+                self.status = status
+                break
+            except Exception as e:
+                if attempt == 2:
+                    raise
