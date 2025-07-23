@@ -178,6 +178,7 @@ To do that:
 - Archer AX3000 V1
 - Archer AX6000 V1
 - Archer AX11000 V1
+- Archer BE230 v1.0
 - Archer BE400 v1.0
 - Archer BE550 v1.0
 - Archer BE800 v1.0
@@ -222,6 +223,7 @@ To do that:
 - TD-W9960 (v1, V1.20)
 - TL-MR100 v2.0
 - TL-MR105
+- TL-MR110-Outdoor v1.0
 - TL-MR6400 (v5, v5.3)
 - TL-MR6500v
 - TL-WA1201 3.0
@@ -234,6 +236,7 @@ To do that:
 - MR47BE v1.0
 - MR50G 1.0
 - H60XR 1.0
+- Halo H80X 1.0
 
 Please let me know if you have tested integration with any other model. Open an issue with info about router's model, hardware and firmware versions.
 
