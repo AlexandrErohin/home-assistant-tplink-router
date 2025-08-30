@@ -1,0 +1,50 @@
+{
+  "config": {
+    "step": {
+      "user": {
+        "description": "Entegrasyon ayarları",
+        "data": {
+          "host": "Host",
+          "username": "Kullanıcı Adı",
+          "password": "Parola",
+          "scan_interval": "Güncellemeler için tarama sıklığı (saniye)",
+          "verify_ssl": "HTTPS için SSL doğrula"
+        }
+      }
+    }
+  },
+  "options": {
+    "step": {
+      "init": {
+        "description": "Router için parametreleri düzenle.",
+        "data": {
+          "host": "Host",
+          "username": "Kullanıcı Adı",
+          "password": "Parola",
+          "scan_interval": "Güncellemeler için tarama sıklığı (saniye)",
+          "verify_ssl": "HTTPS için SSL doğrula"
+        }
+      }
+    }
+  },
+  "services": {
+    "send_sms": {
+      "name": "SMS gönder",
+      "description": "SMS gönder",
+      "fields": {
+        "number": {
+          "name": "Telefon",
+          "description": "Telefon numarası"
+        },
+        "text": {
+          "name": "Mesaj",
+          "description": "Metin"
+        },
+        "device": {
+          "name": "Router",
+          "description": "SMS göndermek için TP-Link Router seçin"
+        }
+      }
+    }
+  }
+}
