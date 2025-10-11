@@ -13,15 +13,11 @@ from .const import DOMAIN
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 from homeassistant.helpers.update_coordinator import CoordinatorEntity
 from .coordinator import TPLinkRouterCoordinator
-from tplinkrouterc6u import Status, IPv4Status, LTEStatus
-
-@dataclass
-class CombinedStatus(Status, IPv4Status, LTEStatus):
-    pass
+from tplinkrouterc6u import Status
 
 @dataclass
 class TPLinkRouterSensorRequiredKeysMixin:
-    value: Callable[[CombinedStatus], Any]
+    value: Callable[[Status], Any]
 
 @dataclass
 class TPLinkRouterSensorEntityDescription(
@@ -93,19 +89,19 @@ SENSOR_TYPES: tuple[TPLinkRouterSensorEntityDescription, ...] = (
         value=lambda status: status.conn_type,
     ),
     TPLinkRouterSensorEntityDescription(
-        key="enable",
+        key="lte_enabled",
         name="LTE Enabled",
         icon="mdi:sim-outline",
         value=lambda status: status.enable,
     ),
     TPLinkRouterSensorEntityDescription(
-        key="connect_status",
+        key="lte_connect_status",
         name="LTE Connection Status",
         icon="mdi:sim-outline",
         value=lambda status: status.connect_status,
     ),
     TPLinkRouterSensorEntityDescription(
-        key="network_type",
+        key="lte_network_type",
         name="LTE Network Type",
         icon="mdi:sim-outline",
         value=lambda status: status.network_type,
@@ -117,14 +113,14 @@ SENSOR_TYPES: tuple[TPLinkRouterSensorEntityDescription, ...] = (
         value=lambda status: status.sim_status,
     ),
     TPLinkRouterSensorEntityDescription(
-        key="total_statistics",
+        key="lte_total_statistics",
         name="LTE Total Statistics",
         icon="mdi:sim-outline",
         state_class=SensorStateClass.TOTAL,
         value=lambda status: status.total_statistics,
     ),
     TPLinkRouterSensorEntityDescription(
-        key="cur_rx_speed",
+        key="lte_cur_rx_speed",
         name="LTE Current RX Speed",
         icon="mdi:sim-outline",
         state_class=SensorStateClass.MEASUREMENT,
@@ -132,7 +128,7 @@ SENSOR_TYPES: tuple[TPLinkRouterSensorEntityDescription, ...] = (
         value=lambda status: status.cur_rx_speed,
     ),
     TPLinkRouterSensorEntityDescription(
-        key="cur_tx_speed",
+        key="lte_cur_tx_speed",
         name="LTE Current TX Speed",
         icon="mdi:sim-outline",
         state_class=SensorStateClass.MEASUREMENT,
@@ -147,7 +143,7 @@ SENSOR_TYPES: tuple[TPLinkRouterSensorEntityDescription, ...] = (
         value=lambda status: status.sms_unread_count,
     ),
     TPLinkRouterSensorEntityDescription(
-        key="sig_level",
+        key="lte_sig_level",
         name="LTE Signal Level",
         icon="mdi:sim-outline",
         state_class=SensorStateClass.MEASUREMENT,
@@ -155,7 +151,7 @@ SENSOR_TYPES: tuple[TPLinkRouterSensorEntityDescription, ...] = (
         value=lambda status: status.sig_level,
     ),
     TPLinkRouterSensorEntityDescription(
-        key="rsrp",
+        key="lte_rsrp",
         name="LTE RSRP",
         icon="mdi:sim-outline",
         state_class=SensorStateClass.MEASUREMENT,
@@ -163,7 +159,7 @@ SENSOR_TYPES: tuple[TPLinkRouterSensorEntityDescription, ...] = (
         value=lambda status: status.rsrp,
     ),
     TPLinkRouterSensorEntityDescription(
-        key="rsrq",
+        key="lte_rsrq",
         name="LTE RSRQ",
         icon="mdi:sim-outline",
         state_class=SensorStateClass.MEASUREMENT,
@@ -171,7 +167,7 @@ SENSOR_TYPES: tuple[TPLinkRouterSensorEntityDescription, ...] = (
         value=lambda status: status.rsrq,
     ),
     TPLinkRouterSensorEntityDescription(
-        key="snr",
+        key="lte_snr",
         name="LTE SNR",
         icon="mdi:sim-outline",
         state_class=SensorStateClass.MEASUREMENT,
@@ -179,7 +175,7 @@ SENSOR_TYPES: tuple[TPLinkRouterSensorEntityDescription, ...] = (
         value=lambda status: status.snr,
     ),
     TPLinkRouterSensorEntityDescription(
-        key="isp_name",
+        key="lte_isp_name",
         name="LTE ISP Name",
         icon="mdi:sim-outline",
         value=lambda status: status.isp_name,
