@@ -6,7 +6,7 @@ from homeassistant.components.sensor import (
     SensorEntity,
     SensorEntityDescription,
 )
-from homeassistant.const import PERCENTAGE, BYTES_PER_SECOND, SIGNAL_STRENGTH_DECIBELS_MILLIWATT
+from homeassistant.const import PERCENTAGE, SIGNAL_STRENGTH_DECIBELS_MILLIWATT, UnitOfDataRate
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import HomeAssistant, callback
 from .const import DOMAIN
@@ -15,10 +15,13 @@ from homeassistant.helpers.update_coordinator import CoordinatorEntity
 from .coordinator import TPLinkRouterCoordinator
 from tplinkrouterc6u import Status, IPv4Status, LTEStatus
 
+@dataclass
+class CombinedStatus(Status, IPv4Status, LTEStatus):
+    pass
 
 @dataclass
 class TPLinkRouterSensorRequiredKeysMixin:
-    value: Callable[[Status,IPv4Status, LTEStatus], Any]
+    value: Callable[[CombinedStatus], Any]
 
 @dataclass
 class TPLinkRouterSensorEntityDescription(
@@ -125,7 +128,7 @@ SENSOR_TYPES: tuple[TPLinkRouterSensorEntityDescription, ...] = (
         name="LTE Current RX Speed",
         icon="mdi:sim-outline",
         state_class=SensorStateClass.MEASUREMENT,
-        native_unit_of_measurement=BYTES_PER_SECOND,
+        native_unit_of_measurement=UnitOfDataRate.BYTES_PER_SECOND,
         value=lambda status: status.cur_rx_speed,
     ),
     TPLinkRouterSensorEntityDescription(
@@ -133,7 +136,7 @@ SENSOR_TYPES: tuple[TPLinkRouterSensorEntityDescription, ...] = (
         name="LTE Current TX Speed",
         icon="mdi:sim-outline",
         state_class=SensorStateClass.MEASUREMENT,
-        native_unit_of_measurement=BYTES_PER_SECOND,
+        native_unit_of_measurement=UnitOfDataRate.BYTES_PER_SECOND,
         value=lambda status: status.cur_tx_speed,
     ),
     TPLinkRouterSensorEntityDescription(
