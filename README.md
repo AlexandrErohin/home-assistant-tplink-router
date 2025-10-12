@@ -191,6 +191,7 @@ To do that:
 - Archer C7 (v4.0, v5.0)
 - Archer C24 (1.0, 2.0)
 - Archer C60 v2.0
+- Archer C64 1.0
 - Archer C80 (1.0, 2.20)
 - Archer C5400X V1
 - Archer GX90 v1.0
@@ -223,7 +224,9 @@ To do that:
 - TD-W9960 (v1, V1.20)
 - TL-MR100 v2.0
 - TL-MR105
+- TL-MR100-Outdoor v1.0
 - TL-MR110-Outdoor v1.0
+- TL-MR150 v2
 - TL-MR6400 (v5, v5.3)
 - TL-MR6500v
 - TL-WA1201 3.0
@@ -236,7 +239,9 @@ To do that:
 - MR47BE v1.0
 - MR50G 1.0
 - H60XR 1.0
+- H47BE 2.0
 - Halo H80X 1.0
+- Halo H3000x 1.0
 
 Please let me know if you have tested integration with any other model. Open an issue with info about router's model, hardware and firmware versions.
 

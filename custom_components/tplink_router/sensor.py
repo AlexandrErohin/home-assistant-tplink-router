@@ -6,14 +6,14 @@ from homeassistant.components.sensor import (
     SensorEntity,
     SensorEntityDescription,
 )
-from homeassistant.const import PERCENTAGE
+from homeassistant.const import PERCENTAGE, SIGNAL_STRENGTH_DECIBELS_MILLIWATT, UnitOfDataRate
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import HomeAssistant, callback
 from .const import DOMAIN
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 from homeassistant.helpers.update_coordinator import CoordinatorEntity
 from .coordinator import TPLinkRouterCoordinator
-from tplinkrouterc6u import Status, IPv4Status
+from tplinkrouterc6u import Status, LTEStatus
 
 
 @dataclass
@@ -22,8 +22,8 @@ class TPLinkRouterSensorRequiredKeysMixin:
 
 
 @dataclass
-class TPLinkRouterIpv4SensorRequiredKeysMixin:
-    value: Callable[[IPv4Status], Any]
+class TPLinkRouterLTESensorRequiredKeysMixin:
+    value: Callable[[LTEStatus], Any]
 
 
 @dataclass
@@ -36,12 +36,12 @@ class TPLinkRouterSensorEntityDescription(
 
 
 @dataclass
-class TPLinkRouterIpv4SensorEntityDescription(
-    SensorEntityDescription, TPLinkRouterIpv4SensorRequiredKeysMixin
+class TPLinkRouterLTESensorEntityDescription(
+    SensorEntityDescription, TPLinkRouterLTESensorRequiredKeysMixin
 ):
-    """A class that describes Ipv4Sensor entities."""
+    """A class that describes LTEStatus entities."""
 
-    sensor_type: str = "ipv4_status"
+    sensor_type: str = "lte_status"
 
 
 SENSOR_TYPES: tuple[TPLinkRouterSensorEntityDescription, ...] = (
@@ -107,6 +107,102 @@ SENSOR_TYPES: tuple[TPLinkRouterSensorEntityDescription, ...] = (
 )
 
 
+LTE_SENSOR_TYPES: tuple[TPLinkRouterLTESensorEntityDescription, ...] = (
+    TPLinkRouterLTESensorEntityDescription(
+        key="lte_enabled",
+        name="LTE Enabled",
+        icon="mdi:sim-outline",
+        value=lambda status: status.enable,
+    ),
+    TPLinkRouterLTESensorEntityDescription(
+        key="lte_connect_status",
+        name="LTE Connection Status",
+        icon="mdi:sim-outline",
+        value=lambda status: status.connect_status,
+    ),
+    TPLinkRouterLTESensorEntityDescription(
+        key="lte_network_type",
+        name="LTE Network Type",
+        icon="mdi:sim-outline",
+        value=lambda status: status.network_type,
+    ),
+    TPLinkRouterLTESensorEntityDescription(
+        key="lte_sim_status",
+        name="LTE SIM Status",
+        icon="mdi:sim-outline",
+        value=lambda status: status.sim_status,
+    ),
+    TPLinkRouterLTESensorEntityDescription(
+        key="lte_total_statistics",
+        name="LTE Total Statistics",
+        icon="mdi:sim-outline",
+        state_class=SensorStateClass.TOTAL,
+        value=lambda status: status.total_statistics,
+    ),
+    TPLinkRouterLTESensorEntityDescription(
+        key="lte_cur_rx_speed",
+        name="LTE Current RX Speed",
+        icon="mdi:sim-outline",
+        state_class=SensorStateClass.MEASUREMENT,
+        native_unit_of_measurement=UnitOfDataRate.BYTES_PER_SECOND,
+        value=lambda status: status.cur_rx_speed,
+    ),
+    TPLinkRouterLTESensorEntityDescription(
+        key="lte_cur_tx_speed",
+        name="LTE Current TX Speed",
+        icon="mdi:sim-outline",
+        state_class=SensorStateClass.MEASUREMENT,
+        native_unit_of_measurement=UnitOfDataRate.BYTES_PER_SECOND,
+        value=lambda status: status.cur_tx_speed,
+    ),
+    TPLinkRouterLTESensorEntityDescription(
+        key="lte_sms_unread_count",
+        name="Unread SMS",
+        icon="mdi:sim-outline",
+        state_class=SensorStateClass.TOTAL,
+        value=lambda status: status.sms_unread_count,
+    ),
+    TPLinkRouterLTESensorEntityDescription(
+        key="lte_sig_level",
+        name="LTE Signal Level",
+        icon="mdi:sim-outline",
+        state_class=SensorStateClass.MEASUREMENT,
+        native_unit_of_measurement=PERCENTAGE,
+        value=lambda status: status.sig_level,
+    ),
+    TPLinkRouterLTESensorEntityDescription(
+        key="lte_rsrp",
+        name="LTE RSRP",
+        icon="mdi:sim-outline",
+        state_class=SensorStateClass.MEASUREMENT,
+        native_unit_of_measurement=SIGNAL_STRENGTH_DECIBELS_MILLIWATT,
+        value=lambda status: status.rsrp,
+    ),
+    TPLinkRouterLTESensorEntityDescription(
+        key="lte_rsrq",
+        name="LTE RSRQ",
+        icon="mdi:sim-outline",
+        state_class=SensorStateClass.MEASUREMENT,
+        native_unit_of_measurement=SIGNAL_STRENGTH_DECIBELS_MILLIWATT,
+        value=lambda status: status.rsrq,
+    ),
+    TPLinkRouterLTESensorEntityDescription(
+        key="lte_snr",
+        name="LTE SNR",
+        icon="mdi:sim-outline",
+        state_class=SensorStateClass.MEASUREMENT,
+        native_unit_of_measurement=SIGNAL_STRENGTH_DECIBELS_MILLIWATT,
+        value=lambda status: status.snr,
+    ),
+    TPLinkRouterLTESensorEntityDescription(
+        key="lte_isp_name",
+        name="LTE ISP Name",
+        icon="mdi:sim-outline",
+        value=lambda status: status.isp_name,
+    ),
+)
+
+
 async def async_setup_entry(
     hass: HomeAssistant, entry: ConfigEntry, async_add_entities: AddEntitiesCallback
 ) -> None:
@@ -117,6 +213,10 @@ async def async_setup_entry(
     for description in SENSOR_TYPES:
         sensors.append(TPLinkRouterSensor(coordinator, description))
 
+    if hasattr(coordinator.router, "get_lte_status"):
+        for description in LTE_SENSOR_TYPES:
+            sensors.append(TPLinkRouterSensor(coordinator, description))
+
     async_add_entities(sensors, False)
 
 
@@ -124,12 +224,12 @@ class TPLinkRouterSensor(
     CoordinatorEntity[TPLinkRouterCoordinator], SensorEntity
 ):
     _attr_has_entity_name = True
-    entity_description: TPLinkRouterSensorEntityDescription
+    entity_description: TPLinkRouterSensorEntityDescription | TPLinkRouterLTESensorEntityDescription
 
     def __init__(
             self,
             coordinator: TPLinkRouterCoordinator,
-            description: TPLinkRouterSensorEntityDescription,
+            description: TPLinkRouterSensorEntityDescription | TPLinkRouterLTESensorEntityDescription,
     ) -> None:
         super().__init__(coordinator)
 
@@ -140,10 +240,12 @@ class TPLinkRouterSensor(
     @callback
     def _handle_coordinator_update(self) -> None:
         """Handle updated data from the coordinator."""
-        self._attr_native_value = self.entity_description.value(self.coordinator.status)
+        coordinator_data = getattr(self.coordinator, self.entity_description.sensor_type)
+        self._attr_native_value = self.entity_description.value(coordinator_data)
         self.async_write_ha_state()
 
     @property
     def available(self) -> bool:
         """Return True if entity is available."""
-        return self.entity_description.value(self.coordinator.status) is not None
+        coordinator_data = getattr(self.coordinator, self.entity_description.sensor_type)
+        return self.entity_description.value(coordinator_data) is not None

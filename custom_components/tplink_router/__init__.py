@@ -42,14 +42,16 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     def callback():
         firm = client.get_firmware()
         stat = client.get_status()
+        # Check if router is lte_status compatible
+        lte_status = client.get_lte_status() if hasattr(client, "get_lte_status") else None
 
-        return firm, stat
+        return firm, stat, lte_status
 
-    firmware, status = await hass.async_add_executor_job(TPLinkRouterCoordinator.request, client, callback)
+    firmware, status, lte_status = await hass.async_add_executor_job(TPLinkRouterCoordinator.request, client, callback)
 
     # Create device coordinator and fetch data
-    coordinator = TPLinkRouterCoordinator(hass, client, entry.data[CONF_SCAN_INTERVAL], firmware, status, _LOGGER,
-                                          entry.entry_id)
+    coordinator = TPLinkRouterCoordinator(hass, client, entry.data[CONF_SCAN_INTERVAL], firmware, status,
+                                          lte_status, _LOGGER, entry.entry_id)
 
     await coordinator.async_config_entry_first_refresh()
     hass.data.setdefault(DOMAIN, {})[entry.entry_id] = coordinator
