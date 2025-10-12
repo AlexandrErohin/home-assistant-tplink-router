@@ -6,7 +6,7 @@ from homeassistant.components.sensor import (
     SensorEntity,
     SensorEntityDescription,
 )
-from homeassistant.const import PERCENTAGE, SIGNAL_STRENGTH_DECIBELS_MILLIWATT, UnitOfDataRate
+from homeassistant.const import PERCENTAGE, SIGNAL_STRENGTH_DECIBELS_MILLIWATT, UnitOfDataRate, UnitOfInformation
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import HomeAssistant, callback
 from .const import DOMAIN
@@ -106,6 +106,29 @@ SENSOR_TYPES: tuple[TPLinkRouterSensorEntityDescription, ...] = (
     ),
 )
 
+network_types = {
+    0: "No Service",
+    1: "GSM",
+    2: "WCDMA",
+    3: "4G LTE",
+    4: "TD-SCDMA",
+    5: "CDMA 1x",
+    6: "CDMA 1x Ev-Do",
+    7: "4G+ LTE"
+}
+
+sim_statuses = {
+    0: "No SIM card detected or SIM card error.",
+    1: "No SIM card detected.",
+    2: "SIM card error.",
+    3: "SIM card prepared.",
+    4: "SIM locked.",
+    5: "SIM unlocked. Authentication succeeded.",
+    6: "PIN locked.",
+    7: "SIM card is locked permanently.",
+    8: "suspension of transmission",
+    9: "Unopened"
+}
 
 LTE_SENSOR_TYPES: tuple[TPLinkRouterLTESensorEntityDescription, ...] = (
     TPLinkRouterLTESensorEntityDescription(
@@ -124,19 +147,20 @@ LTE_SENSOR_TYPES: tuple[TPLinkRouterLTESensorEntityDescription, ...] = (
         key="lte_network_type",
         name="LTE Network Type",
         icon="mdi:sim-outline",
-        value=lambda status: status.network_type,
+        value=lambda status: network_types[status.network_type],
     ),
     TPLinkRouterLTESensorEntityDescription(
         key="lte_sim_status",
         name="LTE SIM Status",
         icon="mdi:sim-outline",
-        value=lambda status: status.sim_status,
+        value=lambda status: sim_statuses[status.sim_status],
     ),
     TPLinkRouterLTESensorEntityDescription(
         key="lte_total_statistics",
         name="LTE Total Statistics",
         icon="mdi:sim-outline",
         state_class=SensorStateClass.TOTAL,
+        native_unit_of_measurement=UnitOfInformation.BYTES,
         value=lambda status: status.total_statistics,
     ),
     TPLinkRouterLTESensorEntityDescription(
@@ -168,7 +192,7 @@ LTE_SENSOR_TYPES: tuple[TPLinkRouterLTESensorEntityDescription, ...] = (
         icon="mdi:sim-outline",
         state_class=SensorStateClass.MEASUREMENT,
         native_unit_of_measurement=PERCENTAGE,
-        value=lambda status: status.sig_level,
+        value=lambda status: status.sig_level * 25,
     ),
     TPLinkRouterLTESensorEntityDescription(
         key="lte_rsrp",
@@ -192,7 +216,7 @@ LTE_SENSOR_TYPES: tuple[TPLinkRouterLTESensorEntityDescription, ...] = (
         icon="mdi:sim-outline",
         state_class=SensorStateClass.MEASUREMENT,
         native_unit_of_measurement=SIGNAL_STRENGTH_DECIBELS_MILLIWATT,
-        value=lambda status: status.snr,
+        value=lambda status: 0.1 * status.snr,
     ),
     TPLinkRouterLTESensorEntityDescription(
         key="lte_isp_name",
