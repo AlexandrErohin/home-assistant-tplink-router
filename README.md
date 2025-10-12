@@ -41,6 +41,21 @@ If you forget to enable it back - it would be automatically enable after 20 minu
  - Memory used
  - Connection Type
 
+For LTE Routers
+- LTE Enabled
+- LTE Connection Status
+- LTE Network Type
+- LTE SIM Status
+- LTE Total Statistics
+- LTE Current RX Speed
+- LTE Current TX Speed
+- Unread SMS
+- LTE Signal Level
+- LTE RSRP
+- LTE RSRQ
+- LTE SNR
+- LTE ISP Name
+
 ### Device Tracker
  - Track connected to router devices by MAC address with connection information
 
