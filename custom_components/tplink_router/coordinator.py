@@ -5,7 +5,7 @@ from collections.abc import Callable
 from homeassistant.helpers.update_coordinator import DataUpdateCoordinator
 from tplinkrouterc6u import TplinkRouterProvider, AbstractRouter, Firmware, Status, Connection, LTEStatus
 from homeassistant.core import HomeAssistant
-from homeassistant.helpers.device_registry import DeviceInfo
+from homeassistant.helpers.device_registry import CONNECTION_NETWORK_MAC, DeviceInfo
 from .const import (
     DOMAIN,
     DEFAULT_NAME,
@@ -31,6 +31,7 @@ class TPLinkRouterCoordinator(DataUpdateCoordinator):
         self.lte_status = lte_status
         self.device_info = DeviceInfo(
             configuration_url=router.host,
+            connections={(CONNECTION_NETWORK_MAC, self.status.lan_macaddr)},
             identifiers={(DOMAIN, self.status.lan_macaddr)},
             manufacturer="TPLink",
             model=firmware.model,
