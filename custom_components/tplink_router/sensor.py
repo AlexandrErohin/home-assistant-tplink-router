@@ -106,30 +106,6 @@ SENSOR_TYPES: tuple[TPLinkRouterSensorEntityDescription, ...] = (
     ),
 )
 
-network_types = {
-    0: "No Service",
-    1: "GSM",
-    2: "WCDMA",
-    3: "4G LTE",
-    4: "TD-SCDMA",
-    5: "CDMA 1x",
-    6: "CDMA 1x Ev-Do",
-    7: "4G+ LTE"
-}
-
-sim_statuses = {
-    0: "No SIM card detected or SIM card error.",
-    1: "No SIM card detected.",
-    2: "SIM card error.",
-    3: "SIM card prepared.",
-    4: "SIM locked.",
-    5: "SIM unlocked. Authentication succeeded.",
-    6: "PIN locked.",
-    7: "SIM card is locked permanently.",
-    8: "suspension of transmission",
-    9: "Unopened"
-}
-
 LTE_SENSOR_TYPES: tuple[TPLinkRouterLTESensorEntityDescription, ...] = (
     TPLinkRouterLTESensorEntityDescription(
         key="lte_enabled",
@@ -147,13 +123,13 @@ LTE_SENSOR_TYPES: tuple[TPLinkRouterLTESensorEntityDescription, ...] = (
         key="lte_network_type",
         name="LTE Network Type",
         icon="mdi:sim-outline",
-        value=lambda status: network_types[status.network_type],
+        value=lambda status: status.network_type_info,
     ),
     TPLinkRouterLTESensorEntityDescription(
         key="lte_sim_status",
         name="LTE SIM Status",
         icon="mdi:sim-outline",
-        value=lambda status: sim_statuses[status.sim_status],
+        value=lambda status: status.sim_status_info,
     ),
     TPLinkRouterLTESensorEntityDescription(
         key="lte_total_statistics",
