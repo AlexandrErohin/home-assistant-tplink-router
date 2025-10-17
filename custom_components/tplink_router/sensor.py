@@ -123,11 +123,23 @@ LTE_SENSOR_TYPES: tuple[TPLinkRouterLTESensorEntityDescription, ...] = (
         key="lte_network_type",
         name="LTE Network Type",
         icon="mdi:sim-outline",
+        value=lambda status: status.network_type,
+    ),
+    TPLinkRouterLTESensorEntityDescription(
+        key="lte_network_type_info",
+        name="LTE Network Type Info",
+        icon="mdi:sim-outline",
         value=lambda status: status.network_type_info,
     ),
     TPLinkRouterLTESensorEntityDescription(
         key="lte_sim_status",
         name="LTE SIM Status",
+        icon="mdi:sim-outline",
+        value=lambda status: status.sim_status,
+    ),
+    TPLinkRouterLTESensorEntityDescription(
+        key="lte_sim_status_info",
+        name="LTE SIM Status Info",
         icon="mdi:sim-outline",
         value=lambda status: status.sim_status_info,
     ),
