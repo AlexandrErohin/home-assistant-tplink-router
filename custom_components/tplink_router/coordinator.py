@@ -109,10 +109,9 @@ class TPLinkRouterCoordinator(DataUpdateCoordinator):
         new_items = []
         for sms in sms_list:
             h = TPLinkRouterCoordinator._hash_item(sms)
-            if (
-                    h not in self._sms_hashes
-                    and (self._last_update_time is not None and sms.received_at >= self._last_update_time)
-            ):
+            if self._last_update_time is None:
+                self._sms_hashes.add(h)
+            elif h not in self._sms_hashes:
                 self._sms_hashes.add(h)
                 new_items.append(sms)
 
