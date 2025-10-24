@@ -1,9 +1,18 @@
 from __future__ import annotations
+import hashlib
 from datetime import timedelta, datetime
 from logging import Logger
 from collections.abc import Callable
 from homeassistant.helpers.update_coordinator import DataUpdateCoordinator
-from tplinkrouterc6u import TplinkRouterProvider, AbstractRouter, Firmware, Status, Connection, LTEStatus
+from tplinkrouterc6u import (
+    TplinkRouterProvider,
+    AbstractRouter,
+    Firmware,
+    Status,
+    Connection,
+    LTEStatus,
+    SMS,
+)
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers.device_registry import CONNECTION_NETWORK_MAC, DeviceInfo
 from .const import (
@@ -41,6 +50,9 @@ class TPLinkRouterCoordinator(DataUpdateCoordinator):
         )
 
         self.scan_stopped_at: datetime | None = None
+        self._last_update_time: datetime | None = None
+        self._sms_hashes: set[str] = set()
+        self.new_sms: list[SMS] = []
 
         super().__init__(
             hass,
@@ -86,3 +98,27 @@ class TPLinkRouterCoordinator(DataUpdateCoordinator):
                 self.router,
                 self.router.get_lte_status,
             )
+        await self._update_new_sms()
+        self._last_update_time = datetime.now()
+
+    async def _update_new_sms(self) -> None:
+        if not hasattr(self.router, "get_sms") or self.lte_status is None:
+            return
+        sms_list = await self.hass.async_add_executor_job(TPLinkRouterCoordinator.request, self.router,
+                                                          self.router.get_sms)
+        new_items = []
+        for sms in sms_list:
+            h = TPLinkRouterCoordinator._hash_item(sms)
+            if (
+                    h not in self._known_hashes
+                    and (self._last_update_time is not None and sms.received_at >= self._last_update_time)
+            ):
+                self._sms_hashes.add(h)
+                new_items.append(sms)
+
+        self.new_sms = new_items
+
+    @staticmethod
+    def _hash_item(sms: SMS) -> str:
+        key = f"{sms.sender}|{sms.content}|{sms.received_at.isoformat()}"
+        return hashlib.sha1(key.encode("utf-8")).hexdigest()

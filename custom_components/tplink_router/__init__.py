@@ -8,9 +8,8 @@ from homeassistant.const import (
 )
 from homeassistant.core import HomeAssistant, ServiceCall
 from homeassistant.config_entries import ConfigEntry
-from .const import DOMAIN, DEFAULT_USER
+from .const import DOMAIN, DEFAULT_USER, EVENT_NEW_SMS
 import logging
-from tplinkrouterc6u import TPLinkMRClient
 from .coordinator import TPLinkRouterCoordinator
 from homeassistant.helpers import device_registry
 
@@ -43,9 +42,14 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
         firm = client.get_firmware()
         stat = client.get_status()
         # Check if router is lte_status compatible
-        lte_status = client.get_lte_status() if hasattr(client, "get_lte_status") else None
+        lte_stat = None
+        if hasattr(client, "get_lte_status"):
+            try:
+                lte_stat = client.get_lte_status()
+            except Exception:
+                pass
 
-        return firm, stat, lte_status
+        return firm, stat, lte_stat
 
     firmware, status, lte_status = await hass.async_add_executor_job(TPLinkRouterCoordinator.request, client, callback)
 
@@ -54,6 +58,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
                                           lte_status, _LOGGER, entry.entry_id)
 
     await coordinator.async_config_entry_first_refresh()
+    _async_add_listeners(hass, coordinator)
     hass.data.setdefault(DOMAIN, {})[entry.entry_id] = coordinator
 
     await hass.config_entries.async_forward_entry_setups(entry, PLATFORMS)
@@ -78,7 +83,7 @@ async def async_reload_entry(hass: HomeAssistant, config_entry: ConfigEntry) -> 
 
 def register_services(hass: HomeAssistant, coord: TPLinkRouterCoordinator) -> None:
 
-    if not issubclass(coord.router.__class__, TPLinkMRClient):
+    if not hasattr(coord.router, "send_sms") or coord.lte_status is None:
         return
 
     dr = device_registry.async_get(hass)
@@ -93,7 +98,7 @@ def register_services(hass: HomeAssistant, coord: TPLinkRouterCoordinator) -> No
             entry = hass.config_entries.async_get_entry(key)
             if not entry:
                 continue
-            if entry.domain != DOMAIN or not issubclass(hass.data[DOMAIN][key].router.__class__, TPLinkMRClient):
+            if entry.domain != DOMAIN or not hasattr(hass.data[DOMAIN][key].router, "send_sms"):
                 continue
             coordinator = hass.data[DOMAIN][key]
 
@@ -107,3 +112,26 @@ def register_services(hass: HomeAssistant, coord: TPLinkRouterCoordinator) -> No
 
     if not hass.services.has_service(DOMAIN, 'send_sms'):
         hass.services.async_register(DOMAIN, 'send_sms', send_sms_service)
+
+
+def _async_add_listeners(hass: HomeAssistant, coord: TPLinkRouterCoordinator) -> None:
+
+    if not hasattr(coord.router, "get_sms") or coord.lte_status is None:
+        return
+
+    coord.async_add_listener(
+        lambda: _fire_sms_event(hass, coord)
+    )
+
+
+def _fire_sms_event(hass: HomeAssistant, coord: TPLinkRouterCoordinator) -> None:
+    for sms in coord.new_sms:
+        hass.bus.fire(
+            EVENT_NEW_SMS,
+            {
+                'sender': sms.sender,
+                'content': sms.content,
+                'received_at': sms.received_at.isoformat(),
+            },
+        )
+    coord.new_sms = []
