@@ -54,10 +54,17 @@ SENSOR_TYPES: tuple[TPLinkRouterSensorEntityDescription, ...] = (
     ),
     TPLinkRouterSensorEntityDescription(
         key="wifi_clients_total",
-        name="Total main wifi clients",
+        name="Total wifi clients",
         icon="mdi:account-multiple",
         state_class=SensorStateClass.TOTAL,
         value=lambda status: status.wifi_clients_total,
+    ),
+    TPLinkRouterSensorEntityDescription(
+        key="main_wifi_clients_total",
+        name="Total main wifi clients",
+        icon="mdi:account-multiple",
+        state_class=SensorStateClass.TOTAL,
+        value=lambda status: status.main_wifi_clients_total,
     ),
     TPLinkRouterSensorEntityDescription(
         key="wired_clients_total",
