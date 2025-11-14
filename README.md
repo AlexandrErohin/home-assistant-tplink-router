@@ -170,8 +170,9 @@ NOTE!
 
 <img src="https://raw.githubusercontent.com/AlexandrErohin/home-assistant-tplink-router/master/docs/media/router.png" width="30%">
 
-3. If you got error - `use web encrypted password instead. Check the documentation!` Read [web encrypted password](#encrypted_pass)
-4. The TP-Link Web Interface only supports upto 1 user logged in at a time (for security reasons, apparently). So you will be logged out from router web interface when the integration updates data
+3. If you got error - `check if the default router username is correct` The default username for most routers is `admin`. Some routers have the default username - `user`.
+4. If you got error - `use web encrypted password instead` Read [web encrypted password](#encrypted_pass)
+5. The TP-Link Web Interface only supports upto 1 user logged in at a time (for security reasons, apparently). So you will be logged out from router web interface when the integration updates data
 
 ### <a id="encrypted_pass">Web Encrypted Password</a>
 If you got error - `use web encrypted password instead. Check the documentation!`
@@ -243,7 +244,7 @@ To do that:
 - Archer C80 (1.0, 2.20)
 - Archer C5400X V1
 - Archer GX90 v1.0
-- Archer MR200 (v5, v5.3, v6.0)
+- Archer MR200 (v2, v5, v5.3, v6.0)
 - Archer MR550 v1
 - Archer MR600 (v1, v2, v3)
 - Archer NX200 v2.0
@@ -252,6 +253,7 @@ To do that:
 - Archer VR900v
 - Archer VR1200v v1
 - Archer VR2100v v1
+- Archer VX231v v1.0
 - Archer VX1800v v1.0
 - BE11000 2.0
 - Deco M4 2.0
@@ -282,11 +284,13 @@ To do that:
 - TL-WA3001 v1.0
 - TL-XDR3010 V2
 - TL-WDR3600 V1
+- TL-XDR6088 v1.0.30
 - VX420-G2h v1.1
 - VX800v v1
 - XC220-G3v v2.30
 - RE330 v1
 ### <a id="mercusys">MERCUSYS routers</a>
+- AC10 1.20
 - MR47BE v1.0
 - MR50G 1.0
 - H60XR 1.0
