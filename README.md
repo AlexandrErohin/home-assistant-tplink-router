@@ -166,13 +166,14 @@ The default data is preset already.
 
 NOTE!
 1. If you use `https` connection to your router you may get error `certificate verify failed: EE certificate key too weak`. To fix this - unset `Verify ssl`
-2. Use Local Password which is for Log In with Local Password. Login with TP-LINK ID doesnt work
+2. If you use `https` connection - You need to turn on "Local Management via HTTPS" (advanced->system->administration) in the router web UI
+3. Use Local Password which is for Log In with Local Password. Login with TP-LINK ID doesnt work
 
 <img src="https://raw.githubusercontent.com/AlexandrErohin/home-assistant-tplink-router/master/docs/media/router.png" width="30%">
 
-3. If you got error - `check if the default router username is correct` The default username for most routers is `admin`. Some routers have the default username - `user`.
-4. If you got error - `use web encrypted password instead` Read [web encrypted password](#encrypted_pass)
-5. The TP-Link Web Interface only supports upto 1 user logged in at a time (for security reasons, apparently). So you will be logged out from router web interface when the integration updates data
+4. If you got error - `check if the default router username is correct` The default username for most routers is `admin`. Some routers have the default username - `user`.
+5. If you got error - `use web encrypted password instead` Read [web encrypted password](#encrypted_pass)
+6. The TP-Link Web Interface only supports upto 1 user logged in at a time (for security reasons, apparently). So you will be logged out from router web interface when the integration updates data
 
 ### <a id="encrypted_pass">Web Encrypted Password</a>
 If you got error - `use web encrypted password instead. Check the documentation!`
@@ -201,7 +202,7 @@ To do that:
 - [TP-LINK routers](#tplink)
 - [MERCUSYS routers](#mercusys)
 ### <a id="tplink">TP-LINK routers</a>
-- Archer A6 V2.0
+- Archer A6 (2.0, 4.0)
 - Archer A7 V5
 - Archer A8 (1.0, 2.20)
 - Archer A9 V6
