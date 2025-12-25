@@ -251,7 +251,7 @@ To do that:
 - Archer MR550 v1
 - Archer MR600 (v1, v2, v3)
 - Archer NX200 v2.0
-- Archer VR400 v3
+- Archer VR400 (v2, v3)
 - Archer VR600 v3
 - Archer VR900v
 - Archer VR1200v v1
