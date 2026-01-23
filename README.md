@@ -44,6 +44,8 @@ If you forget to enable it back - it would be automatically enable after 20 minu
  - CPU used
  - Memory used
  - Connection Type
+ - WAN IPv4 Address
+ - LAN IPv4 Address
 
 For LTE Routers
 - LTE Enabled
@@ -238,6 +240,7 @@ To do that:
 - Archer BE3600 1.6
 - Archer C1200 (v1.0, v2.0)
 - Archer C2300 (v1.0, v2.0)
+- Archer C3200
 - Archer C6 (v2.0, v3.0, v3.20, 4.0)
 - Archer C6U v1.0
 - Archer C7 (v4.0, v5.0)
@@ -275,19 +278,25 @@ To do that:
 - Deco XE75PRO (v3.0)
 - EX511 v2.0
 - HX510 v1.0
+- M8550 v1
+- NE200-Outdoor v1.0
 - NX510v v1.0
+- NX600 v2.0
 - TD-W9960 (v1, V1.20)
 - TL-MR100 v2.0
 - TL-MR105
 - TL-MR100-Outdoor v1.0
 - TL-MR110-Outdoor v1.0
 - TL-MR150 v2
-- TL-MR6400 (v5, v5.3)
+- TL-MR6400 (v5, v5.3, v7)
 - TL-MR6500v
+- TL-R470GP-AC 4.0
+- TL-R488GPM-AC 2.0
 - TL-WA1201 3.0
 - TL-WA3001 v1.0
 - TL-XDR3010 V2
 - TL-WDR3600 V1
+- TL-XDR5410 1.0
 - TL-XDR6088 v1.0.30
 - VX420-G2h v1.1
 - VX800v v1
