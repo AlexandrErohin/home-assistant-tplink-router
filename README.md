@@ -166,9 +166,11 @@ The default data is preset already.
 3. Fill Password.
 4. Click `SUBMIT`
 
+If you got an error please try to use HTTPS connection first
+
 NOTE!
-1. If you use `https` connection to your router you may get error `certificate verify failed: EE certificate key too weak`. To fix this - unset `Verify ssl`
-2. If you use `https` connection - You need to turn on "Local Management via HTTPS" (advanced->system->administration) in the router web UI
+1. If you use `https` connection - You need to turn on "Local Management via HTTPS" (advanced->system->administration) in the router web UI
+2. If you use `https` connection to your router you may get error `certificate verify failed: EE certificate key too weak`. To fix this - unset `Verify ssl`
 3. Use Local Password which is for Log In with Local Password. Login with TP-LINK ID doesnt work
 
 <img src="https://raw.githubusercontent.com/AlexandrErohin/home-assistant-tplink-router/master/docs/media/router.png" width="30%">
