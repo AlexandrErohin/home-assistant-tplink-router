@@ -104,6 +104,18 @@ SENSOR_TYPES: tuple[TPLinkRouterSensorEntityDescription, ...] = (
         icon="mdi:wan",
         value=lambda status: status.conn_type,
     ),
+    TPLinkRouterSensorEntityDescription(
+        key="wan_ipv4_addr",
+        name="WAN IPv4 Address",
+        icon="mdi:wan",
+        value=lambda status: status.wan_ipv4_addr,
+    ),
+    TPLinkRouterSensorEntityDescription(
+        key="lan_ipv4_addr",
+        name="LAN IPv4 Address",
+        icon="mdi:lan",
+        value=lambda status: status.lan_ipv4_addr,
+    ),
 )
 
 LTE_SENSOR_TYPES: tuple[TPLinkRouterLTESensorEntityDescription, ...] = (
