@@ -242,7 +242,7 @@ To do that:
 - Archer BE3600 1.6
 - Archer C1200 (v1.0, v2.0)
 - Archer C2300 (v1.0, v2.0)
-- Archer C3200
+- Archer C3200 v1
 - Archer C6 (v2.0, v3.0, v3.20, 4.0)
 - Archer C6U v1.0
 - Archer C7 (v4.0, v5.0)
