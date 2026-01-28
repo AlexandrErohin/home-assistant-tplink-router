@@ -282,6 +282,7 @@ To do that:
 - HX510 v1.0
 - M8550 v1
 - NE200-Outdoor v1.0
+- NE211-Outdoor v1.0
 - NX510v v1.0
 - NX600 v2.0
 - TD-W9960 (v1, V1.20)
