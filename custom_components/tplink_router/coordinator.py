@@ -70,10 +70,14 @@ class TPLinkRouterCoordinator(DataUpdateCoordinator):
     @staticmethod
     def request(router: AbstractRouter, callback: Callable):
         router.authorize()
-        data = callback()
-        router.logout()
-
-        return data
+        try:
+            return callback()
+        finally:
+            try:
+                router.logout()
+            except Exception:
+                # Do not block updates if logout fails.
+                pass
 
     async def reboot(self) -> None:
         await self.hass.async_add_executor_job(TPLinkRouterCoordinator.request, self.router, self.router.reboot)
