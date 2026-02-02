@@ -135,6 +135,16 @@ class TPLinkTracker(CoordinatorEntity, ScannerEntity):
         if self.device.down_speed is not None or self.device.up_speed is not None:
             attributes['up_speed'] = self.device.up_speed
             attributes['down_speed'] = self.device.down_speed
+        if getattr(self.device, 'tx_rate', None) is not None:
+            attributes['tx_rate'] = self.device.tx_rate
+        if getattr(self.device, 'rx_rate', None) is not None:
+            attributes['rx_rate'] = self.device.rx_rate
+        if getattr(self.device, 'online_time', None) is not None:
+            attributes['online_time'] = self.device.online_time
+        if getattr(self.device, 'traffic_usage', None) is not None:
+            attributes['traffic_usage'] = self.device.traffic_usage
+        if getattr(self.device, 'signal', None) is not None:
+            attributes['signal'] = self.device.signal
         return attributes
 
     @property
