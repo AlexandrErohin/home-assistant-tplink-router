@@ -100,6 +100,13 @@ All available fields in `trigger.event.data`:
 - band
 - packets_sent
 - packets_received
+- up_speed
+- down_speed
+- tx_rate
+- rx_rate
+- online_time
+- traffic_usage
+- signal
 
 #### SMS events only for MR LTE routers
 To receive notifications of receiving a new sms add following lines to your `configuration.yaml` file:
