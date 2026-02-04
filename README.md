@@ -217,6 +217,7 @@ To do that:
 - Archer A7 V5
 - Archer A8 (1.0, 2.20)
 - Archer A9 V6
+- Archer A10 v1
 - Archer A20 v1.0
 - Archer AX10 v1.0
 - Archer AX12 v1.0
@@ -246,7 +247,7 @@ To do that:
 - Archer BE550 v1.0
 - Archer BE800 v1.0
 - Archer BE805 v1.0
-- Archer BE3600 1.6
+- Archer BE3600 (v1.0, v1.6)
 - Archer C1200 (v1.0, v2.0)
 - Archer C2300 (v1.0, v2.0)
 - Archer C3200 v1
