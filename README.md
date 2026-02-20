@@ -213,70 +213,71 @@ To do that:
 - [TP-LINK routers](#tplink)
 - [MERCUSYS routers](#mercusys)
 ### <a id="tplink">TP-LINK routers</a>
+- Archer A10 v1
+- Archer A20 v1.0
 - Archer A6 (2.0, 4.0)
 - Archer A7 V5
 - Archer A8 (1.0, 2.20)
 - Archer A9 V6
-- Archer A10 v1
-- Archer A20 v1.0
 - Archer AX10 v1.0
+- Archer AX11000 V1
 - Archer AX12 v1.0
 - Archer AX17 v1.0
+- Archer AX1800
 - Archer AX20 (v1.0, v3.0)
-- Archer AX21 (v1.20, v3.0)
+- Archer AX21 (v1.20, v3.0, v4.6)
 - Archer AX23 (v1.0, v1.2)
+- Archer AX3000 V1
 - Archer AX50 v1.0
 - Archer AX53 (v1.0, v2)
 - Archer AX55 (v1.0, V1.60, v4.0)
 - Archer AX58 v1.0
+- Archer AX6000 V1
 - Archer AX72 V1
 - Archer AX73 (V1, V2.0)
 - Archer AX75 V1
 - Archer AX90 V1.20
 - Archer AX95 v1.0
-- Archer AXE75 V1
-- Archer AXE5400 v1.0
 - Archer AXE16000
-- Archer AX1800
-- Archer AX3000 V1
-- Archer AX6000 V1
-- Archer AX11000 V1
+- Archer AXE5400 v1.0
+- Archer AXE75 V1
 - Archer BE220 v1.0
 - Archer BE230 v1.0
+- Archer BE3600 (v1.0, v1.2, v1.6)
 - Archer BE400 v1.0
 - Archer BE550 v1.0
 - Archer BE800 v1.0
-- Archer BE805 v1.0
-- Archer BE3600 (v1.0, v1.2, v1.6)
+- Archer BE805 (v1.0, v1.20)
 - Archer C1200 (v1.0, v2.0)
 - Archer C2300 (v1.0, v2.0)
-- Archer C3200 v1
-- Archer C6 (v2.0, v3.0, v3.20, 4.0)
-- Archer C6U v1.0
-- Archer C7 (v4.0, v5.0)
 - Archer C24 (1.0, 2.0)
+- Archer C3200 v1
+- Archer C5400X V1
+- Archer C6 (v2.0, v3.0, v3.20, 4.0)
 - Archer C60 v2.0
 - Archer C64 1.0
+- Archer C6U v1.0
+- Archer C7 (v4.0, v5.0)
 - Archer C80 (1.0, 2.20)
-- Archer C5400X V1
 - Archer GX90 v1.0
 - Archer MR200 (v2, v5, v5.3, v6.0)
 - Archer MR550 v1
 - Archer MR600 (v1, v2, v3)
 - Archer NX200 (v1.0, v2.0)
+- Archer VR1200v v1
+- Archer VR2100v v1
 - Archer VR400 (v2, v3)
 - Archer VR600 v3
 - Archer VR900v
-- Archer VR1200v v1
-- Archer VR2100v v1
-- Archer VX231v v1.0
 - Archer VX1800v v1.0
+- Archer VX231v v1.0
 - BE11000 2.0
+- CPE210 v2.0
 - Deco M4 2.0
 - Deco M4R 2.0
 - Deco M5 v3
-- Deco M9 Pro
 - Deco M9 Plus 1.0
+- Deco M9 Pro
 - Deco P7
 - Deco X20
 - Deco X50 v1.3
@@ -286,6 +287,7 @@ To do that:
 - Deco X90
 - Deco XE75 (v1.0, v2.0)
 - Deco XE75PRO (v3.0)
+- EAP115 v2.0
 - EX511 v2.0
 - HX510 v1.0
 - M8550 v1
@@ -293,37 +295,38 @@ To do that:
 - NE211-Outdoor v1.0
 - NX510v v1.0
 - NX600 v2.0
+- RE305 4.0
+- RE315 1.0
+- RE330 v1
 - TD-W9960 (v1, V1.20)
 - TL-MR100 v2.0
-- TL-MR105
 - TL-MR100-Outdoor v1.0
+- TL-MR105
 - TL-MR110-Outdoor v1.0
 - TL-MR150 v2
 - TL-MR6400 (v5, v5.3, v7)
 - TL-MR6500v
 - TL-R470GP-AC 4.0
 - TL-R488GPM-AC 2.0
+- TL-SG108E v6.0
 - TL-WA1201 3.0
 - TL-WA3001 v1.0
-- TL-XDR3010 V2
 - TL-WDR3600 V1
+- TL-XDR3010 V2
 - TL-XDR5410 1.0
 - TL-XDR6088 v1.0.30
 - VX420-G2h v1.1
 - VX800v v1
 - XC220-G3v v2.30
-- RE305 4.0
-- RE315 1.0
-- RE330 v1
 ### <a id="mercusys">MERCUSYS routers</a>
 - AC10 1.20
+- Halo H3000x 1.0
+- Halo H47BE 2.0
+- Halo H60XR 1.0
+- Halo H80X 1.0
+- ME30 1.0
 - MR47BE v1.0
 - MR50G 1.0
-- ME30 1.0
-- H60XR 1.0
-- H47BE 2.0
-- Halo H80X 1.0
-- Halo H3000x 1.0
 
 Please let me know if you have tested integration with any other model. Open an issue with info about router's model, hardware and firmware versions.
 
