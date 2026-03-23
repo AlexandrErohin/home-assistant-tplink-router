@@ -242,7 +242,7 @@ To do that:
 - Archer AXE5400 v1.0
 - Archer AXE75 V1
 - Archer BE220 v1.0
-- Archer BE230 v1.0
+- Archer BE230 (v1.0, v2.0)
 - Archer BE3600 (v1.0, v1.2, v1.6)
 - Archer BE400 v1.0
 - Archer BE550 v1.0
@@ -266,6 +266,7 @@ To do that:
 - Archer NX200 (v1.0, v2.0)
 - Archer VR1200v v1
 - Archer VR2100v v1
+- Archer VR2800 v1
 - Archer VR400 (v2, v3)
 - Archer VR600 v3
 - Archer VR900v
@@ -273,6 +274,7 @@ To do that:
 - Archer VX231v v1.0
 - BE11000 2.0
 - CPE210 v2.0
+- Deco BE25 1.0
 - Deco M4 2.0
 - Deco M4R 2.0
 - Deco M5 v3
@@ -281,7 +283,7 @@ To do that:
 - Deco P7
 - Deco X20
 - Deco X50 v1.3
-- Deco X50-5G 1.20
+- Deco X50-5G (1.20, 2.0)
 - Deco X55 1.0
 - Deco X60 V3
 - Deco X90
@@ -320,6 +322,7 @@ To do that:
 - XC220-G3v v2.30
 ### <a id="mercusys">MERCUSYS routers</a>
 - AC10 1.20
+- Halo H25BE 1.0
 - Halo H3000x 1.0
 - Halo H47BE 2.0
 - Halo H60XR 1.0
