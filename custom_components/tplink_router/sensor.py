@@ -192,7 +192,7 @@ LTE_SENSOR_TYPES: tuple[TPLinkRouterLTESensorEntityDescription, ...] = (
         icon="mdi:sim-outline",
         state_class=SensorStateClass.MEASUREMENT,
         native_unit_of_measurement=PERCENTAGE,
-        value=lambda status: status.sig_level * 25,
+        value=lambda status: status.sig_level * 25 if status.sig_level is not None else None,
     ),
     TPLinkRouterLTESensorEntityDescription(
         key="lte_rsrp",
@@ -216,7 +216,7 @@ LTE_SENSOR_TYPES: tuple[TPLinkRouterLTESensorEntityDescription, ...] = (
         icon="mdi:sim-outline",
         state_class=SensorStateClass.MEASUREMENT,
         native_unit_of_measurement=SIGNAL_STRENGTH_DECIBELS_MILLIWATT,
-        value=lambda status: 0.1 * status.snr,
+        value=lambda status: 0.1 * status.snr if status.snr is not None else None,
     ),
     TPLinkRouterLTESensorEntityDescription(
         key="lte_isp_name",
