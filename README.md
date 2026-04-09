@@ -301,6 +301,7 @@ To do that:
 - RE315 1.0
 - RE330 v1
 - TD-W9960 (v1, V1.20)
+- TL-7DR6430 1.0
 - TL-MR100 v2.0
 - TL-MR100-Outdoor v1.0
 - TL-MR105
