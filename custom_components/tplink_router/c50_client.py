@@ -26,7 +26,7 @@ from datetime import datetime
 from hashlib import md5
 from logging import Logger
 from random import randint
-from time import time
+from time import sleep, time
 from typing import Optional
 
 from Crypto.Cipher import AES, PKCS1_v1_5
@@ -241,14 +241,21 @@ class TPLinkC50Client(TPLinkMRClient):
         )
 
         body = f"sign={sign}\r\ndata={enc_data}\r\n"
-        response = self._session.post(
-            f"{self.host}/cgi_gdpr",
-            headers=self._base_headers(),
-            data=body,
-            timeout=self.timeout,
-            stream=True,
-        )
-        raw = self._read_chunked(response)
+
+        # Retry up to REQUEST_RETRIES times on transient 500/406 errors,
+        # matching the retry behaviour of the parent TPLinkMRClient._request().
+        for attempt in range(self.REQUEST_RETRIES):
+            response = self._session.post(
+                f"{self.host}/cgi_gdpr",
+                headers=self._base_headers(),
+                data=body,
+                timeout=self.timeout,
+                stream=True,
+            )
+            raw = self._read_chunked(response)
+            if response.status_code not in (500, 406):
+                break
+            sleep(0.5)
 
         if response.status_code != 200:
             raise ClientException(
