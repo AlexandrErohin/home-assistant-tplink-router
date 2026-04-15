@@ -164,11 +164,26 @@ class TPLinkC50Client(TPLinkMRClient):
         )
         raw = self._read_chunked(response)
 
+        if self._logger:
+            self._logger.warning(
+                "%s - authorize: HTTP %s raw_len=%s raw_prefix=%s",
+                self.ROUTER_NAME,
+                response.status_code,
+                len(raw),
+                repr(raw[:120]),
+            )
+
+        if response.status_code != 200:
+            raise ClientException(
+                f"{self.ROUTER_NAME} - authorize: HTTP {response.status_code}"
+            )
+
         try:
             decrypted = self._aes_dec(raw, aes_key, aes_iv)
         except Exception as exc:
             raise ClientException(
-                f"{self.ROUTER_NAME} - authorize: AES decrypt failed: {exc}"
+                f"{self.ROUTER_NAME} - authorize: AES decrypt failed: {exc}; "
+                f"raw_len={len(raw)} raw_prefix={repr(raw[:120])}"
             ) from exc
 
         if "$.ret=0" not in decrypted:
