@@ -165,7 +165,7 @@ class TPLinkC50Client(TPLinkMRClient):
         raw = self._read_chunked(response)
 
         if self._logger:
-            self._logger.warning(
+            self._logger.debug(
                 "%s - authorize: HTTP %s raw_len=%s raw_prefix=%s",
                 self.ROUTER_NAME,
                 response.status_code,
@@ -466,7 +466,7 @@ class TPLinkWR841NClient(TPLinkC50Client):
             verify=self._verify_ssl,
         )
         if self._logger:
-            self._logger.warning(
+            self._logger.debug(
                 "%s - authorize: GET / status=%s cookies=%s",
                 self.ROUTER_NAME,
                 init_resp.status_code,
@@ -476,7 +476,7 @@ class TPLinkWR841NClient(TPLinkC50Client):
         nn, ee, seq = self._fetch_rsa_key()
 
         if self._logger:
-            self._logger.warning(
+            self._logger.debug(
                 "%s - authorize: getParm nn_len=%s seq=%s cookies=%s",
                 self.ROUTER_NAME,
                 len(nn),
@@ -510,7 +510,7 @@ class TPLinkWR841NClient(TPLinkC50Client):
         body = f"sign={sign}\r\ndata={enc_data}\r\n"
 
         if self._logger:
-            self._logger.warning(
+            self._logger.debug(
                 "%s - authorize: sign_len=%s enc_data_len=%s sign_prefix=%s",
                 self.ROUTER_NAME,
                 len(sign),
@@ -528,7 +528,7 @@ class TPLinkWR841NClient(TPLinkC50Client):
         raw = self._read_chunked(response)
 
         if self._logger:
-            self._logger.warning(
+            self._logger.debug(
                 "%s - authorize: login HTTP %s raw_len=%s raw_prefix=%s cookies=%s",
                 self.ROUTER_NAME,
                 response.status_code,
@@ -572,7 +572,7 @@ class TPLinkWR841NClient(TPLinkC50Client):
             verify=self._verify_ssl,
         )
         if self._logger:
-            self._logger.warning(
+            self._logger.debug(
                 "%s - authorize: post-login GET / status=%s cookies=%s",
                 self.ROUTER_NAME,
                 root_resp.status_code,
