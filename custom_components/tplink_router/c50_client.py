@@ -185,7 +185,7 @@ class TPLinkC50Client(TPLinkMRClient):
         # The router requires a GET / after login to fully initialize the
         # server-side session before it will accept /cgi_gdpr data requests.
         # A browser does this automatically via the post-login redirect.
-        self._session.get(
+        root_resp = self._session.get(
             self.host + "/",
             headers={
                 "Accept": "text/html,application/xhtml+xml,*/*",
@@ -195,6 +195,13 @@ class TPLinkC50Client(TPLinkMRClient):
             timeout=self.timeout,
             verify=self._verify_ssl,
         )
+        if self._logger:
+            self._logger.debug(
+                "%s - authorize: GET / status=%s cookies=%s",
+                self.ROUTER_NAME,
+                root_resp.status_code,
+                dict(self._session.cookies),
+            )
 
         # Persist session params for subsequent requests
         self._login_nn = nn
@@ -242,6 +249,15 @@ class TPLinkC50Client(TPLinkMRClient):
 
         body = f"sign={sign}\r\ndata={enc_data}\r\n"
 
+        if self._logger:
+            self._logger.debug(
+                "%s - req_act: cookies=%s seq=%s enc_len=%s",
+                self.ROUTER_NAME,
+                dict(self._session.cookies),
+                self._login_seq + len(enc_data),
+                len(enc_data),
+            )
+
         # Retry up to REQUEST_RETRIES times on transient 500/406 errors,
         # matching the retry behaviour of the parent TPLinkMRClient._request().
         for attempt in range(self.REQUEST_RETRIES):
@@ -253,6 +269,15 @@ class TPLinkC50Client(TPLinkMRClient):
                 stream=True,
             )
             raw = self._read_chunked(response)
+            if self._logger:
+                self._logger.debug(
+                    "%s - req_act attempt %s: HTTP %s raw_len=%s raw_prefix=%s",
+                    self.ROUTER_NAME,
+                    attempt,
+                    response.status_code,
+                    len(raw),
+                    repr(raw[:60]),
+                )
             if response.status_code not in (500, 406):
                 break
             sleep(0.5)
