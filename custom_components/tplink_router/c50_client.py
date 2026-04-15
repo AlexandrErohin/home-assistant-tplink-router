@@ -123,6 +123,12 @@ class TPLinkC50Client(TPLinkMRClient):
     # ------------------------------------------------------------------
 
     def authorize(self) -> None:
+        # Always start with a clean HTTP session so stale JSESSIONID cookies
+        # from a previous login do not confuse the router on re-login.
+        self._session = Session()
+        if not self._verify_ssl:
+            self._session.verify = False
+
         nn, ee, seq = self._fetch_rsa_key()
 
         ts = str(round(time() * 1000))
@@ -176,6 +182,20 @@ class TPLinkC50Client(TPLinkMRClient):
                 f"{self.ROUTER_NAME} - Login failed. Error code: {ret_code}"
             )
 
+        # The router requires a GET / after login to fully initialize the
+        # server-side session before it will accept /cgi_gdpr data requests.
+        # A browser does this automatically via the post-login redirect.
+        self._session.get(
+            self.host + "/",
+            headers={
+                "Accept": "text/html,application/xhtml+xml,*/*",
+                "User-Agent": self._base_headers()["User-Agent"],
+                "Referer": self._base_headers()["Referer"],
+            },
+            timeout=self.timeout,
+            verify=self._verify_ssl,
+        )
+
         # Persist session params for subsequent requests
         self._login_nn = nn
         self._login_ee = ee
@@ -186,6 +206,9 @@ class TPLinkC50Client(TPLinkMRClient):
         self._authorized_at = datetime.now()
 
     def logout(self) -> None:
+        # Clear local session state.  The next authorize() creates a fresh
+        # HTTP session (new JSESSIONID), so no explicit HTTP logout request
+        # is needed — the router will time out the old server-side session.
         self._aes_key = None
         self._aes_iv = None
         self._login_nn = None
