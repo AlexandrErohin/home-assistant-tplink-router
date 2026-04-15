@@ -447,6 +447,146 @@ class TPLinkWR841NClient(TPLinkC50Client):
         except Exception:
             return False
 
+    def authorize(self) -> None:
+        """Override to add a GET / before login (WR841N requires it) and extra diagnostics."""
+        self._session = Session()
+        if not self._verify_ssl:
+            self._session.verify = False
+
+        # WR841N requires a GET / before login to establish a valid server-side session.
+        # Without this the router returns HTTP 500 for the login POST.
+        init_resp = self._session.get(
+            self.host + "/",
+            headers={
+                "Accept": "text/html,application/xhtml+xml,*/*",
+                "User-Agent": self._base_headers()["User-Agent"],
+                "Referer": self._base_headers()["Referer"],
+            },
+            timeout=self.timeout,
+            verify=self._verify_ssl,
+        )
+        if self._logger:
+            self._logger.warning(
+                "%s - authorize: GET / status=%s cookies=%s",
+                self.ROUTER_NAME,
+                init_resp.status_code,
+                dict(self._session.cookies),
+            )
+
+        nn, ee, seq = self._fetch_rsa_key()
+
+        if self._logger:
+            self._logger.warning(
+                "%s - authorize: getParm nn_len=%s seq=%s cookies=%s",
+                self.ROUTER_NAME,
+                len(nn),
+                seq,
+                dict(self._session.cookies),
+            )
+
+        ts = str(round(time() * 1000))
+        aes_key = (ts + str(randint(100_000_000, 999_999_999)))[:16]
+        aes_iv = (ts + str(randint(100_000_000, 999_999_999)))[:16]
+        pw_hash = md5(f"{self.username}{self.password}".encode()).hexdigest()
+
+        login_plain = (
+            f"8\r\n"
+            f"[/cgi/login#0,0,0,0,0,0#0,0,0,0,0,0]0,2\r\n"
+            f"username={self.username}\r\n"
+            f"password={self.password}\r\n"
+        )
+
+        enc_data = self._aes_enc(login_plain, aes_key, aes_iv)
+        sign = self._make_sign(
+            seq + len(enc_data),
+            is_login=True,
+            pw_hash=pw_hash,
+            nn=nn,
+            ee=ee,
+            aes_key=aes_key,
+            aes_iv=aes_iv,
+        )
+
+        body = f"sign={sign}\r\ndata={enc_data}\r\n"
+
+        if self._logger:
+            self._logger.warning(
+                "%s - authorize: sign_len=%s enc_data_len=%s sign_prefix=%s",
+                self.ROUTER_NAME,
+                len(sign),
+                len(enc_data),
+                sign[:32],
+            )
+
+        response = self._session.post(
+            f"{self.host}/cgi_gdpr",
+            headers=self._base_headers(),
+            data=body,
+            timeout=self.timeout,
+            stream=True,
+        )
+        raw = self._read_chunked(response)
+
+        if self._logger:
+            self._logger.warning(
+                "%s - authorize: login HTTP %s raw_len=%s raw_prefix=%s cookies=%s",
+                self.ROUTER_NAME,
+                response.status_code,
+                len(raw),
+                repr(raw[:120]),
+                dict(self._session.cookies),
+            )
+
+        if response.status_code != 200:
+            raise ClientException(
+                f"{self.ROUTER_NAME} - authorize: HTTP {response.status_code}"
+            )
+
+        try:
+            decrypted = self._aes_dec(raw, aes_key, aes_iv)
+        except Exception as exc:
+            raise ClientException(
+                f"{self.ROUTER_NAME} - authorize: AES decrypt failed: {exc}; "
+                f"raw_len={len(raw)} raw_prefix={repr(raw[:120])}"
+            ) from exc
+
+        if "$.ret=0" not in decrypted:
+            ret_match = re.search(r"\$\.ret=(\d+)", decrypted)
+            ret_code = int(ret_match.group(1)) if ret_match else -1
+            if ret_code == self.HTTP_ERR_USER_PWD_NOT_CORRECT:
+                raise AuthorizeError(
+                    f"{self.ROUTER_NAME} - Login failed: wrong password"
+                )
+            raise ClientException(
+                f"{self.ROUTER_NAME} - Login failed. Error code: {ret_code}"
+            )
+
+        root_resp = self._session.get(
+            self.host + "/",
+            headers={
+                "Accept": "text/html,application/xhtml+xml,*/*",
+                "User-Agent": self._base_headers()["User-Agent"],
+                "Referer": self._base_headers()["Referer"],
+            },
+            timeout=self.timeout,
+            verify=self._verify_ssl,
+        )
+        if self._logger:
+            self._logger.warning(
+                "%s - authorize: post-login GET / status=%s cookies=%s",
+                self.ROUTER_NAME,
+                root_resp.status_code,
+                dict(self._session.cookies),
+            )
+
+        self._login_nn = nn
+        self._login_ee = ee
+        self._login_seq = seq
+        self._aes_key = aes_key
+        self._aes_iv = aes_iv
+        self._token = "wr841n_session"
+        self._authorized_at = datetime.now()
+
     @staticmethod
     def _rsa_pkcs_encrypt(data: str, nn: str, ee: str) -> str:
         """Raw RSA encryption (no padding) — flag=0, 512-bit key."""
