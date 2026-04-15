@@ -622,7 +622,7 @@ class TPLinkWR841NClient(TPLinkC50Client):
             def __new__(cls, addr):
                 if not addr:
                     return None
-                return super().__new__(cls, addr)
+                return super().__new__(cls)  # addr goes to __init__, not __new__
 
         _orig = _mr.IPv4Address
         _mr.IPv4Address = _NullSafeIPv4Address
