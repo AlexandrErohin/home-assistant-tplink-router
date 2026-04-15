@@ -604,3 +604,29 @@ class TPLinkWR841NClient(TPLinkC50Client):
         m = int.from_bytes(m_bytes, "big")
         c = pow(m, e, n)
         return hex(c)[2:].zfill(block_size * 2)
+
+    def get_status(self):
+        """
+        Override to handle AP/bridge mode where the router returns an empty
+        externalIPAddress or defaultGateway.
+
+        The upstream tplinkrouterc6u library calls IPv4Address('') which raises
+        AddressValueError on any router not connected to WAN (AP mode, bridge
+        mode, etc.).  Temporarily replace IPv4Address in the mr module with a
+        null-safe version that returns None for empty strings, then restore it.
+        """
+        from ipaddress import IPv4Address
+        import tplinkrouterc6u.client.mr as _mr
+
+        class _NullSafeIPv4Address(IPv4Address):
+            def __new__(cls, addr):
+                if not addr:
+                    return None
+                return super().__new__(cls, addr)
+
+        _orig = _mr.IPv4Address
+        _mr.IPv4Address = _NullSafeIPv4Address
+        try:
+            return super().get_status()
+        finally:
+            _mr.IPv4Address = _orig
