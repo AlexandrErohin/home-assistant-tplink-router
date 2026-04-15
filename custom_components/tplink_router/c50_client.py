@@ -589,11 +589,18 @@ class TPLinkWR841NClient(TPLinkC50Client):
 
     @staticmethod
     def _rsa_pkcs_encrypt(data: str, nn: str, ee: str) -> str:
-        """Raw RSA encryption (no padding) — flag=0, 512-bit key."""
+        """
+        Raw RSA encryption (no padding) — flag=0, 512-bit key.
+
+        TP-Link flag=0 left-justifies the string in the block (data bytes
+        first, zeros at the end). This differs from PKCS#1 v1.5 (flag=1)
+        which right-justifies.
+        """
         n = int(nn, 16)
         e = int(ee, 16)
         block_size = (n.bit_length() + 7) // 8  # 64 bytes for 512-bit key
-        m_bytes = data.encode("utf-8").rjust(block_size, b"\x00")
+        # LEFT-justify: data bytes at the start, trailing zeros
+        m_bytes = data.encode("utf-8").ljust(block_size, b"\x00")
         m = int.from_bytes(m_bytes, "big")
         c = pow(m, e, n)
         return hex(c)[2:].zfill(block_size * 2)
