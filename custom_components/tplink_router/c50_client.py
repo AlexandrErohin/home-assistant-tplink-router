@@ -196,7 +196,7 @@ class TPLinkC50Client(TPLinkMRClient):
             verify=self._verify_ssl,
         )
         if self._logger:
-            self._logger.debug(
+            self._logger.warning(
                 "%s - authorize: GET / status=%s cookies=%s",
                 self.ROUTER_NAME,
                 root_resp.status_code,
@@ -250,7 +250,7 @@ class TPLinkC50Client(TPLinkMRClient):
         body = f"sign={sign}\r\ndata={enc_data}\r\n"
 
         if self._logger:
-            self._logger.debug(
+            self._logger.warning(
                 "%s - req_act: cookies=%s seq=%s enc_len=%s",
                 self.ROUTER_NAME,
                 dict(self._session.cookies),
@@ -270,7 +270,7 @@ class TPLinkC50Client(TPLinkMRClient):
             )
             raw = self._read_chunked(response)
             if self._logger:
-                self._logger.debug(
+                self._logger.warning(
                     "%s - req_act attempt %s: HTTP %s raw_len=%s raw_prefix=%s",
                     self.ROUTER_NAME,
                     attempt,
