@@ -76,7 +76,7 @@ class TPLinkC50Client(TPLinkMRClient):
     def supports(self) -> bool:
         """
         Return True when the router has INCLUDE_LOGIN_GDPR_ENCRYPT=1 *and*
-        a 512-bit RSA key — the combination that identifies this family.
+        a 512-bit RSA key *and* uses PKCS#1 v1.5 padding (flag=1).
 
         We intentionally do NOT attempt a full login here, because the parent
         class' supports() already does a plain RSA-key fetch and falsely
@@ -85,6 +85,10 @@ class TPLinkC50Client(TPLinkMRClient):
         Detection strategy:
         1. The RSA key must be exactly 512-bit (128 hex chars).
         2. The oid_str.js must declare INCLUDE_LOGIN_GDPR_ENCRYPT=1.
+        3. The tpEncrypt.js must use RSA flag=1 (PKCS#1 v1.5, 53-byte chunks).
+           Some routers (e.g. TL-WR841N) also have a 512-bit key and
+           INCLUDE_LOGIN_GDPR_ENCRYPT=1 but use flag=0 (raw RSA, 64-byte
+           chunks) and are handled by the standard MR client.
         """
         try:
             nn, _ee, _seq = self._fetch_rsa_key()
@@ -99,7 +103,18 @@ class TPLinkC50Client(TPLinkMRClient):
                 timeout=self.timeout,
                 verify=self._verify_ssl,
             )
-            return r.status_code == 200 and "INCLUDE_LOGIN_GDPR_ENCRYPT=1" in r.text
+            if not (r.status_code == 200 and "INCLUDE_LOGIN_GDPR_ENCRYPT=1" in r.text):
+                return False
+
+            # Confirm PKCS#1 v1.5 padding (flag=1) is used in tpEncrypt.js.
+            # Routers with flag=0 use raw RSA and are handled by the standard client.
+            r2 = self._session.get(
+                f"{self.host}/js/tpEncrypt.js",
+                headers=self._base_headers(),
+                timeout=self.timeout,
+                verify=self._verify_ssl,
+            )
+            return r2.status_code == 200 and "512,1" in r2.text
         except Exception:
             return False
 
