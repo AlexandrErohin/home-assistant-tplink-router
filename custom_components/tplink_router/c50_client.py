@@ -384,3 +384,61 @@ class TPLinkC50Client(TPLinkMRClient):
         except Exception:
             pass
         return raw.decode("utf-8", errors="replace")
+
+
+class TPLinkWR841NClient(TPLinkC50Client):
+    """
+    Client for GDPR-encrypted routers using raw RSA (flag=0, 512-bit key).
+
+    These routers share the same /cgi_gdpr + AES-128-CBC protocol as the C50
+    family, but use raw RSA (no PKCS#1 v1.5 padding) for the sign field:
+      - tpEncrypt.js: $.rsa.encrypt(..., 512, 0)  ← flag=0
+      - Block size: 64 bytes (full 512-bit key, no padding overhead)
+
+    Examples: TL-WR841N v14
+    """
+
+    ROUTER_NAME = "TP Link Router WR841N"
+
+    # Raw RSA: full 64-byte block (no PKCS#1 overhead)
+    _RSA_CHUNK = 64
+
+    def supports(self) -> bool:
+        """
+        Return True for GDPR-encrypted routers with a 512-bit key and raw
+        RSA (flag=0): INCLUDE_LOGIN_GDPR_ENCRYPT=1 and "512,0" in tpEncrypt.js.
+        """
+        try:
+            nn, _ee, _seq = self._fetch_rsa_key()
+            if len(nn) != self._RSA_KEY_HEX_LEN:
+                return False
+
+            r = self._session.get(
+                f"{self.host}/js/oid_str.js",
+                headers=self._base_headers(),
+                timeout=self.timeout,
+                verify=self._verify_ssl,
+            )
+            if not (r.status_code == 200 and "INCLUDE_LOGIN_GDPR_ENCRYPT=1" in r.text):
+                return False
+
+            r2 = self._session.get(
+                f"{self.host}/js/tpEncrypt.js",
+                headers=self._base_headers(),
+                timeout=self.timeout,
+                verify=self._verify_ssl,
+            )
+            return r2.status_code == 200 and "512,0" in r2.text
+        except Exception:
+            return False
+
+    @staticmethod
+    def _rsa_pkcs_encrypt(data: str, nn: str, ee: str) -> str:
+        """Raw RSA encryption (no padding) — flag=0, 512-bit key."""
+        n = int(nn, 16)
+        e = int(ee, 16)
+        block_size = (n.bit_length() + 7) // 8  # 64 bytes for 512-bit key
+        m_bytes = data.encode("utf-8").rjust(block_size, b"\x00")
+        m = int.from_bytes(m_bytes, "big")
+        c = pow(m, e, n)
+        return hex(c)[2:].zfill(block_size * 2)

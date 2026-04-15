@@ -19,7 +19,7 @@ from .const import (
     DOMAIN,
     DEFAULT_NAME,
 )
-from .c50_client import TPLinkC50Client
+from .c50_client import TPLinkC50Client, TPLinkWR841NClient
 
 
 class TPLinkRouterCoordinator(DataUpdateCoordinator):
@@ -65,15 +65,23 @@ class TPLinkRouterCoordinator(DataUpdateCoordinator):
     @staticmethod
     def _get_client_sync(host: str, password: str, username: str, logger: Logger,
                          verify_ssl: bool) -> AbstractRouter:
-        # Try C50 client first: it has a 512-bit RSA key and uses PKCS#1 v1.5
-        # encryption. The standard MR client falsely claims support for this
-        # family because they share the same /cgi/getParm endpoint, but the
-        # MR login then fails with error 71234 (HTTP_ERR_USER_BAD_REQUEST).
+        # Try C50 client first: 512-bit key + PKCS#1 v1.5 (flag=1).
+        # The standard MR client falsely claims support for GDPR-encrypted
+        # families because they share the same /cgi/getParm endpoint, but its
+        # 1024-bit RSA login then fails with error 71234.
         c50 = TPLinkC50Client(host, password, username, logger, verify_ssl)
         if c50.supports():
             if logger:
                 logger.debug("TPLinkC50Client: supports() passed for %s", host)
             return c50
+
+        # Try WR841N client next: 512-bit key + raw RSA (flag=0).
+        wr841n = TPLinkWR841NClient(host, password, username, logger, verify_ssl)
+        if wr841n.supports():
+            if logger:
+                logger.debug("TPLinkWR841NClient: supports() passed for %s", host)
+            return wr841n
+
         return TplinkRouterProvider.get_client(host, password, username, logger, verify_ssl)
 
     @staticmethod
