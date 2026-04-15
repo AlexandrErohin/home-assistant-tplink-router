@@ -248,6 +248,9 @@ To do that:
 - Archer BE550 v1.0
 - Archer BE800 v1.0
 - Archer BE805 (v1.0, v1.20)
+- Archer A5 v6 (via C50 client)
+- Archer C50 v4 (via C50 client)
+- Archer C55 (via C50 client)
 - Archer C1200 (v1.0, v2.0)
 - Archer C2300 (v1.0, v2.0)
 - Archer C24 (1.0, 2.0)

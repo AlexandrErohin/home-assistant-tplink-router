@@ -19,6 +19,7 @@ from .const import (
     DOMAIN,
     DEFAULT_NAME,
 )
+from .c50_client import TPLinkC50Client
 
 
 class TPLinkRouterCoordinator(DataUpdateCoordinator):
@@ -62,10 +63,25 @@ class TPLinkRouterCoordinator(DataUpdateCoordinator):
         )
 
     @staticmethod
+    def _get_client_sync(host: str, password: str, username: str, logger: Logger,
+                         verify_ssl: bool) -> AbstractRouter:
+        # Try C50 client first: it has a 512-bit RSA key and uses PKCS#1 v1.5
+        # encryption. The standard MR client falsely claims support for this
+        # family because they share the same /cgi/getParm endpoint, but the
+        # MR login then fails with error 71234 (HTTP_ERR_USER_BAD_REQUEST).
+        c50 = TPLinkC50Client(host, password, username, logger, verify_ssl)
+        if c50.supports():
+            if logger:
+                logger.debug("TPLinkC50Client: supports() passed for %s", host)
+            return c50
+        return TplinkRouterProvider.get_client(host, password, username, logger, verify_ssl)
+
+    @staticmethod
     async def get_client(hass: HomeAssistant, host: str, password: str, username: str, logger: Logger,
                          verify_ssl: bool) -> AbstractRouter:
-        return await hass.async_add_executor_job(TplinkRouterProvider.get_client, host, password, username,
-                                                 logger, verify_ssl)
+        return await hass.async_add_executor_job(
+            TPLinkRouterCoordinator._get_client_sync, host, password, username, logger, verify_ssl
+        )
 
     @staticmethod
     def request(router: AbstractRouter, callback: Callable):
