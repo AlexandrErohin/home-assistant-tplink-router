@@ -12,6 +12,7 @@ from .const import DOMAIN
 from homeassistant.helpers.update_coordinator import CoordinatorEntity
 from .coordinator import TPLinkRouterCoordinator
 from tplinkrouterc6u import Connection
+from . import vpn
 
 
 @dataclass
@@ -115,6 +116,16 @@ async def async_setup_entry(
 
     switches.append(TPLinkRouterScanEntity(coordinator))
 
+    if coordinator.vpn_status is not None:
+        vpn_desc = SwitchEntityDescription(
+            key="vpn_client",
+            name="VPN Client",
+            icon="mdi:vpn",
+            entity_category=EntityCategory.CONFIG,
+        )
+        switches.append(TPLinkVpnClientSwitch(coordinator, vpn_desc))
+        vpn.setup_vpn_entities(coordinator, entry, async_add_entities)
+
     async_add_entities(switches, False)
 
 
@@ -187,4 +198,26 @@ class TPLinkRouterScanEntity(
     async def async_turn_off(self, **kwargs: Any) -> None:
         """Turn the entity off."""
         self.coordinator.scan_stopped_at = datetime.now()
+        self.async_write_ha_state()
+
+
+class TPLinkVpnClientSwitch(TPLinkRouterSwitchEntity):
+    """Switch for the global VPN client toggle."""
+
+    @property
+    def is_on(self) -> bool:
+        return self.coordinator.vpn_status.enabled
+
+    @property
+    def available(self) -> bool:
+        return self.coordinator.vpn_status is not None
+
+    async def async_turn_on(self, **kwargs: Any) -> None:
+        await self.coordinator.set_vpn_client(True)
+        self.coordinator.vpn_status.enabled = True
+        self.async_write_ha_state()
+
+    async def async_turn_off(self, **kwargs: Any) -> None:
+        await self.coordinator.set_vpn_client(False)
+        self.coordinator.vpn_status.enabled = False
         self.async_write_ha_state()
