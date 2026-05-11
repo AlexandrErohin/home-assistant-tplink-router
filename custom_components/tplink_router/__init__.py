@@ -56,8 +56,9 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
                 pass
         return firm, stat, lte_stat, vpn_stat
 
-    firmware, status, lte_status, vpn_status = await hass.async_add_executor_job(TPLinkRouterCoordinator.request, client, callback)
-
+    firmware, status, lte_status, vpn_status = await hass.async_add_executor_job(
+        TPLinkRouterCoordinator.request, client, callback
+    )
     # Create device coordinator and fetch data
     coordinator = TPLinkRouterCoordinator(hass, client, entry.data[CONF_SCAN_INTERVAL], firmware, status,
                                           lte_status, _LOGGER, entry.entry_id, vpn_status)

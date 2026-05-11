@@ -34,6 +34,8 @@ If you forget to enable it back - it would be automatically enable after 20 minu
  - 2.4Ghz IoT wifi network Enable/Disable
  - 5Ghz IoT wifi network Enable/Disable
  - 6Ghz IoT wifi network Enable/Disable
+ - VPN Client (for some routers)
+ - Control VPN Server List (for some routers)
 
 ### Sensors
  - Total amount of wired clients
