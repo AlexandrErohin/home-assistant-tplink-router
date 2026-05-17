@@ -12,7 +12,7 @@ from .const import DOMAIN
 from homeassistant.helpers.update_coordinator import CoordinatorEntity
 from .coordinator import TPLinkRouterCoordinator
 from tplinkrouterc6u import Connection
-from . import vpn
+from . import vpn_client
 
 
 @dataclass
@@ -116,7 +116,7 @@ async def async_setup_entry(
 
     switches.append(TPLinkRouterScanEntity(coordinator))
 
-    if coordinator.vpn_status is not None:
+    if coordinator.vpn_client_status is not None:
         vpn_desc = SwitchEntityDescription(
             key="vpn_client",
             name="VPN Client",
@@ -124,7 +124,7 @@ async def async_setup_entry(
             entity_category=EntityCategory.CONFIG,
         )
         switches.append(TPLinkVpnClientSwitch(coordinator, vpn_desc))
-        vpn.setup_vpn_entities(coordinator, entry, async_add_entities)
+        vpn_client.setup_vpn_entities(coordinator, entry, async_add_entities)
 
     async_add_entities(switches, False)
 
@@ -206,18 +206,18 @@ class TPLinkVpnClientSwitch(TPLinkRouterSwitchEntity):
 
     @property
     def is_on(self) -> bool:
-        return self.coordinator.vpn_status.enabled
+        return self.coordinator.vpn_client_status.enabled
 
     @property
     def available(self) -> bool:
-        return self.coordinator.vpn_status is not None
+        return self.coordinator.vpn_client_status is not None
 
     async def async_turn_on(self, **kwargs: Any) -> None:
         await self.coordinator.set_vpn_client(True)
-        self.coordinator.vpn_status.enabled = True
+        self.coordinator.vpn_client_status.enabled = True
         self.async_write_ha_state()
 
     async def async_turn_off(self, **kwargs: Any) -> None:
         await self.coordinator.set_vpn_client(False)
-        self.coordinator.vpn_status.enabled = False
+        self.coordinator.vpn_client_status.enabled = False
         self.async_write_ha_state()

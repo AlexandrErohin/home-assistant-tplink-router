@@ -33,7 +33,8 @@ class TPLinkRouterCoordinator(DataUpdateCoordinator):
             lte_status: LTEStatus | None,
             logger: Logger,
             unique_id: str,
-            vpn_status: VpnClientStatus | None = None,
+            # vpn_status: VpnStatus | None = None,
+            vpn_client_status: VpnClientStatus | None = None,
     ) -> None:
         self.router = router
         self.unique_id = unique_id
@@ -51,7 +52,7 @@ class TPLinkRouterCoordinator(DataUpdateCoordinator):
             hw_version=firmware.hardware_version,
         )
 
-        self.vpn_status: VpnClientStatus | None = vpn_status
+        self.vpn_client_status: VpnClientStatus | None = vpn_client_status
 
         self.scan_stopped_at: datetime | None = None
         self._last_update_time: datetime | None = None
@@ -121,13 +122,13 @@ class TPLinkRouterCoordinator(DataUpdateCoordinator):
                 self.router,
                 self.router.get_lte_status,
             )
-        if self.vpn_status is not None:
-            new_vpn_status = await self.hass.async_add_executor_job(
+        if self.vpn_client_status is not None:
+            new_vpn_client_status = await self.hass.async_add_executor_job(
                 TPLinkRouterCoordinator.request, self.router, self.router.get_vpn_client_status
             )
-            self.vpn_status.enabled = new_vpn_status.enabled
-            self.vpn_status.servers = new_vpn_status.servers
-            self.vpn_status.devices = new_vpn_status.devices
+            self.vpn_client_status.enabled = new_vpn_client_status.enabled
+            self.vpn_client_status.servers = new_vpn_client_status.servers
+            self.vpn_client_status.devices = new_vpn_client_status.devices
         await self._update_new_sms()
         self._last_update_time = datetime.now()
 
