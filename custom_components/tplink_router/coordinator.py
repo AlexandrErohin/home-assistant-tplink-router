@@ -13,6 +13,7 @@ from tplinkrouterc6u import (
     LTEStatus,
     SMS,
     VpnClientStatus,
+    VPNStatus
 )
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers.device_registry import CONNECTION_NETWORK_MAC, DeviceInfo
@@ -33,7 +34,7 @@ class TPLinkRouterCoordinator(DataUpdateCoordinator):
             lte_status: LTEStatus | None,
             logger: Logger,
             unique_id: str,
-            # vpn_status: VpnStatus | None = None,
+            vpn_server_status: VPNStatus | None = None,
             vpn_client_status: VpnClientStatus | None = None,
     ) -> None:
         self.router = router
@@ -52,7 +53,8 @@ class TPLinkRouterCoordinator(DataUpdateCoordinator):
             hw_version=firmware.hardware_version,
         )
 
-        self.vpn_client_status: VpnClientStatus | None = vpn_client_status
+        self.vpn_server_status = vpn_server_status
+        self.vpn_client_status = vpn_client_status
 
         self.scan_stopped_at: datetime | None = None
         self._last_update_time: datetime | None = None
@@ -122,13 +124,15 @@ class TPLinkRouterCoordinator(DataUpdateCoordinator):
                 self.router,
                 self.router.get_lte_status,
             )
+        if self.vpn_server_status is not None:
+            self.vpn_server_status = await self.hass.async_add_executor_job(
+                TPLinkRouterCoordinator.request, self.router, self.router.get_vpn_status
+            )
         if self.vpn_client_status is not None:
-            new_vpn_client_status = await self.hass.async_add_executor_job(
+            self.vpn_client_status = await self.hass.async_add_executor_job(
                 TPLinkRouterCoordinator.request, self.router, self.router.get_vpn_client_status
             )
-            self.vpn_client_status.enabled = new_vpn_client_status.enabled
-            self.vpn_client_status.servers = new_vpn_client_status.servers
-            self.vpn_client_status.devices = new_vpn_client_status.devices
+        
         await self._update_new_sms()
         self._last_update_time = datetime.now()
 

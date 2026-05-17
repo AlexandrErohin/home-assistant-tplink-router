@@ -48,20 +48,28 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
                 lte_stat = client.get_lte_status()
             except Exception:
                 pass
+        # Check if router is vpn_server compatible
+        vpn_server_stat = None
+        if hasattr(client, "get_vpn_status"):
+            try:
+                vpn_server_stat = client.get_vpn_status()
+            except Exception:
+                pass
+        # Check if router is vpn_client compatible
         vpn_client_stat = None
         if hasattr(client, "get_vpn_client_status"):
             try:
                 vpn_client_stat = client.get_vpn_client_status()
             except Exception:
                 pass
-        return firm, stat, lte_stat, vpn_client_stat
+        return firm, stat, lte_stat, vpn_server_stat, vpn_client_stat 
 
-    firmware, status, lte_status, vpn_client_status = await hass.async_add_executor_job(
+    firmware, status, lte_status, vpn_server_stat, vpn_client_status = await hass.async_add_executor_job(
         TPLinkRouterCoordinator.request, client, callback
     )
     # Create device coordinator and fetch data
     coordinator = TPLinkRouterCoordinator(hass, client, entry.data[CONF_SCAN_INTERVAL], firmware, status,
-                                          lte_status, _LOGGER, entry.entry_id, vpn_client_status)
+                                          lte_status, _LOGGER, entry.entry_id, vpn_server_stat, vpn_client_status)
 
     await coordinator.async_config_entry_first_refresh()
     _async_add_listeners(hass, coordinator)
