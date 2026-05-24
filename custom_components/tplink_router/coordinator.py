@@ -72,6 +72,10 @@ class TPLinkRouterCoordinator(DataUpdateCoordinator):
                                                  logger, verify_ssl)
 
     @staticmethod
+    def get_client_by_class(client_class: str) -> AbstractRouter:
+        return TplinkRouterProvider.get_clients()[client_class]
+
+    @staticmethod
     def request(router: AbstractRouter, callback: Callable):
         router.authorize()
         try:

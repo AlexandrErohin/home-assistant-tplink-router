@@ -8,7 +8,7 @@ from homeassistant.const import (
 )
 from homeassistant.core import HomeAssistant, ServiceCall
 from homeassistant.config_entries import ConfigEntry
-from .const import DOMAIN, DEFAULT_USER, EVENT_NEW_SMS
+from .const import DOMAIN, DEFAULT_USER, EVENT_NEW_SMS, CONF_CLENT_CLASS
 import logging
 from .coordinator import TPLinkRouterCoordinator
 from homeassistant.helpers import device_registry
@@ -29,14 +29,30 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     if not (host.startswith('http://') or host.startswith('https://')):
         host = "http://{}".format(host)
     verify_ssl = entry.data[CONF_VERIFY_SSL] if CONF_VERIFY_SSL in entry.data else True
-    client = await TPLinkRouterCoordinator.get_client(
-        hass=hass,
-        host=host,
-        password=entry.data[CONF_PASSWORD],
-        username=entry.data.get(CONF_USERNAME, DEFAULT_USER),
-        logger=_LOGGER,
-        verify_ssl=verify_ssl
-    )
+    client_class = entry.data.get(CONF_CLENT_CLASS)
+    if not client_class:
+        client = await TPLinkRouterCoordinator.get_client(
+            hass=hass,
+            host=host,
+            password=entry.data[CONF_PASSWORD],
+            username=entry.data.get(CONF_USERNAME, DEFAULT_USER),
+            logger=_LOGGER,
+            verify_ssl=verify_ssl
+        )
+        new_data = dict(entry.data)
+        new_data[CONF_CLENT_CLASS] = client.__class__.__name__
+        hass.config_entries.async_update_entry(
+            entry,
+            data=new_data,
+        )
+    else:
+        client = TPLinkRouterCoordinator.get_client_by_class(client_class)(
+            host=host,
+            password=entry.data[CONF_PASSWORD],
+            username=entry.data.get(CONF_USERNAME, DEFAULT_USER),
+            logger=_LOGGER,
+            verify_ssl=verify_ssl
+        )
 
     def callback():
         firm = client.get_firmware()

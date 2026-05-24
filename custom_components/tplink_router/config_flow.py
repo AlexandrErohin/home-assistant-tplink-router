@@ -5,7 +5,7 @@ from homeassistant import config_entries
 from homeassistant.core import callback
 import homeassistant.helpers.config_validation as cv
 from homeassistant.data_entry_flow import FlowResult
-from .const import DOMAIN, DEFAULT_USER, DEFAULT_HOST
+from .const import DOMAIN, DEFAULT_USER, DEFAULT_HOST, CONF_CLENT_CLASS
 from .coordinator import TPLinkRouterCoordinator
 from homeassistant.const import (
     CONF_HOST,
@@ -42,6 +42,7 @@ class ConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
                     verify_ssl=user_input[CONF_VERIFY_SSL],
                 )
                 await self.hass.async_add_executor_job(router.authorize)
+                user_input[CONF_CLENT_CLASS] = router.__class__.__name__
                 return self.async_create_entry(title=user_input["host"], data=user_input)
             except Exception as error:
                 _LOGGER.error('TplinkRouter Integration Exception - {}'.format(error))
@@ -81,6 +82,7 @@ class OptionsFlow(config_entries.OptionsFlowWithConfigEntry):
                     verify_ssl=user_input[CONF_VERIFY_SSL],
                 )
                 await self.hass.async_add_executor_job(router.authorize)
+                user_input[CONF_CLENT_CLASS] = router.__class__.__name__
                 self.hass.config_entries.async_update_entry(self.config_entry, data=user_input)
                 return self.async_create_entry(title=user_input["host"], data=user_input)
             except Exception as error:

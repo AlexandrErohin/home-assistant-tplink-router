@@ -1,5 +1,6 @@
 DEFAULT_NAME = "TP-Link Router"
 DOMAIN = "tplink_router"
+CONF_CLENT_CLASS = "client_class"
 DEFAULT_USER = "admin"
 DEFAULT_HOST = "http://192.168.0.1"
 
