@@ -5,6 +5,7 @@ from logging import Logger
 from collections.abc import Callable
 from homeassistant.helpers.update_coordinator import DataUpdateCoordinator
 from tplinkrouterc6u import (
+    VPN,
     TplinkRouterProvider,
     AbstractRouter,
     Firmware,
@@ -93,6 +94,11 @@ class TPLinkRouterCoordinator(DataUpdateCoordinator):
         def callback():
             self.router.set_wifi(wifi, enable)
 
+        await self.hass.async_add_executor_job(TPLinkRouterCoordinator.request, self.router, callback)
+
+    async def set_vpn_server(self, kind: VPN, enable: bool) -> None:
+        def callback():
+            self.router.set_vpn(kind, enable)
         await self.hass.async_add_executor_job(TPLinkRouterCoordinator.request, self.router, callback)
 
     async def set_vpn_client(self, enable: bool) -> None:
