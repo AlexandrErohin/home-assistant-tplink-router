@@ -22,18 +22,20 @@ class TPLinkRouterSwitchConfigBase:
     property: str
     coordinator_key: str
 
+
 @dataclass
 class TPLinkRouterStatusSwitchConfig(TPLinkRouterSwitchConfigBase):
     coordinator_key: str = 'status'
+
 
 @dataclass
 class TPLinkRouterVPNServerSwitchConfig(TPLinkRouterSwitchConfigBase):
     coordinator_key: str = 'vpn_server_status'
 
+
 @dataclass
 class TPLinkRouterVPNClientSwitchConfig(TPLinkRouterSwitchConfigBase):
     coordinator_key: str = 'vpn_client_status'
-
 
 
 STATUS_SWITCH_TYPES = (
@@ -274,4 +276,3 @@ class TPLinkRouterScanEntity(
         """Turn the entity off."""
         self.coordinator.scan_stopped_at = datetime.now()
         self.async_write_ha_state()
-

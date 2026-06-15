@@ -142,7 +142,7 @@ class TPLinkRouterCoordinator(DataUpdateCoordinator):
             self.vpn_client_status = await self.hass.async_add_executor_job(
                 TPLinkRouterCoordinator.request, self.router, self.router.get_vpn_client_status
             )
-        
+
         await self._update_new_sms()
         self._last_update_time = datetime.now()
 

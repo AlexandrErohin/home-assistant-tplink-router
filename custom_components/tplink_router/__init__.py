@@ -78,7 +78,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
                 vpn_client_stat = client.get_vpn_client_status()
             except Exception:
                 pass
-        return firm, stat, lte_stat, vpn_server_stat, vpn_client_stat 
+        return firm, stat, lte_stat, vpn_server_stat, vpn_client_stat
 
     firmware, status, lte_status, vpn_server_stat, vpn_client_status = await hass.async_add_executor_job(
         TPLinkRouterCoordinator.request, client, callback
