@@ -21,7 +21,7 @@ def setup_vpn_entities(
     def coordinator_updated() -> None:
         new_entities = []
 
-        for server in coordinator.vpn_status.servers:
+        for server in coordinator.vpn_client_status.servers:
             if server.id not in tracked_servers:
                 entity = TPLinkVpnServerSwitch(coordinator, server)
                 tracked_servers[server.id] = entity
@@ -29,7 +29,7 @@ def setup_vpn_entities(
             else:
                 tracked_servers[server.id].server = server
 
-        for device in coordinator.vpn_status.devices:
+        for device in coordinator.vpn_client_status.devices:
             if device.macaddr not in tracked_devices:
                 entity = TPLinkVpnDeviceSwitch(coordinator, device)
                 tracked_devices[device.macaddr] = entity
@@ -70,7 +70,7 @@ class TPLinkVpnServerSwitch(CoordinatorEntity[TPLinkRouterCoordinator], SwitchEn
     @property
     def available(self) -> bool:
         return super().available and any(
-            s.id == self._server_id for s in self.coordinator.vpn_status.servers
+            s.id == self._server_id for s in self.coordinator.vpn_client_status.servers
         )
 
     @property
@@ -96,7 +96,7 @@ class TPLinkVpnServerSwitch(CoordinatorEntity[TPLinkRouterCoordinator], SwitchEn
     @callback
     def _handle_coordinator_update(self) -> None:
         found = next(
-            (s for s in self.coordinator.vpn_status.servers if s.id == self._server_id), None
+            (s for s in self.coordinator.vpn_client_status.servers if s.id == self._server_id), None
         )
         if found is not None:
             self.server = found
@@ -131,7 +131,7 @@ class TPLinkVpnDeviceSwitch(CoordinatorEntity[TPLinkRouterCoordinator], SwitchEn
     @property
     def available(self) -> bool:
         return super().available and any(
-            d.macaddr == self._mac for d in self.coordinator.vpn_status.devices
+            d.macaddr == self._mac for d in self.coordinator.vpn_client_status.devices
         )
 
     async def async_turn_on(self, **kwargs: Any) -> None:
@@ -147,7 +147,7 @@ class TPLinkVpnDeviceSwitch(CoordinatorEntity[TPLinkRouterCoordinator], SwitchEn
     @callback
     def _handle_coordinator_update(self) -> None:
         found = next(
-            (d for d in self.coordinator.vpn_status.devices if d.macaddr == self._mac), None
+            (d for d in self.coordinator.vpn_client_status.devices if d.macaddr == self._mac), None
         )
         if found is not None:
             self.device = found
