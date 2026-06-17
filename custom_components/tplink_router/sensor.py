@@ -6,7 +6,7 @@ from homeassistant.components.sensor import (
     SensorEntity,
     SensorEntityDescription,
 )
-from homeassistant.const import PERCENTAGE, SIGNAL_STRENGTH_DECIBELS_MILLIWATT, UnitOfDataRate, UnitOfInformation
+from homeassistant.const import PERCENTAGE, SIGNAL_STRENGTH_DECIBELS_MILLIWATT, UnitOfDataRate, UnitOfInformation, UnitOfFrequency
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import HomeAssistant, callback
 from .const import DOMAIN
@@ -36,6 +36,42 @@ class TPLinkRouterLTESensorConfig(TPLinkRouterSensorConfigBase[LTEStatus]):
 @dataclass
 class TPLinkRouterVPNServerSensorConfig(TPLinkRouterSensorConfigBase[VPNStatus]):
     sensor_type: str = "vpn_server_status"
+
+
+@dataclass
+class TPLinkRouterServingCellSensorConfig(TPLinkRouterSensorConfigBase[list]):
+    sensor_type: str = "serving_cells"
+
+
+# --- Serving cell helpers ---
+_NT_NR = '8'
+_NT_LTE_PLUS = '7'
+_NT_LTE = '3'
+
+
+def _sc(cells, nt):
+    if not cells:
+        return None
+    return next((c for c in cells if c.get('networkType') == nt), None)
+
+
+def _scf(cells, nt, field, transform=None):
+    c = _sc(cells, nt)
+    if c is None:
+        return None
+    raw = c.get(field)
+    if raw is None or raw == '' or raw == '268435455':
+        return None
+    return transform(raw) if transform else raw
+
+
+def _active_bands(cells):
+    if not cells:
+        return None
+    prefix = {_NT_LTE: 'B', _NT_LTE_PLUS: 'B', _NT_NR: 'N'}
+    parts = [f"{prefix[nt]}{_sc(cells, nt)['band']}"
+             for nt in (_NT_LTE, _NT_LTE_PLUS, _NT_NR) if _sc(cells, nt)]
+    return '+'.join(parts) if parts else None
 
 
 SENSOR_TYPES = (
@@ -276,6 +312,159 @@ LTE_SENSOR_TYPES = (
     ),
 )
 
+SERVING_CELL_SENSOR_TYPES = (
+    # Overview
+    TPLinkRouterServingCellSensorConfig(
+        value=lambda cells: _active_bands(cells),
+        description=SensorEntityDescription(
+            key="cell_active_bands",
+            name="Active Bands",
+            icon="mdi:antenna",
+        ),
+    ),
+    # 5G NR cell
+    TPLinkRouterServingCellSensorConfig(
+        value=lambda cells: _scf(cells, _NT_NR, 'band', int),
+        description=SensorEntityDescription(
+            key="cell_nr_band",
+            name="NR Band",
+            icon="mdi:antenna",
+            state_class=SensorStateClass.MEASUREMENT,
+        ),
+    ),
+    TPLinkRouterServingCellSensorConfig(
+        value=lambda cells: _scf(cells, _NT_NR, 'ARFCN', int),
+        description=SensorEntityDescription(
+            key="cell_nr_arfcn",
+            name="NR-ARFCN",
+            icon="mdi:antenna",
+            state_class=SensorStateClass.MEASUREMENT,
+        ),
+    ),
+    TPLinkRouterServingCellSensorConfig(
+        value=lambda cells: _scf(cells, _NT_NR, 'downBandWidth', lambda v: int(v) // 1000),
+        description=SensorEntityDescription(
+            key="cell_nr_dl_bandwidth",
+            name="NR DL Bandwidth",
+            icon="mdi:antenna",
+            state_class=SensorStateClass.MEASUREMENT,
+            native_unit_of_measurement=UnitOfFrequency.MEGAHERTZ,
+        ),
+    ),
+    TPLinkRouterServingCellSensorConfig(
+        value=lambda cells: _scf(cells, _NT_NR, 'downFreq', int),
+        description=SensorEntityDescription(
+            key="cell_nr_dl_freq",
+            name="NR DL Frequency",
+            icon="mdi:antenna",
+            state_class=SensorStateClass.MEASUREMENT,
+            native_unit_of_measurement=UnitOfFrequency.MEGAHERTZ,
+        ),
+    ),
+    TPLinkRouterServingCellSensorConfig(
+        value=lambda cells: _scf(cells, _NT_NR, 'downlinkModType'),
+        description=SensorEntityDescription(
+            key="cell_nr_dl_mod",
+            name="NR DL Modulation",
+            icon="mdi:sine-wave",
+        ),
+    ),
+    TPLinkRouterServingCellSensorConfig(
+        value=lambda cells: _scf(cells, _NT_NR, 'uplinkModType'),
+        description=SensorEntityDescription(
+            key="cell_nr_ul_mod",
+            name="NR UL Modulation",
+            icon="mdi:sine-wave",
+        ),
+    ),
+    TPLinkRouterServingCellSensorConfig(
+        value=lambda cells: _scf(cells, _NT_NR, 'CQI', int),
+        description=SensorEntityDescription(
+            key="cell_nr_cqi",
+            name="NR CQI",
+            icon="mdi:antenna",
+            state_class=SensorStateClass.MEASUREMENT,
+        ),
+    ),
+    TPLinkRouterServingCellSensorConfig(
+        value=lambda cells: _scf(cells, _NT_NR, 'RI', int),
+        description=SensorEntityDescription(
+            key="cell_nr_ri",
+            name="NR RI",
+            icon="mdi:antenna",
+            state_class=SensorStateClass.MEASUREMENT,
+        ),
+    ),
+    TPLinkRouterServingCellSensorConfig(
+        value=lambda cells: _scf(cells, _NT_NR, 'numRbs', int),
+        description=SensorEntityDescription(
+            key="cell_nr_num_rbs",
+            name="NR Resource Blocks",
+            icon="mdi:antenna",
+            state_class=SensorStateClass.MEASUREMENT,
+        ),
+    ),
+    # LTE anchor cell
+    TPLinkRouterServingCellSensorConfig(
+        value=lambda cells: _scf(cells, _NT_LTE, 'band', int),
+        description=SensorEntityDescription(
+            key="cell_lte_band",
+            name="LTE Anchor Band",
+            icon="mdi:antenna",
+            state_class=SensorStateClass.MEASUREMENT,
+        ),
+    ),
+    TPLinkRouterServingCellSensorConfig(
+        value=lambda cells: _scf(cells, _NT_LTE, 'ARFCN', int),
+        description=SensorEntityDescription(
+            key="cell_lte_arfcn",
+            name="LTE E-ARFCN",
+            icon="mdi:antenna",
+            state_class=SensorStateClass.MEASUREMENT,
+        ),
+    ),
+    TPLinkRouterServingCellSensorConfig(
+        value=lambda cells: _scf(cells, _NT_LTE, 'downBandWidth', lambda v: int(v) // 1000),
+        description=SensorEntityDescription(
+            key="cell_lte_dl_bandwidth",
+            name="LTE Anchor DL Bandwidth",
+            icon="mdi:antenna",
+            state_class=SensorStateClass.MEASUREMENT,
+            native_unit_of_measurement=UnitOfFrequency.MEGAHERTZ,
+        ),
+    ),
+    TPLinkRouterServingCellSensorConfig(
+        value=lambda cells: _scf(cells, _NT_LTE, 'downFreq', int),
+        description=SensorEntityDescription(
+            key="cell_lte_dl_freq",
+            name="LTE Anchor DL Frequency",
+            icon="mdi:antenna",
+            state_class=SensorStateClass.MEASUREMENT,
+            native_unit_of_measurement=UnitOfFrequency.MEGAHERTZ,
+        ),
+    ),
+    TPLinkRouterServingCellSensorConfig(
+        value=lambda cells: _scf(cells, _NT_LTE, 'RSRP', int),
+        description=SensorEntityDescription(
+            key="cell_lte_rsrp",
+            name="LTE Anchor RSRP",
+            icon="mdi:antenna",
+            state_class=SensorStateClass.MEASUREMENT,
+            native_unit_of_measurement=SIGNAL_STRENGTH_DECIBELS_MILLIWATT,
+        ),
+    ),
+    TPLinkRouterServingCellSensorConfig(
+        value=lambda cells: _scf(cells, _NT_LTE, 'RSRQ', int),
+        description=SensorEntityDescription(
+            key="cell_lte_rsrq",
+            name="LTE Anchor RSRQ",
+            icon="mdi:antenna",
+            state_class=SensorStateClass.MEASUREMENT,
+            native_unit_of_measurement=SIGNAL_STRENGTH_DECIBELS_MILLIWATT,
+        ),
+    ),
+)
+
 VPN_SERVER_SENSOR_TYPES = (
     TPLinkRouterVPNServerSensorConfig(
         value=lambda status: status.openvpn_clients_total,
@@ -310,6 +499,10 @@ async def async_setup_entry(
 
     if coordinator.lte_status is not None:
         for sensor in LTE_SENSOR_TYPES:
+            sensors.append(TPLinkRouterSensor(coordinator, sensor))
+
+    if coordinator.lte_status is not None and hasattr(coordinator.router, 'req_act'):
+        for sensor in SERVING_CELL_SENSOR_TYPES:
             sensors.append(TPLinkRouterSensor(coordinator, sensor))
 
     if coordinator.vpn_server_status is not None:

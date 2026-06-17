@@ -43,6 +43,7 @@ class TPLinkRouterCoordinator(DataUpdateCoordinator):
         self.status = status
         self.tracked = {}
         self.lte_status = lte_status
+        self.serving_cells: list[dict] | None = None
         self.device_info = DeviceInfo(
             configuration_url=router.host,
             connections={(CONNECTION_NETWORK_MAC, self.status.lan_macaddr)},
@@ -134,6 +135,13 @@ class TPLinkRouterCoordinator(DataUpdateCoordinator):
                 self.router,
                 self.router.get_lte_status,
             )
+        if self.lte_status is not None and hasattr(self.router, 'req_act'):
+            router = self.router
+            self.serving_cells = await self.hass.async_add_executor_job(
+                TPLinkRouterCoordinator.request,
+                router,
+                lambda: TPLinkRouterCoordinator._fetch_serving_cells(router),
+            )
         if self.vpn_server_status is not None:
             self.vpn_server_status = await self.hass.async_add_executor_job(
                 TPLinkRouterCoordinator.request, self.router, self.router.get_vpn_status
@@ -161,6 +169,12 @@ class TPLinkRouterCoordinator(DataUpdateCoordinator):
                 new_items.append(sms)
 
         self.new_sms = new_items
+
+    @staticmethod
+    def _fetch_serving_cells(router) -> list[dict]:
+        acts = [router.ActItem(router.ActItem.GL, 'DEV2_LTE_SERVING_CELL_INFO')]
+        _, values = router.req_act(acts)
+        return [c for c in (values[0] if values else []) if c.get('cellConnectionStatus') == '1']
 
     @staticmethod
     def _hash_item(sms: SMS) -> str:
