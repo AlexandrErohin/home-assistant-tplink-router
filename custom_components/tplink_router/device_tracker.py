@@ -4,7 +4,6 @@ from typing import TypeAlias
 from homeassistant.components.device_tracker.config_entry import ScannerEntity
 from homeassistant.components.device_tracker.const import SourceType
 from homeassistant.config_entries import ConfigEntry
-from homeassistant.const import STATE_HOME
 from homeassistant.core import HomeAssistant, callback
 from homeassistant.helpers import entity_registry
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
@@ -27,22 +26,12 @@ async def async_setup_entry(
         entry: ConfigEntry,
         async_add_entities: AddEntitiesCallback,
 ) -> None:
+    """Add entitities from coordinator, otherwise restore."""
     coordinator = hass.data[DOMAIN][entry.entry_id]
-    tracked: dict[MAC_ADDR, TPLinkTracker] = {}
     registry = entity_registry.async_get(hass)
-    unique_id_prefix = f"{coordinator.unique_id}_{DOMAIN}_"
+    tracked: dict[MAC_ADDR, TPLinkTracker] = {}
     to_restore: list[TPLinkTracker] = []
-    for reg_entry in entity_registry.async_entries_for_config_entry(registry, entry.entry_id):
-        if reg_entry.domain != "device_tracker":
-            continue
-        mac = reg_entry.unique_id[len(unique_id_prefix):]
-        if mac in tracked:
-            continue
-        restored = TPLinkTracker(coordinator, None, mac=mac)
-        tracked[mac] = restored
-        to_restore.append(restored)
-    if to_restore:
-        async_add_entities(to_restore)
+    unique_id_prefix = f"{coordinator.unique_id}_{DOMAIN}_"
 
     @callback
     def coordinator_updated():
@@ -51,6 +40,16 @@ async def async_setup_entry(
 
     entry.async_on_unload(coordinator.async_add_listener(coordinator_updated))
     coordinator_updated()
+    for reg_entry in entity_registry.async_entries_for_config_entry(registry, entry.entry_id):
+        if reg_entry.domain != "device_tracker":
+            continue
+        mac = reg_entry.unique_id[len(unique_id_prefix):]
+        if mac in tracked:
+            continue
+        tracked[mac] = TPLinkTracker(coordinator, None, mac=mac)
+        to_restore.append(tracked[mac])
+    if to_restore:
+        async_add_entities(to_restore)
 
 
 @callback
@@ -186,10 +185,11 @@ class TPLinkTracker(CoordinatorEntity, RestoreEntity, ScannerEntity):
         return True
 
     async def async_added_to_hass(self) -> None:
+        """Restore entity attributes if not already updated."""
         await super().async_added_to_hass()
+        if self.device is not None:
+            return
         last_state = await self.async_get_last_state()
         if last_state is None:
             return
-        self.active = last_state.state == STATE_HOME
-        if self.device is None:
-            self._restored_attributes = dict(last_state.attributes)
+        self._restored_attributes = dict(last_state.attributes)
