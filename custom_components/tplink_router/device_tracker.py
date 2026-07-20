@@ -4,8 +4,11 @@ from typing import TypeAlias
 from homeassistant.components.device_tracker.config_entry import ScannerEntity
 from homeassistant.components.device_tracker.const import SourceType
 from homeassistant.config_entries import ConfigEntry
+from homeassistant.const import STATE_HOME
 from homeassistant.core import HomeAssistant, callback
+from homeassistant.helpers import entity_registry
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
+from homeassistant.helpers.restore_state import RestoreEntity
 from homeassistant.helpers.update_coordinator import CoordinatorEntity
 from .coordinator import TPLinkRouterCoordinator
 from .const import (
@@ -26,6 +29,20 @@ async def async_setup_entry(
 ) -> None:
     coordinator = hass.data[DOMAIN][entry.entry_id]
     tracked: dict[MAC_ADDR, TPLinkTracker] = {}
+    registry = entity_registry.async_get(hass)
+    unique_id_prefix = f"{coordinator.unique_id}_{DOMAIN}_"
+    to_restore: list[TPLinkTracker] = []
+    for reg_entry in entity_registry.async_entries_for_config_entry(registry, entry.entry_id):
+        if reg_entry.domain != "device_tracker":
+            continue
+        mac = reg_entry.unique_id[len(unique_id_prefix):]
+        if mac in tracked:
+            continue
+        restored = TPLinkTracker(coordinator, None, mac=mac)
+        tracked[mac] = restored
+        to_restore.append(restored)
+    if to_restore:
+        async_add_entities(to_restore)
 
     @callback
     def coordinator_updated():
@@ -70,18 +87,20 @@ def update_items(
             coordinator.hass.bus.fire(EVENT_OFFLINE, tracked[mac].data)
 
 
-class TPLinkTracker(CoordinatorEntity, ScannerEntity):
+class TPLinkTracker(CoordinatorEntity, RestoreEntity, ScannerEntity):
     """Representation of network device."""
 
     def __init__(
             self,
             coordinator: TPLinkRouterCoordinator,
-            data: Device,
+            data: Device | None,
+            mac: MAC_ADDR | None = None,
     ) -> None:
-        """Initialize the tracked device."""
+        """Initialize the device (tracked by the router or restored from Home Assistant)."""
         self.device = data
-        self.active = True
-
+        self._mac = mac or (data.macaddr if data else None)
+        self.active = data.active if data else False
+        self._restored_attributes: dict[str, str] = {}
         super().__init__(coordinator)
 
     @property
@@ -97,22 +116,28 @@ class TPLinkTracker(CoordinatorEntity, ScannerEntity):
     @property
     def name(self) -> str:
         """Return the name of the client."""
-        return self.device.hostname if self.device.hostname != '' else self.device.macaddr
+        if self.device is not None:
+            return self.device.hostname if self.device.hostname != "" else self._mac
+        return self._restored_attributes.get("hostname") or self._mac
 
     @property
     def hostname(self) -> str:
         """Return the hostname of the client."""
-        return self.device.hostname
+        if self.device is not None:
+            return self.device.hostname
+        return self._restored_attributes.get("hostname", "")
 
     @property
     def mac_address(self) -> MAC_ADDR:
         """Return the mac address of the client."""
-        return self.device.macaddr
+        return self._mac
 
     @property
     def ip_address(self) -> str:
         """Return the ip address of the client."""
-        return self.device.ipaddr
+        if self.device is not None:
+            return self.device.ipaddr
+        return self._restored_attributes.get("ip_address", "")
 
     @property
     def unique_id(self) -> str:
@@ -126,6 +151,8 @@ class TPLinkTracker(CoordinatorEntity, ScannerEntity):
 
     @property
     def extra_state_attributes(self) -> dict[str, str]:
+        if self.device is None:
+            return self._restored_attributes
         attributes = {
             'connection': self.device.type.get_type(),
             'band': self.device.type.get_band(),
@@ -157,3 +184,12 @@ class TPLinkTracker(CoordinatorEntity, ScannerEntity):
     @property
     def entity_registry_enabled_default(self) -> bool:
         return True
+
+    async def async_added_to_hass(self) -> None:
+        await super().async_added_to_hass()
+        last_state = await self.async_get_last_state()
+        if last_state is None:
+            return
+        self.active = last_state.state == STATE_HOME
+        if self.device is None:
+            self._restored_attributes = dict(last_state.attributes)
