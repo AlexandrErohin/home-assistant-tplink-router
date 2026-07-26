@@ -463,6 +463,65 @@ SERVING_CELL_SENSOR_TYPES = (
             native_unit_of_measurement=SIGNAL_STRENGTH_DECIBELS_MILLIWATT,
         ),
     ),
+    # LTE CA secondary cell (networkType '7', LTE+)
+    TPLinkRouterServingCellSensorConfig(
+        value=lambda cells: _scf(cells, _NT_LTE_PLUS, 'band', int),
+        description=SensorEntityDescription(
+            key="cell_lte_ca_band",
+            name="LTE CA Band",
+            icon="mdi:antenna",
+            state_class=SensorStateClass.MEASUREMENT,
+        ),
+    ),
+    TPLinkRouterServingCellSensorConfig(
+        value=lambda cells: _scf(cells, _NT_LTE_PLUS, 'ARFCN', int),
+        description=SensorEntityDescription(
+            key="cell_lte_ca_arfcn",
+            name="LTE CA E-ARFCN",
+            icon="mdi:antenna",
+            state_class=SensorStateClass.MEASUREMENT,
+        ),
+    ),
+    TPLinkRouterServingCellSensorConfig(
+        value=lambda cells: _scf(cells, _NT_LTE_PLUS, 'downBandWidth', lambda v: int(v) // 1000),
+        description=SensorEntityDescription(
+            key="cell_lte_ca_dl_bandwidth",
+            name="LTE CA DL Bandwidth",
+            icon="mdi:antenna",
+            state_class=SensorStateClass.MEASUREMENT,
+            native_unit_of_measurement=UnitOfFrequency.MEGAHERTZ,
+        ),
+    ),
+    TPLinkRouterServingCellSensorConfig(
+        value=lambda cells: _scf(cells, _NT_LTE_PLUS, 'downFreq', int),
+        description=SensorEntityDescription(
+            key="cell_lte_ca_dl_freq",
+            name="LTE CA DL Frequency",
+            icon="mdi:antenna",
+            state_class=SensorStateClass.MEASUREMENT,
+            native_unit_of_measurement=UnitOfFrequency.MEGAHERTZ,
+        ),
+    ),
+    TPLinkRouterServingCellSensorConfig(
+        value=lambda cells: _scf(cells, _NT_LTE_PLUS, 'RSRP', int),
+        description=SensorEntityDescription(
+            key="cell_lte_ca_rsrp",
+            name="LTE CA RSRP",
+            icon="mdi:antenna",
+            state_class=SensorStateClass.MEASUREMENT,
+            native_unit_of_measurement=SIGNAL_STRENGTH_DECIBELS_MILLIWATT,
+        ),
+    ),
+    TPLinkRouterServingCellSensorConfig(
+        value=lambda cells: _scf(cells, _NT_LTE_PLUS, 'RSRQ', int),
+        description=SensorEntityDescription(
+            key="cell_lte_ca_rsrq",
+            name="LTE CA RSRQ",
+            icon="mdi:antenna",
+            state_class=SensorStateClass.MEASUREMENT,
+            native_unit_of_measurement=SIGNAL_STRENGTH_DECIBELS_MILLIWATT,
+        ),
+    ),
 )
 
 VPN_SERVER_SENSOR_TYPES = (
@@ -501,7 +560,7 @@ async def async_setup_entry(
         for sensor in LTE_SENSOR_TYPES:
             sensors.append(TPLinkRouterSensor(coordinator, sensor))
 
-    if coordinator.lte_status is not None and hasattr(coordinator.router, 'req_act'):
+    if coordinator.lte_status is not None and hasattr(coordinator.router, 'get_lte_serving_cells'):
         for sensor in SERVING_CELL_SENSOR_TYPES:
             sensors.append(TPLinkRouterSensor(coordinator, sensor))
 
