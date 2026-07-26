@@ -267,7 +267,7 @@ To do that:
 - Archer MR550 v1
 - Archer MR600 (v1, v2, v3)
 - Archer NX200 (v1.0, v2.0)
-- Archer VR1200v v1
+- Archer VR1200v (v1, v2)
 - Archer VR2100v v1
 - Archer VR2800 v1
 - Archer VR400 (v2, v3)
@@ -295,6 +295,7 @@ To do that:
 - Deco XE75PRO (v3.0)
 - EAP115 v2.0
 - EX511 v2.0
+- HB810 v2.6
 - HX510 v1.0
 - M8550 v1
 - NE200-Outdoor v1.0
@@ -307,7 +308,7 @@ To do that:
 - TD-W9960 (v1, V1.20)
 - TL-7DR6430 1.0
 - TL-7DR7270 1.0 (firmware 1.0.18+, new auth)
-- TL-MR100 v2.0
+- TL-MR100 (v2.0, v3.0)
 - TL-MR100-Outdoor v1.0
 - TL-MR105
 - TL-MR110-Outdoor v1.0
@@ -338,6 +339,7 @@ To do that:
 - ME30 1.0
 - MR47BE v1.0
 - MR50G 1.0
+- MR80X v2.0
 
 Please let me know if you have tested integration with any other model. Open an issue with info about router's model, hardware and firmware versions.
 
