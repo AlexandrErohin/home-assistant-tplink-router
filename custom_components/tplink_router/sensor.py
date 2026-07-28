@@ -44,32 +44,29 @@ class TPLinkRouterServingCellSensorConfig(TPLinkRouterSensorConfigBase[list]):
 
 
 # --- Serving cell helpers ---
-_NT_NR = '8'
-_NT_LTE_PLUS = '7'
-_NT_LTE = '3'
+_NT_NR = 8
+_NT_LTE_PLUS = 7
+_NT_LTE = 3
 
 
 def _sc(cells, nt):
     if not cells:
         return None
-    return next((c for c in cells if c.get('networkType') == nt), None)
+    return next((c for c in cells if c.network_type == nt), None)
 
 
-def _scf(cells, nt, field, transform=None):
+def _scf(cells, nt, field):
     c = _sc(cells, nt)
     if c is None:
         return None
-    raw = c.get(field)
-    if raw is None or raw == '' or raw == '268435455':
-        return None
-    return transform(raw) if transform else raw
+    return getattr(c, field)
 
 
 def _active_bands(cells):
     if not cells:
         return None
     prefix = {_NT_LTE: 'B', _NT_LTE_PLUS: 'B', _NT_NR: 'N'}
-    parts = [f"{prefix[nt]}{_sc(cells, nt)['band']}"
+    parts = [f"{prefix[nt]}{_sc(cells, nt).band}"
              for nt in (_NT_LTE, _NT_LTE_PLUS, _NT_NR) if _sc(cells, nt)]
     return '+'.join(parts) if parts else None
 
@@ -324,7 +321,7 @@ SERVING_CELL_SENSOR_TYPES = (
     ),
     # 5G NR cell
     TPLinkRouterServingCellSensorConfig(
-        value=lambda cells: _scf(cells, _NT_NR, 'band', int),
+        value=lambda cells: _scf(cells, _NT_NR, 'band'),
         description=SensorEntityDescription(
             key="cell_nr_band",
             name="NR Band",
@@ -333,7 +330,7 @@ SERVING_CELL_SENSOR_TYPES = (
         ),
     ),
     TPLinkRouterServingCellSensorConfig(
-        value=lambda cells: _scf(cells, _NT_NR, 'ARFCN', int),
+        value=lambda cells: _scf(cells, _NT_NR, 'arfcn'),
         description=SensorEntityDescription(
             key="cell_nr_arfcn",
             name="NR-ARFCN",
@@ -342,7 +339,7 @@ SERVING_CELL_SENSOR_TYPES = (
         ),
     ),
     TPLinkRouterServingCellSensorConfig(
-        value=lambda cells: _scf(cells, _NT_NR, 'downBandWidth', lambda v: int(v) // 1000),
+        value=lambda cells: _scf(cells, _NT_NR, 'downlink_bandwidth'),
         description=SensorEntityDescription(
             key="cell_nr_dl_bandwidth",
             name="NR DL Bandwidth",
@@ -352,7 +349,7 @@ SERVING_CELL_SENSOR_TYPES = (
         ),
     ),
     TPLinkRouterServingCellSensorConfig(
-        value=lambda cells: _scf(cells, _NT_NR, 'downFreq', int),
+        value=lambda cells: _scf(cells, _NT_NR, 'downlink_frequency'),
         description=SensorEntityDescription(
             key="cell_nr_dl_freq",
             name="NR DL Frequency",
@@ -362,7 +359,7 @@ SERVING_CELL_SENSOR_TYPES = (
         ),
     ),
     TPLinkRouterServingCellSensorConfig(
-        value=lambda cells: _scf(cells, _NT_NR, 'downlinkModType'),
+        value=lambda cells: _scf(cells, _NT_NR, 'downlink_modulation'),
         description=SensorEntityDescription(
             key="cell_nr_dl_mod",
             name="NR DL Modulation",
@@ -370,7 +367,7 @@ SERVING_CELL_SENSOR_TYPES = (
         ),
     ),
     TPLinkRouterServingCellSensorConfig(
-        value=lambda cells: _scf(cells, _NT_NR, 'uplinkModType'),
+        value=lambda cells: _scf(cells, _NT_NR, 'uplink_modulation'),
         description=SensorEntityDescription(
             key="cell_nr_ul_mod",
             name="NR UL Modulation",
@@ -378,7 +375,7 @@ SERVING_CELL_SENSOR_TYPES = (
         ),
     ),
     TPLinkRouterServingCellSensorConfig(
-        value=lambda cells: _scf(cells, _NT_NR, 'CQI', int),
+        value=lambda cells: _scf(cells, _NT_NR, 'cqi'),
         description=SensorEntityDescription(
             key="cell_nr_cqi",
             name="NR CQI",
@@ -387,7 +384,7 @@ SERVING_CELL_SENSOR_TYPES = (
         ),
     ),
     TPLinkRouterServingCellSensorConfig(
-        value=lambda cells: _scf(cells, _NT_NR, 'RI', int),
+        value=lambda cells: _scf(cells, _NT_NR, 'ri'),
         description=SensorEntityDescription(
             key="cell_nr_ri",
             name="NR RI",
@@ -396,7 +393,7 @@ SERVING_CELL_SENSOR_TYPES = (
         ),
     ),
     TPLinkRouterServingCellSensorConfig(
-        value=lambda cells: _scf(cells, _NT_NR, 'numRbs', int),
+        value=lambda cells: _scf(cells, _NT_NR, 'resource_blocks'),
         description=SensorEntityDescription(
             key="cell_nr_num_rbs",
             name="NR Resource Blocks",
@@ -406,7 +403,7 @@ SERVING_CELL_SENSOR_TYPES = (
     ),
     # LTE anchor cell
     TPLinkRouterServingCellSensorConfig(
-        value=lambda cells: _scf(cells, _NT_LTE, 'band', int),
+        value=lambda cells: _scf(cells, _NT_LTE, 'band'),
         description=SensorEntityDescription(
             key="cell_lte_band",
             name="LTE Anchor Band",
@@ -415,7 +412,7 @@ SERVING_CELL_SENSOR_TYPES = (
         ),
     ),
     TPLinkRouterServingCellSensorConfig(
-        value=lambda cells: _scf(cells, _NT_LTE, 'ARFCN', int),
+        value=lambda cells: _scf(cells, _NT_LTE, 'arfcn'),
         description=SensorEntityDescription(
             key="cell_lte_arfcn",
             name="LTE E-ARFCN",
@@ -424,7 +421,7 @@ SERVING_CELL_SENSOR_TYPES = (
         ),
     ),
     TPLinkRouterServingCellSensorConfig(
-        value=lambda cells: _scf(cells, _NT_LTE, 'downBandWidth', lambda v: int(v) // 1000),
+        value=lambda cells: _scf(cells, _NT_LTE, 'downlink_bandwidth'),
         description=SensorEntityDescription(
             key="cell_lte_dl_bandwidth",
             name="LTE Anchor DL Bandwidth",
@@ -434,7 +431,7 @@ SERVING_CELL_SENSOR_TYPES = (
         ),
     ),
     TPLinkRouterServingCellSensorConfig(
-        value=lambda cells: _scf(cells, _NT_LTE, 'downFreq', int),
+        value=lambda cells: _scf(cells, _NT_LTE, 'downlink_frequency'),
         description=SensorEntityDescription(
             key="cell_lte_dl_freq",
             name="LTE Anchor DL Frequency",
@@ -444,7 +441,7 @@ SERVING_CELL_SENSOR_TYPES = (
         ),
     ),
     TPLinkRouterServingCellSensorConfig(
-        value=lambda cells: _scf(cells, _NT_LTE, 'RSRP', int),
+        value=lambda cells: _scf(cells, _NT_LTE, 'rsrp'),
         description=SensorEntityDescription(
             key="cell_lte_rsrp",
             name="LTE Anchor RSRP",
@@ -454,7 +451,7 @@ SERVING_CELL_SENSOR_TYPES = (
         ),
     ),
     TPLinkRouterServingCellSensorConfig(
-        value=lambda cells: _scf(cells, _NT_LTE, 'RSRQ', int),
+        value=lambda cells: _scf(cells, _NT_LTE, 'rsrq'),
         description=SensorEntityDescription(
             key="cell_lte_rsrq",
             name="LTE Anchor RSRQ",
@@ -463,9 +460,9 @@ SERVING_CELL_SENSOR_TYPES = (
             native_unit_of_measurement=SIGNAL_STRENGTH_DECIBELS_MILLIWATT,
         ),
     ),
-    # LTE CA secondary cell (networkType '7', LTE+)
+    # LTE CA secondary cell (networkType 7, LTE+)
     TPLinkRouterServingCellSensorConfig(
-        value=lambda cells: _scf(cells, _NT_LTE_PLUS, 'band', int),
+        value=lambda cells: _scf(cells, _NT_LTE_PLUS, 'band'),
         description=SensorEntityDescription(
             key="cell_lte_ca_band",
             name="LTE CA Band",
@@ -474,7 +471,7 @@ SERVING_CELL_SENSOR_TYPES = (
         ),
     ),
     TPLinkRouterServingCellSensorConfig(
-        value=lambda cells: _scf(cells, _NT_LTE_PLUS, 'ARFCN', int),
+        value=lambda cells: _scf(cells, _NT_LTE_PLUS, 'arfcn'),
         description=SensorEntityDescription(
             key="cell_lte_ca_arfcn",
             name="LTE CA E-ARFCN",
@@ -483,7 +480,7 @@ SERVING_CELL_SENSOR_TYPES = (
         ),
     ),
     TPLinkRouterServingCellSensorConfig(
-        value=lambda cells: _scf(cells, _NT_LTE_PLUS, 'downBandWidth', lambda v: int(v) // 1000),
+        value=lambda cells: _scf(cells, _NT_LTE_PLUS, 'downlink_bandwidth'),
         description=SensorEntityDescription(
             key="cell_lte_ca_dl_bandwidth",
             name="LTE CA DL Bandwidth",
@@ -493,7 +490,7 @@ SERVING_CELL_SENSOR_TYPES = (
         ),
     ),
     TPLinkRouterServingCellSensorConfig(
-        value=lambda cells: _scf(cells, _NT_LTE_PLUS, 'downFreq', int),
+        value=lambda cells: _scf(cells, _NT_LTE_PLUS, 'downlink_frequency'),
         description=SensorEntityDescription(
             key="cell_lte_ca_dl_freq",
             name="LTE CA DL Frequency",
@@ -503,7 +500,7 @@ SERVING_CELL_SENSOR_TYPES = (
         ),
     ),
     TPLinkRouterServingCellSensorConfig(
-        value=lambda cells: _scf(cells, _NT_LTE_PLUS, 'RSRP', int),
+        value=lambda cells: _scf(cells, _NT_LTE_PLUS, 'rsrp'),
         description=SensorEntityDescription(
             key="cell_lte_ca_rsrp",
             name="LTE CA RSRP",
@@ -513,7 +510,7 @@ SERVING_CELL_SENSOR_TYPES = (
         ),
     ),
     TPLinkRouterServingCellSensorConfig(
-        value=lambda cells: _scf(cells, _NT_LTE_PLUS, 'RSRQ', int),
+        value=lambda cells: _scf(cells, _NT_LTE_PLUS, 'rsrq'),
         description=SensorEntityDescription(
             key="cell_lte_ca_rsrq",
             name="LTE CA RSRQ",
