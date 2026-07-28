@@ -38,6 +38,13 @@ BUTTON_TYPES = (
         entity_category=EntityCategory.CONFIG,
         method=lambda coordinator: coordinator.reboot(),
     ),
+    TPLinkButtonEntityDescription(
+        key="reset_traffic",
+        name="Reset traffic counters",
+        entity_category=EntityCategory.CONFIG,
+        icon="mdi:counter",
+        method=lambda coordinator: coordinator.reset_traffic_counters(),
+    ),
 )
 
 
