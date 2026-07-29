@@ -220,7 +220,11 @@ class TPLinkRouterSwitch(
         self._attr_unique_id = f"{coordinator.unique_id}_{DOMAIN}_{switch.description.key}"
         self.entity_description = switch.description
         self.switch = switch
-        self.coordinator_attr = getattr(self.coordinator, switch.coordinator_key)
+
+    @property
+    def coordinator_attr(self):
+        """Получаем актуальный атрибут координатора."""
+        return getattr(self.coordinator, self.switch.coordinator_key)
 
     @property
     def is_on(self) -> bool:
