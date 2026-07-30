@@ -28,7 +28,7 @@ class ConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
                 vol.Required(CONF_HOST, default=DEFAULT_HOST): str,
                 vol.Required(CONF_PASSWORD): cv.string,
                 vol.Required(CONF_SCAN_INTERVAL, default=30): int,
-                vol.Required(CONF_VERIFY_SSL, default=True): cv.boolean,
+                vol.Required(CONF_VERIFY_SSL, default=False): cv.boolean,
             }
         )
         if user_input is not None:
@@ -53,7 +53,7 @@ class ConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
                         vol.Required(CONF_PASSWORD): cv.string,
                         vol.Required(CONF_USERNAME, default=DEFAULT_USER): str,
                         vol.Required(CONF_SCAN_INTERVAL, default=30): int,
-                        vol.Required(CONF_VERIFY_SSL, default=True): cv.boolean,
+                        vol.Required(CONF_VERIFY_SSL, default=False): cv.boolean,
                     }
                 )
 

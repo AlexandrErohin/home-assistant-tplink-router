@@ -28,7 +28,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     host = entry.data[CONF_HOST]
     if not (host.startswith('http://') or host.startswith('https://')):
         host = "http://{}".format(host)
-    verify_ssl = entry.data[CONF_VERIFY_SSL] if CONF_VERIFY_SSL in entry.data else True
+    verify_ssl = entry.data[CONF_VERIFY_SSL] if CONF_VERIFY_SSL in entry.data else False
     client_class = entry.data.get(CONF_CLENT_CLASS)
     if not client_class:
         client = await TPLinkRouterCoordinator.get_client(
