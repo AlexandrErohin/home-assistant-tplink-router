@@ -134,6 +134,22 @@ SENSOR_TYPES = (
             icon="mdi:lan",
         ),
     ),
+    TPLinkRouterSensorConfig(
+        value=lambda status: status.wan_ipv6_enabled,
+        description=SensorEntityDescription(
+            key="wan_ipv6_enabled",
+            name="WAN IPv6 Enabled",
+            icon="mdi:wan",
+        ),
+    ),
+    TPLinkRouterSensorConfig(
+        value=lambda status: status.wan_ipv6_addr,
+        description=SensorEntityDescription(
+            key="wan_ipv6_addr",
+            name="WAN IPv6 Address",
+            icon="mdi:wan",
+        ),
+    ),
 )
 
 LTE_SENSOR_TYPES = (
