@@ -13,7 +13,7 @@ from .const import DOMAIN
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 from homeassistant.helpers.update_coordinator import CoordinatorEntity
 from .coordinator import TPLinkRouterCoordinator
-from tplinkrouterc6u import Status, LTEStatus, VPNStatus
+from tplinkrouterc6u import Status, LTEStatus, VPNStatus, ServingCell
 
 
 @dataclass
@@ -39,7 +39,7 @@ class TPLinkRouterVPNServerSensorConfig(TPLinkRouterSensorConfigBase[VPNStatus])
 
 
 @dataclass
-class TPLinkRouterServingCellSensorConfig(TPLinkRouterSensorConfigBase[list]):
+class TPLinkRouterServingCellSensorConfig(TPLinkRouterSensorConfigBase[list[ServingCell]]):
     sensor_type: str = "serving_cells"
 
 
