@@ -557,7 +557,7 @@ async def async_setup_entry(
         for sensor in LTE_SENSOR_TYPES:
             sensors.append(TPLinkRouterSensor(coordinator, sensor))
 
-    if coordinator.lte_status is not None and hasattr(coordinator.router, 'get_lte_serving_cells'):
+    if coordinator.serving_cells is not None:
         for sensor in SERVING_CELL_SENSOR_TYPES:
             sensors.append(TPLinkRouterSensor(coordinator, sensor))
 

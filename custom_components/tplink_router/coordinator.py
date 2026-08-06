@@ -13,6 +13,7 @@ from tplinkrouterc6u import (
     Connection,
     LTEStatus,
     SMS,
+    ServingCell,
     VpnClientStatus,
     VPNStatus
 )
@@ -37,13 +38,14 @@ class TPLinkRouterCoordinator(DataUpdateCoordinator):
             unique_id: str,
             vpn_server_status: VPNStatus | None = None,
             vpn_client_status: VpnClientStatus | None = None,
+            serving_cells: list[ServingCell] | None = None,
     ) -> None:
         self.router = router
         self.unique_id = unique_id
         self.status = status
         self.tracked = {}
         self.lte_status = lte_status
-        self.serving_cells: list[dict] | None = None
+        self.serving_cells = serving_cells
         self.device_info = DeviceInfo(
             configuration_url=router.host,
             connections={(CONNECTION_NETWORK_MAC, self.status.lan_macaddr)},
@@ -135,7 +137,7 @@ class TPLinkRouterCoordinator(DataUpdateCoordinator):
                 self.router,
                 self.router.get_lte_status,
             )
-        if self.lte_status is not None and hasattr(self.router, 'get_lte_serving_cells'):
+        if self.serving_cells is not None:
             self.serving_cells = await self.hass.async_add_executor_job(
                 TPLinkRouterCoordinator.request,
                 self.router,
