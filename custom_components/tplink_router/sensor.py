@@ -415,7 +415,7 @@ SERVING_CELL_SENSOR_TYPES = (
         value=lambda cells: _scf(cells, _NT_LTE, 'arfcn'),
         description=SensorEntityDescription(
             key="cell_lte_anchor_arfcn",
-            name="LTE E-ARFCN",
+            name="LTE Anchor E-ARFCN",
             icon="mdi:antenna",
             state_class=SensorStateClass.MEASUREMENT,
         ),
