@@ -405,7 +405,7 @@ SERVING_CELL_SENSOR_TYPES = (
     TPLinkRouterServingCellSensorConfig(
         value=lambda cells: _scf(cells, _NT_LTE, 'band'),
         description=SensorEntityDescription(
-            key="cell_lte_band",
+            key="cell_lte_anchor_band",
             name="LTE Anchor Band",
             icon="mdi:antenna",
             state_class=SensorStateClass.MEASUREMENT,
@@ -414,7 +414,7 @@ SERVING_CELL_SENSOR_TYPES = (
     TPLinkRouterServingCellSensorConfig(
         value=lambda cells: _scf(cells, _NT_LTE, 'arfcn'),
         description=SensorEntityDescription(
-            key="cell_lte_arfcn",
+            key="cell_lte_anchor_arfcn",
             name="LTE E-ARFCN",
             icon="mdi:antenna",
             state_class=SensorStateClass.MEASUREMENT,
@@ -423,7 +423,7 @@ SERVING_CELL_SENSOR_TYPES = (
     TPLinkRouterServingCellSensorConfig(
         value=lambda cells: _scf(cells, _NT_LTE, 'downlink_bandwidth'),
         description=SensorEntityDescription(
-            key="cell_lte_dl_bandwidth",
+            key="cell_lte_anchor_dl_bandwidth",
             name="LTE Anchor DL Bandwidth",
             icon="mdi:antenna",
             state_class=SensorStateClass.MEASUREMENT,
@@ -433,7 +433,7 @@ SERVING_CELL_SENSOR_TYPES = (
     TPLinkRouterServingCellSensorConfig(
         value=lambda cells: _scf(cells, _NT_LTE, 'downlink_frequency'),
         description=SensorEntityDescription(
-            key="cell_lte_dl_freq",
+            key="cell_lte_anchor_dl_freq",
             name="LTE Anchor DL Frequency",
             icon="mdi:antenna",
             state_class=SensorStateClass.MEASUREMENT,
@@ -443,7 +443,7 @@ SERVING_CELL_SENSOR_TYPES = (
     TPLinkRouterServingCellSensorConfig(
         value=lambda cells: _scf(cells, _NT_LTE, 'rsrp'),
         description=SensorEntityDescription(
-            key="cell_lte_rsrp",
+            key="cell_lte_anchor_rsrp",
             name="LTE Anchor RSRP",
             icon="mdi:antenna",
             state_class=SensorStateClass.MEASUREMENT,
@@ -453,7 +453,7 @@ SERVING_CELL_SENSOR_TYPES = (
     TPLinkRouterServingCellSensorConfig(
         value=lambda cells: _scf(cells, _NT_LTE, 'rsrq'),
         description=SensorEntityDescription(
-            key="cell_lte_rsrq",
+            key="cell_lte_anchor_rsrq",
             name="LTE Anchor RSRQ",
             icon="mdi:antenna",
             state_class=SensorStateClass.MEASUREMENT,
