@@ -5,7 +5,7 @@ from homeassistant import config_entries
 from homeassistant.core import callback
 import homeassistant.helpers.config_validation as cv
 from homeassistant.data_entry_flow import FlowResult
-from .const import DOMAIN, DEFAULT_USER, DEFAULT_HOST, CONF_CLENT_CLASS
+from .const import DOMAIN, DEFAULT_USER, DEFAULT_HOST, CONF_CLIENT_CLASS
 from .coordinator import TPLinkRouterCoordinator
 from homeassistant.const import (
     CONF_HOST,
@@ -41,19 +41,35 @@ class ConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
                     logger=_LOGGER,
                     verify_ssl=user_input[CONF_VERIFY_SSL],
                 )
-                await self.hass.async_add_executor_job(router.authorize)
-                user_input[CONF_CLENT_CLASS] = router.__class__.__name__
-                return self.async_create_entry(title=user_input["host"], data=user_input)
+
+                def authorize_and_status():
+                    return TPLinkRouterCoordinator.request(router, router.get_status)
+
+                status = await self.hass.async_add_executor_job(authorize_and_status)
+                await self.async_set_unique_id(status.lan_macaddr.lower())
+                self._abort_if_unique_id_configured()
+
+                user_input[CONF_CLIENT_CLASS] = router.__class__.__name__
+                return self.async_create_entry(title=user_input[CONF_HOST], data=user_input)
             except Exception as error:
-                _LOGGER.error('TplinkRouter Integration Exception - {}'.format(error))
-                errors['base'] = str(error)
+                _LOGGER.error("TplinkRouter Integration Exception - %s", error)
+                errors["base"] = str(error)
                 schema = vol.Schema(
                     {
-                        vol.Required(CONF_HOST, default=DEFAULT_HOST): str,
+                        vol.Required(CONF_HOST, default=user_input.get(CONF_HOST, DEFAULT_HOST)): str,
                         vol.Required(CONF_PASSWORD): cv.string,
-                        vol.Required(CONF_USERNAME, default=DEFAULT_USER): str,
-                        vol.Required(CONF_SCAN_INTERVAL, default=30): int,
-                        vol.Required(CONF_VERIFY_SSL, default=False): cv.boolean,
+                        vol.Required(
+                            CONF_USERNAME,
+                            default=user_input.get(CONF_USERNAME, DEFAULT_USER),
+                        ): str,
+                        vol.Required(
+                            CONF_SCAN_INTERVAL,
+                            default=user_input.get(CONF_SCAN_INTERVAL, 30),
+                        ): int,
+                        vol.Required(
+                            CONF_VERIFY_SSL,
+                            default=user_input.get(CONF_VERIFY_SSL, False),
+                        ): cv.boolean,
                     }
                 )
 
@@ -81,13 +97,15 @@ class OptionsFlow(config_entries.OptionsFlowWithConfigEntry):
                     logger=_LOGGER,
                     verify_ssl=user_input[CONF_VERIFY_SSL],
                 )
-                await self.hass.async_add_executor_job(router.authorize)
-                user_input[CONF_CLENT_CLASS] = router.__class__.__name__
+                await self.hass.async_add_executor_job(
+                    TPLinkRouterCoordinator.request, router, router.get_status
+                )
+                user_input[CONF_CLIENT_CLASS] = router.__class__.__name__
                 self.hass.config_entries.async_update_entry(self.config_entry, data=user_input)
-                return self.async_create_entry(title=user_input["host"], data=user_input)
+                return self.async_create_entry(title=user_input[CONF_HOST], data=user_input)
             except Exception as error:
-                _LOGGER.error('TplinkRouter Integration Exception - {}'.format(error))
-                errors['base'] = str(error)
+                _LOGGER.error("TplinkRouter Integration Exception - %s", error)
+                errors["base"] = str(error)
 
         data_schema = vol.Schema({
             vol.Required(CONF_HOST, default=data.get(CONF_HOST)): cv.string,

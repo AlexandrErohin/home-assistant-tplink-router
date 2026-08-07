@@ -21,8 +21,10 @@ See [Supported routers](#supports)
  - tplink_router_device_offline: Fired when a device becomes offline
  - tplink_router_device_online: Fired when a device becomes online
  - tplink_router_new_sms: Fired when a new sms received by LTE router
-### Switches
+### Buttons
  - Router Reboot
+
+### Switches
  - Router data fetching - you may disable router data fetching before accessing the router, so it wont logging your out.
 If you forget to enable it back - it would be automatically enable after 20 minutes
  - 2.4Ghz host wifi Enable/Disable

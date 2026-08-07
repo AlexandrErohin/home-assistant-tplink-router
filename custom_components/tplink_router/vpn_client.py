@@ -41,6 +41,7 @@ def setup_vpn_entities(
             async_add_entities(new_entities)
 
     entry.async_on_unload(coordinator.async_add_listener(coordinator_updated))
+    coordinator_updated()
 
 
 class TPLinkVpnServerSwitch(CoordinatorEntity[TPLinkRouterCoordinator], SwitchEntity):

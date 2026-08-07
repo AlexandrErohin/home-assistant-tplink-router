@@ -3,6 +3,7 @@ import hashlib
 from datetime import timedelta, datetime
 from logging import Logger
 from collections.abc import Callable
+from typing import Type
 from homeassistant.helpers.update_coordinator import DataUpdateCoordinator
 from tplinkrouterc6u import (
     VPN,
@@ -79,7 +80,7 @@ class TPLinkRouterCoordinator(DataUpdateCoordinator):
                                                  logger, verify_ssl)
 
     @staticmethod
-    def get_client_by_class(client_class: str) -> AbstractRouter:
+    def get_client_by_class(client_class: str) -> Type[AbstractRouter]:
         return TplinkRouterProvider.get_clients()[client_class]
 
     @staticmethod
@@ -128,47 +129,60 @@ class TPLinkRouterCoordinator(DataUpdateCoordinator):
         if self.scan_stopped_at is not None and self.scan_stopped_at > (datetime.now() - timedelta(minutes=20)):
             return
         self.scan_stopped_at = None
-        self.status = await self.hass.async_add_executor_job(TPLinkRouterCoordinator.request, self.router,
-                                                             self.router.get_status)
-        # Only fetch if router is lte_status compatible
-        if self.lte_status is not None:
-            self.lte_status = await self.hass.async_add_executor_job(
-                TPLinkRouterCoordinator.request,
-                self.router,
-                self.router.get_lte_status,
-            )
-        if self.serving_cells is not None:
-            self.serving_cells = await self.hass.async_add_executor_job(
-                TPLinkRouterCoordinator.request,
-                self.router,
-                self.router.get_lte_serving_cells,
-            )
-        if self.vpn_server_status is not None:
-            self.vpn_server_status = await self.hass.async_add_executor_job(
-                TPLinkRouterCoordinator.request, self.router, self.router.get_vpn_status
-            )
-        if self.vpn_client_status is not None:
-            self.vpn_client_status = await self.hass.async_add_executor_job(
-                TPLinkRouterCoordinator.request, self.router, self.router.get_vpn_client_status
+
+        def callback():
+            status = self.router.get_status()
+            lte_status = self.lte_status
+            serving_cells = self.serving_cells
+            vpn_server_status = self.vpn_server_status
+            vpn_client_status = self.vpn_client_status
+            sms_list = None
+
+            if self.lte_status is not None:
+                lte_status = self.router.get_lte_status()
+            if self.serving_cells is not None:
+                serving_cells = self.router.get_lte_serving_cells()
+            if self.vpn_server_status is not None:
+                vpn_server_status = self.router.get_vpn_status()
+            if self.vpn_client_status is not None:
+                vpn_client_status = self.router.get_vpn_client_status()
+            if hasattr(self.router, "get_sms") and self.lte_status is not None:
+                sms_list = self.router.get_sms()
+
+            return (
+                status,
+                lte_status,
+                serving_cells,
+                vpn_server_status,
+                vpn_client_status,
+                sms_list,
             )
 
-        await self._update_new_sms()
+        (
+            self.status,
+            self.lte_status,
+            self.serving_cells,
+            self.vpn_server_status,
+            self.vpn_client_status,
+            sms_list,
+        ) = await self.hass.async_add_executor_job(
+            TPLinkRouterCoordinator.request, self.router, callback
+        )
+
+        if sms_list is not None:
+            self._process_sms_list(sms_list)
         self._last_update_time = datetime.now()
 
-    async def _update_new_sms(self) -> None:
-        if not hasattr(self.router, "get_sms") or self.lte_status is None:
-            return
-        sms_list = await self.hass.async_add_executor_job(TPLinkRouterCoordinator.request, self.router,
-                                                          self.router.get_sms)
-        new_items = []
+    def _process_sms_list(self, sms_list: list[SMS]) -> None:
+        current_hashes: set[str] = set()
+        new_items: list[SMS] = []
         for sms in sms_list:
             h = TPLinkRouterCoordinator._hash_item(sms)
-            if self._last_update_time is None:
-                self._sms_hashes.add(h)
-            elif h not in self._sms_hashes:
-                self._sms_hashes.add(h)
+            current_hashes.add(h)
+            if self._last_update_time is not None and h not in self._sms_hashes:
                 new_items.append(sms)
-
+        # Keep only hashes present in the current mailbox to avoid unbounded growth.
+        self._sms_hashes = current_hashes
         self.new_sms = new_items
 
     @staticmethod

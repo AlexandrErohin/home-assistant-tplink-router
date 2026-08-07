@@ -56,6 +56,7 @@ async def async_setup_entry(
 
 
 class TPLinkRouterButtonEntity(CoordinatorEntity[TPLinkRouterCoordinator], ButtonEntity):
+    _attr_has_entity_name = True
     entity_description: TPLinkButtonEntityDescription
 
     def __init__(

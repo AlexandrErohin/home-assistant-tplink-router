@@ -209,6 +209,8 @@ async def async_setup_entry(
 class TPLinkRouterSwitch(
     CoordinatorEntity[TPLinkRouterCoordinator], SwitchEntity
 ):
+    _attr_has_entity_name = True
+
     def __init__(
             self,
             coordinator: TPLinkRouterCoordinator,
@@ -252,6 +254,7 @@ class TPLinkRouterSwitch(
 class TPLinkRouterScanEntity(
     CoordinatorEntity[TPLinkRouterCoordinator], SwitchEntity
 ):
+    _attr_has_entity_name = True
     entity_description: SwitchEntityDescription
 
     def __init__(self, coordinator: TPLinkRouterCoordinator) -> None:
