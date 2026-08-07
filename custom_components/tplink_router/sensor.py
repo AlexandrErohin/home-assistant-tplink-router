@@ -14,7 +14,7 @@ from homeassistant.const import (
     UnitOfFrequency,
 )
 from homeassistant.config_entries import ConfigEntry
-from homeassistant.core import HomeAssistant, callback
+from homeassistant.core import HomeAssistant
 from .const import DOMAIN
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 from homeassistant.helpers.update_coordinator import CoordinatorEntity
@@ -589,19 +589,13 @@ class TPLinkRouterSensor(CoordinatorEntity[TPLinkRouterCoordinator], SensorEntit
         self.entity_description = sensor.description
         self.sensor = sensor
 
-    @callback
-    def _handle_coordinator_update(self) -> None:
-        """Handle updated data from the coordinator."""
-        coordinator_data = getattr(
-            self.coordinator, self.sensor.sensor_type
-        )
-        self._attr_native_value = self.sensor.value(coordinator_data)
-        self.async_write_ha_state()
+    @property
+    def native_value(self):
+        """Return the sensor value from current coordinator data."""
+        coordinator_data = getattr(self.coordinator, self.sensor.sensor_type)
+        return self.sensor.value(coordinator_data)
 
     @property
     def available(self) -> bool:
         """Return True if entity is available."""
-        coordinator_data = getattr(
-            self.coordinator, self.sensor.sensor_type
-        )
-        return self.sensor.value(coordinator_data) is not None
+        return self.native_value is not None
