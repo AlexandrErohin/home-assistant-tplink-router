@@ -170,6 +170,8 @@ class TPLinkTracker(CoordinatorEntity, RestoreEntity, ScannerEntity):
             attributes['traffic_usage'] = self.device.traffic_usage
         if self.device.signal is not None:
             attributes['signal'] = self.device.signal
+        if self.device.ap_name is not None:
+            attributes['ap_name'] = self.device.ap_name
         return attributes
 
     @property
