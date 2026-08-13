@@ -282,6 +282,7 @@ To do that:
 - CPE210 v2.0
 - CPE220 v3.0
 - Deco BE25 1.0
+- Deco E4R 4.0
 - Deco M4 2.0
 - Deco M4R 2.0
 - Deco M5 v3
