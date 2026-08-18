@@ -74,7 +74,7 @@ class ConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
                         ): cv.boolean,
                         vol.Required(
                             CONF_SUPPORT_VPN, 
-                            default=user_input.get(CONF_SUPPORT_VPN, False)
+                            default=user_input.get(CONF_SUPPORT_VPN, True)
                         ): cv.boolean,
                     },
                     extra=vol.ALLOW_EXTRA
