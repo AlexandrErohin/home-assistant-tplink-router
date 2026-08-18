@@ -8,7 +8,7 @@
           "username": "Login",
           "password": "Password",
           "scan_interval": "Scan interval for updates in seconds",
-          "scan_retries": "Number of retries for each data update",
+          "scan_retries": "Number of attempts for each data update",
           "scan_backoff": "Seconds between retries",
           "verify_ssl": "Verify ssl for https connection"
         }
@@ -24,7 +24,7 @@
           "username": "Login",
           "password": "Password",
           "scan_interval": "Scan interval for updates in seconds",
-          "scan_retries": "Number of retries for each data update",
+          "scan_retries": "Number of attempts for each data update",
           "scan_backoff": "Seconds between retries",
           "verify_ssl": "Verify ssl for https connection"
         }

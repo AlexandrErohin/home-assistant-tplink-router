@@ -6,6 +6,17 @@ import pytest
 from custom_components.tplink_router.utils import prefer, run_with_retry, safe_call
 
 
+def test_run_with_retry_with_zero_retries_still_runs_once():
+    calls = []
+
+    def cb():
+        calls.append(1)
+        return "ok"
+
+    assert run_with_retry(cb, retries=0, backoff_seconds=0) == "ok"
+    assert calls == [1]
+
+
 def test_run_with_retry_succeeds_immediately():
     calls = []
 

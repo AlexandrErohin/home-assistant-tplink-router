@@ -15,6 +15,7 @@ def run_with_retry(
         logger: Logger | None = None,
 ) -> T:
     """Run a blocking callback, retrying transient errors with a growing backoff."""
+    retries = max(1, retries)
     last_error: Exception | None = None
     for attempt in range(retries):
         try:
