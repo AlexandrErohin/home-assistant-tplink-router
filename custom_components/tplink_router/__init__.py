@@ -9,7 +9,7 @@ from homeassistant.const import (
 from datetime import datetime
 from homeassistant.core import HomeAssistant, ServiceCall
 from homeassistant.config_entries import ConfigEntry
-from .const import DOMAIN, DEFAULT_USER, EVENT_NEW_SMS, CONF_CLIENT_CLASS
+from .const import DOMAIN, DEFAULT_USER, EVENT_NEW_SMS, CONF_CLIENT_CLASS, CONF_SUPPORT_VPN
 import logging
 from .coordinator import TPLinkRouterCoordinator
 from homeassistant.helpers import device_registry
@@ -30,6 +30,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     if not (host.startswith('http://') or host.startswith('https://')):
         host = "http://{}".format(host)
     verify_ssl = entry.data[CONF_VERIFY_SSL] if CONF_VERIFY_SSL in entry.data else False
+    support_vpn = entry.data.get(CONF_SUPPORT_VPN)
     client_class = entry.data.get(CONF_CLIENT_CLASS)
     if not client_class:
         client = await TPLinkRouterCoordinator.get_client(
@@ -108,7 +109,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     # Create device coordinator and fetch data
     coordinator = TPLinkRouterCoordinator(hass, client, entry.data[CONF_SCAN_INTERVAL], firmware, status,
                                           lte_status, _LOGGER, entry.entry_id, vpn_server_stat, vpn_client_status,
-                                          serving_cells)
+                                          support_vpn, serving_cells)
 
     if sms_list is not None:
         coordinator._process_sms_list(sms_list)
