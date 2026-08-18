@@ -9,7 +9,7 @@ from homeassistant.const import (
 from datetime import datetime
 from homeassistant.core import HomeAssistant, ServiceCall
 from homeassistant.config_entries import ConfigEntry
-from .const import DOMAIN, DEFAULT_USER, EVENT_NEW_SMS, CONF_CLIENT_CLASS
+from .const import DOMAIN, DEFAULT_USER, EVENT_NEW_SMS, CONF_CLIENT_CLASS, CONF_SCAN_RETRIES, CONF_SCAN_BACKOFF
 import logging
 from .coordinator import TPLinkRouterCoordinator
 from homeassistant.helpers import device_registry
@@ -108,7 +108,9 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     # Create device coordinator and fetch data
     coordinator = TPLinkRouterCoordinator(hass, client, entry.data[CONF_SCAN_INTERVAL], firmware, status,
                                           lte_status, _LOGGER, entry.entry_id, vpn_server_stat, vpn_client_status,
-                                          serving_cells)
+                                          serving_cells,
+                                          retries=entry.data.get(CONF_SCAN_RETRIES, 3),
+                                          backoff_seconds=entry.data.get(CONF_SCAN_BACKOFF, 1.0))
 
     if sms_list is not None:
         coordinator._process_sms_list(sms_list)
