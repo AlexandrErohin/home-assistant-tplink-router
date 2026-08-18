@@ -10,6 +10,7 @@ from homeassistant.helpers.entity_platform import AddEntitiesCallback
 from homeassistant.helpers.restore_state import RestoreEntity
 from homeassistant.helpers.update_coordinator import CoordinatorEntity
 from .coordinator import TPLinkRouterCoordinator
+from .utils import prefer
 from .const import (
     DOMAIN,
     EVENT_NEW_DEVICE,
@@ -71,6 +72,7 @@ def update_items(
                 coordinator.hass.bus.fire(EVENT_NEW_DEVICE, tracked[device.macaddr].data)
         else:
             tracked[device.macaddr].device = device
+            tracked[device.macaddr]._remember(device)
             if fire_event and not tracked[device.macaddr].active and device.active:
                 coordinator.hass.bus.fire(EVENT_ONLINE, tracked[device.macaddr].data)
             if fire_event and tracked[device.macaddr].active and not device.active:
@@ -100,7 +102,18 @@ class TPLinkTracker(CoordinatorEntity, RestoreEntity, ScannerEntity):
         self._mac = mac or (data.macaddr if data else None)
         self.active = data.active if data else False
         self._restored_attributes: dict[str, str] = {}
+        self._last_hostname = ""
+        self._last_ip_address = ""
+        if data:
+            self._remember(data)
         super().__init__(coordinator)
+
+    def _remember(self, data: Device) -> None:
+        """Remember the last meaningful hostname/IP so events never fire blank."""
+        if data.hostname:
+            self._last_hostname = data.hostname
+        if data.ipaddr and str(data.ipaddr) != "0.0.0.0":
+            self._last_ip_address = str(data.ipaddr)
 
     @property
     def is_connected(self) -> bool:
@@ -116,15 +129,15 @@ class TPLinkTracker(CoordinatorEntity, RestoreEntity, ScannerEntity):
     def name(self) -> str:
         """Return the name of the client."""
         if self.device is not None:
-            return self.device.hostname if self.device.hostname != "" else self._mac
-        return self._restored_attributes.get("hostname") or self._mac
+            return self.device.hostname or self._last_hostname or self._mac
+        return self._restored_attributes.get("hostname") or self._last_hostname or self._mac
 
     @property
     def hostname(self) -> str:
         """Return the hostname of the client."""
         if self.device is not None:
-            return self.device.hostname
-        return self._restored_attributes.get("hostname", "")
+            return self.device.hostname or self._last_hostname
+        return self._restored_attributes.get("hostname") or self._last_hostname
 
     @property
     def mac_address(self) -> MAC_ADDR:
@@ -135,8 +148,8 @@ class TPLinkTracker(CoordinatorEntity, RestoreEntity, ScannerEntity):
     def ip_address(self) -> str:
         """Return the ip address of the client."""
         if self.device is not None:
-            return self.device.ipaddr
-        return self._restored_attributes.get("ip_address", "")
+            return prefer(self.device.ipaddr, self._last_ip_address, "")
+        return self._restored_attributes.get("ip_address") or self._last_ip_address
 
     @property
     def unique_id(self) -> str:

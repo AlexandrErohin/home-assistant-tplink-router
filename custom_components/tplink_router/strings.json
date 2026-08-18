@@ -9,6 +9,8 @@
           "username": "[%key:common::config_flow::data::username%]",
           "password": "[%key:common::config_flow::data::password%]",
           "scan_interval": "[%key:common::config_flow::data::scan_interval%]",
+          "scan_retries": "Number of attempts for each data update",
+          "scan_backoff": "Seconds between retries",
           "verify_ssl": "[%key:common::config_flow::data::verify_ssl%]"
         }
       }
@@ -22,6 +24,8 @@
           "username": "[%key:common::config_flow::data::username%]",
           "password": "[%key:common::config_flow::data::password%]",
           "scan_interval": "[%key:common::config_flow::data::scan_interval%]",
+          "scan_retries": "Number of attempts for each data update",
+          "scan_backoff": "Seconds between retries",
           "verify_ssl": "[%key:common::config_flow::data::verify_ssl%]"
         }
       }
