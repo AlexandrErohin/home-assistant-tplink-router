@@ -39,7 +39,6 @@ class TPLinkRouterCoordinator(DataUpdateCoordinator):
             unique_id: str,
             vpn_server_status: VPNStatus | None = None,
             vpn_client_status: VpnClientStatus | None = None,
-            support_vpn: bool | None = None,
             serving_cells: list[ServingCell] | None = None,
     ) -> None:
         self.router = router
@@ -58,7 +57,7 @@ class TPLinkRouterCoordinator(DataUpdateCoordinator):
             sw_version=firmware.firmware_version,
             hw_version=firmware.hardware_version,
         )
-        self.support_vpn = support_vpn
+        
         self.vpn_server_status = vpn_server_status
         self.vpn_client_status = vpn_client_status
 
@@ -143,9 +142,9 @@ class TPLinkRouterCoordinator(DataUpdateCoordinator):
                 lte_status = self.router.get_lte_status()
             if self.serving_cells is not None:
                 serving_cells = self.router.get_lte_serving_cells()
-            if self.vpn_server_status is not None and self.support_vpn:
+            if self.vpn_server_status is not None:
                 vpn_server_status = self.router.get_vpn_status()
-            if self.vpn_client_status is not None and self.support_vpn:
+            if self.vpn_client_status is not None:
                 vpn_client_status = self.router.get_vpn_client_status()
             if hasattr(self.router, "get_sms") and self.lte_status is not None:
                 sms_list = self.router.get_sms()

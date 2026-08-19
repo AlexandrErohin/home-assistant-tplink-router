@@ -66,20 +66,22 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
                 lte_stat = client.get_lte_status()
             except Exception:
                 pass
-        # Check if router is vpn_server compatible
+        # Check router VPN compatibility, if needed
         vpn_server_stat = None
-        if hasattr(client, "get_vpn_status"):
-            try:
-                vpn_server_stat = client.get_vpn_status()
-            except Exception:
-                pass
-        # Check if router is vpn_client compatible
         vpn_client_stat = None
-        if hasattr(client, "get_vpn_client_status"):
-            try:
-                vpn_client_stat = client.get_vpn_client_status()
-            except Exception:
-                pass
+        if support_vpn:
+            # Check if router is vpn_server compatible
+            if hasattr(client, "get_vpn_status"):
+                try:
+                    vpn_server_stat = client.get_vpn_status()
+                except Exception:
+                    pass
+            # Check if router is vpn_client compatible
+            if hasattr(client, "get_vpn_client_status"):
+                try:
+                    vpn_client_stat = client.get_vpn_client_status()
+                except Exception:
+                    pass
         # Check if router is serving_cells compatible
         serving_cells = None
         if hasattr(client, "get_lte_serving_cells"):
@@ -109,7 +111,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     # Create device coordinator and fetch data
     coordinator = TPLinkRouterCoordinator(hass, client, entry.data[CONF_SCAN_INTERVAL], firmware, status,
                                           lte_status, _LOGGER, entry.entry_id, vpn_server_stat, vpn_client_status,
-                                          support_vpn, serving_cells)
+                                          serving_cells)
 
     if sms_list is not None:
         coordinator._process_sms_list(sms_list)
