@@ -8,7 +8,8 @@
           "username": "ログイン",
           "password": "パスワード",
           "scan_interval": "更新のスキャン間隔(秒）",
-          "verify_ssl": "https接続でSSLを検証する"
+          "verify_ssl": "https接続でSSLを検証する",
+          "support_vpn": "VPNサーバーとクライアントのサポートを含める"
         }
       }
     }
@@ -22,7 +23,8 @@
           "username": "ログイン",
           "password": "パスワード",
           "scan_interval": "更新のスキャン間隔(秒）",
-          "verify_ssl": "https接続でSSLを検証する"
+          "verify_ssl": "https接続でSSLを検証する",
+          "support_vpn": "VPNサーバーとクライアントのサポートを含める"
         }
       }
     }

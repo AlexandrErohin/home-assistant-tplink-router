@@ -73,7 +73,7 @@ class ConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
                             default=user_input.get(CONF_VERIFY_SSL, False),
                         ): cv.boolean,
                         vol.Required(
-                            CONF_SUPPORT_VPN, 
+                            CONF_SUPPORT_VPN,
                             default=user_input.get(CONF_SUPPORT_VPN, True)
                         ): cv.boolean,
                     },
@@ -116,12 +116,12 @@ class OptionsFlow(config_entries.OptionsFlowWithConfigEntry):
 
         data_schema = vol.Schema(
             {
-            vol.Required(CONF_HOST, default=data.get(CONF_HOST)): cv.string,
-            vol.Required(CONF_USERNAME, default=data.get(CONF_USERNAME, DEFAULT_USER)): cv.string,
-            vol.Required(CONF_PASSWORD, default=data.get(CONF_PASSWORD)): cv.string,
-            vol.Required(CONF_SCAN_INTERVAL, default=data.get(CONF_SCAN_INTERVAL)): int,
-            vol.Required(CONF_VERIFY_SSL, default=data.get(CONF_VERIFY_SSL)): cv.boolean,
-            vol.Required(CONF_SUPPORT_VPN, default=data.get(CONF_SUPPORT_VPN)): cv.boolean,
+                vol.Required(CONF_HOST, default=data.get(CONF_HOST)): cv.string,
+                vol.Required(CONF_USERNAME, default=data.get(CONF_USERNAME, DEFAULT_USER)): cv.string,
+                vol.Required(CONF_PASSWORD, default=data.get(CONF_PASSWORD)): cv.string,
+                vol.Required(CONF_SCAN_INTERVAL, default=data.get(CONF_SCAN_INTERVAL)): int,
+                vol.Required(CONF_VERIFY_SSL, default=data.get(CONF_VERIFY_SSL)): cv.boolean,
+                vol.Required(CONF_SUPPORT_VPN, default=data.get(CONF_SUPPORT_VPN, True)): cv.boolean,
             },
             extra=vol.ALLOW_EXTRA
         )

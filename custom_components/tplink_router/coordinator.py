@@ -57,7 +57,7 @@ class TPLinkRouterCoordinator(DataUpdateCoordinator):
             sw_version=firmware.firmware_version,
             hw_version=firmware.hardware_version,
         )
-        
+
         self.vpn_server_status = vpn_server_status
         self.vpn_client_status = vpn_client_status
 

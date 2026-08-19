@@ -205,6 +205,7 @@ You may edit configuration data like:
 2. Password
 3. Scan interval
 4. Verify https
+5. Include support for VPN server/client (enable/disable VPN status polling and related VPN entities)
 
 To do that:
 
@@ -235,6 +236,7 @@ To do that:
 - Archer AX50 v1.0
 - Archer AX53 (v1.0, v2)
 - Archer AX55 (v1.0, V1.60, v4.0)
+- Archer AX55 Pro v1.0
 - Archer AX58 v1.0
 - Archer AX6000 V1
 - Archer AX72 V1

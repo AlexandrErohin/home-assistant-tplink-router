@@ -8,7 +8,8 @@
           "username": "Usuario",
           "password": "Contraseña",
           "scan_interval": "Intervalo de escaneo para actualizaciones en segundos",
-          "verify_ssl": "Verificar SSL para conexión https"
+          "verify_ssl": "Verificar SSL para conexión https",
+          "support_vpn": "Incluir compatibilidad para servidor y cliente VPN"
         }
       }
     }
@@ -22,7 +23,8 @@
           "username": "Usuario",
           "password": "Contraseña",
           "scan_interval": "Intervalo de escaneo para actualizaciones en segundos",
-          "verify_ssl": "Verificar SSL para conexión https"
+          "verify_ssl": "Verificar SSL para conexión https",
+          "support_vpn": "Incluir compatibilidad para servidor y cliente VPN"
         }
       }
     }
