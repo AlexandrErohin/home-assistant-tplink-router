@@ -9,7 +9,7 @@ from homeassistant.const import (
 from datetime import datetime
 from homeassistant.core import HomeAssistant, ServiceCall
 from homeassistant.config_entries import ConfigEntry
-from .const import DOMAIN, DEFAULT_USER, EVENT_NEW_SMS, CONF_CLIENT_CLASS
+from .const import DOMAIN, DEFAULT_USER, EVENT_NEW_SMS, CONF_CLIENT_CLASS, CONF_SUPPORT_VPN
 import logging
 from .coordinator import TPLinkRouterCoordinator
 from homeassistant.helpers import device_registry
@@ -30,6 +30,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     if not (host.startswith('http://') or host.startswith('https://')):
         host = "http://{}".format(host)
     verify_ssl = entry.data[CONF_VERIFY_SSL] if CONF_VERIFY_SSL in entry.data else False
+    support_vpn = entry.data.get(CONF_SUPPORT_VPN)
     client_class = entry.data.get(CONF_CLIENT_CLASS)
     if not client_class:
         client = await TPLinkRouterCoordinator.get_client(
@@ -65,20 +66,22 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
                 lte_stat = client.get_lte_status()
             except Exception:
                 pass
-        # Check if router is vpn_server compatible
+        # Check router VPN compatibility, if needed
         vpn_server_stat = None
-        if hasattr(client, "get_vpn_status"):
-            try:
-                vpn_server_stat = client.get_vpn_status()
-            except Exception:
-                pass
-        # Check if router is vpn_client compatible
         vpn_client_stat = None
-        if hasattr(client, "get_vpn_client_status"):
-            try:
-                vpn_client_stat = client.get_vpn_client_status()
-            except Exception:
-                pass
+        if support_vpn:
+            # Check if router is vpn_server compatible
+            if hasattr(client, "get_vpn_status"):
+                try:
+                    vpn_server_stat = client.get_vpn_status()
+                except Exception:
+                    pass
+            # Check if router is vpn_client compatible
+            if hasattr(client, "get_vpn_client_status"):
+                try:
+                    vpn_client_stat = client.get_vpn_client_status()
+                except Exception:
+                    pass
         # Check if router is serving_cells compatible
         serving_cells = None
         if hasattr(client, "get_lte_serving_cells"):

@@ -8,7 +8,9 @@
           "username": "Login",
           "password": "Password",
           "scan_interval": "Scan interval for updates in seconds",
-          "verify_ssl": "Verify ssl for https connection"
+          "verify_ssl": "Verify ssl for https connection",
+          "support_vpn": "Include support for VPN server and client"
+
         }
       }
     }
@@ -22,7 +24,9 @@
           "username": "Login",
           "password": "Password",
           "scan_interval": "Scan interval for updates in seconds",
-          "verify_ssl": "Verify ssl for https connection"
+          "verify_ssl": "Verify ssl for https connection",
+          "support_vpn": "Include support for VPN server and client"
+
         }
       }
     }
