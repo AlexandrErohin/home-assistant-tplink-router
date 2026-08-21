@@ -124,6 +124,12 @@ class TPLinkRouterCoordinator(DataUpdateCoordinator):
             self.router.set_vpn_client_device(mac, enable)
         await self.hass.async_add_executor_job(TPLinkRouterCoordinator.request, self.router, callback)
 
+    async def set_ipv4_dhcps(self, enable: bool) -> None:
+        def callback():
+            self.router.set_ipv4_dhcps(enable)
+
+        await self.hass.async_add_executor_job(TPLinkRouterCoordinator.request, self.router, callback)
+
     async def _async_update_data(self):
         """Asynchronous update of all data."""
         if self.scan_stopped_at is not None and self.scan_stopped_at > (datetime.now() - timedelta(minutes=20)):

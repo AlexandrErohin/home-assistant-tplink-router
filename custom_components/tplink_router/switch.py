@@ -177,6 +177,18 @@ VPN_CLIENT_SWITCH_TYPES = (
     ),
 )
 
+DHCP_SERVER_SWITCH_TYPES = (
+    TPLinkRouterStatusSwitchConfig(
+        property='lan_ipv4_dhcp_enable',
+        method=lambda coordinator, value: coordinator.set_ipv4_dhcps(value),
+        description=SwitchEntityDescription(
+            key="ipv4_dhcp",
+            name="IPv4 DHCP enable",
+            icon="mdi:server-network",
+            entity_category=EntityCategory.CONFIG,
+        ),
+    ),
+)
 
 async def async_setup_entry(
         hass: HomeAssistant,
@@ -202,6 +214,10 @@ async def async_setup_entry(
             switches.append(TPLinkRouterSwitch(coordinator, switch))
         # Dynamically register VPN Client devices & servers available on the router
         vpn_client.setup_vpn_entities(coordinator, entry, async_add_entities)
+
+    if hasattr(coordinator.router, "set_ipv4_dhcps"):
+        for switch in DHCP_SERVER_SWITCH_TYPES:
+            switches.append(TPLinkRouterSwitch(coordinator, switch))
 
     async_add_entities(switches, False)
 
