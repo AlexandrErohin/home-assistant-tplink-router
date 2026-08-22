@@ -5,7 +5,9 @@ from homeassistant import config_entries
 from homeassistant.core import callback
 import homeassistant.helpers.config_validation as cv
 from homeassistant.data_entry_flow import FlowResult
-from .const import DOMAIN, DEFAULT_USER, DEFAULT_HOST, CONF_CLIENT_CLASS, CONF_SUPPORT_VPN
+from .const import (
+    DOMAIN, DEFAULT_USER, DEFAULT_HOST, CONF_CLIENT_CLASS, CONF_SUPPORT_VPN, CONF_SUPPORT_TRACKER
+)
 from .coordinator import TPLinkRouterCoordinator
 from homeassistant.const import (
     CONF_HOST,
@@ -30,6 +32,7 @@ class ConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
                 vol.Required(CONF_SCAN_INTERVAL, default=30): int,
                 vol.Required(CONF_VERIFY_SSL, default=False): cv.boolean,
                 vol.Required(CONF_SUPPORT_VPN, default=True): cv.boolean,
+                vol.Required(CONF_SUPPORT_TRACKER, default=True): cv.boolean,
             },
             extra=vol.ALLOW_EXTRA
         )
@@ -75,6 +78,10 @@ class ConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
                         vol.Required(
                             CONF_SUPPORT_VPN,
                             default=user_input.get(CONF_SUPPORT_VPN, True)
+                        ): cv.boolean,
+                        vol.Required(
+                            CONF_SUPPORT_TRACKER,
+                            default=user_input.get(CONF_SUPPORT_TRACKER, True)
                         ): cv.boolean,
                     },
                     extra=vol.ALLOW_EXTRA
@@ -122,6 +129,7 @@ class OptionsFlow(config_entries.OptionsFlowWithConfigEntry):
                 vol.Required(CONF_SCAN_INTERVAL, default=data.get(CONF_SCAN_INTERVAL)): int,
                 vol.Required(CONF_VERIFY_SSL, default=data.get(CONF_VERIFY_SSL)): cv.boolean,
                 vol.Required(CONF_SUPPORT_VPN, default=data.get(CONF_SUPPORT_VPN, True)): cv.boolean,
+                vol.Required(CONF_SUPPORT_TRACKER, default=data.get(CONF_SUPPORT_TRACKER, True)): cv.boolean,
             },
             extra=vol.ALLOW_EXTRA
         )
