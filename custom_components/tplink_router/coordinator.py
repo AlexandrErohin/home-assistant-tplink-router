@@ -45,6 +45,7 @@ class TPLinkRouterCoordinator(DataUpdateCoordinator):
         self.unique_id = unique_id
         self.status = status
         self.tracked = {}
+        self.traffic_counters = []
         self.lte_status = lte_status
         self.serving_cells = serving_cells
         self.device_info = DeviceInfo(
@@ -97,6 +98,15 @@ class TPLinkRouterCoordinator(DataUpdateCoordinator):
 
     async def reboot(self) -> None:
         await self.hass.async_add_executor_job(TPLinkRouterCoordinator.request, self.router, self.router.reboot)
+
+    def register_traffic_counters(self, counters) -> None:
+        """Register traffic counter entities."""
+        self.traffic_counters = list(counters)
+
+    async def reset_traffic_counters(self) -> None:
+        """Reset all accumulated traffic counters."""
+        for counter in self.traffic_counters:
+            counter.reset()
 
     async def set_wifi(self, wifi: Connection, enable: bool) -> None:
         def callback():
