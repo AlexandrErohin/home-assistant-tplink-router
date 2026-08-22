@@ -12,6 +12,7 @@ from homeassistant.helpers.update_coordinator import CoordinatorEntity
 from .coordinator import TPLinkRouterCoordinator
 from .const import (
     DOMAIN,
+    CONF_SUPPORT_TRACKER,
     EVENT_NEW_DEVICE,
     EVENT_ONLINE,
     EVENT_OFFLINE,
@@ -26,7 +27,10 @@ async def async_setup_entry(
         entry: ConfigEntry,
         async_add_entities: AddEntitiesCallback,
 ) -> None:
-    """Add entitities from coordinator, otherwise restore."""
+    """ User can suppress device trackers for non-AP router """
+    if not entry.data.get(CONF_SUPPORT_TRACKER):
+        return
+    """Add entities from coordinator, otherwise restore."""
     coordinator = hass.data[DOMAIN][entry.entry_id]
     registry = entity_registry.async_get(hass)
     tracked: dict[MAC_ADDR, TPLinkTracker] = {}
