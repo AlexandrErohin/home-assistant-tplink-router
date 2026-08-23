@@ -1,5 +1,6 @@
 from __future__ import annotations
 import hashlib
+import asyncio
 from datetime import timedelta, datetime
 from logging import Logger
 from collections.abc import Callable
@@ -65,6 +66,7 @@ class TPLinkRouterCoordinator(DataUpdateCoordinator):
         self._last_update_time: datetime | None = None
         self._sms_hashes: set[str] = set()
         self.new_sms: list[SMS] = []
+        self.lock = asyncio.Lock()
 
         super().__init__(
             hass,
@@ -96,82 +98,88 @@ class TPLinkRouterCoordinator(DataUpdateCoordinator):
                 pass
 
     async def reboot(self) -> None:
-        await self.hass.async_add_executor_job(TPLinkRouterCoordinator.request, self.router, self.router.reboot)
+        async with self.lock:
+            await self.hass.async_add_executor_job(TPLinkRouterCoordinator.request, self.router, self.router.reboot)
 
     async def set_wifi(self, wifi: Connection, enable: bool) -> None:
-        def callback():
-            self.router.set_wifi(wifi, enable)
-
-        await self.hass.async_add_executor_job(TPLinkRouterCoordinator.request, self.router, callback)
+        async with self.lock:
+            def callback():
+                self.router.set_wifi(wifi, enable)
+            await self.hass.async_add_executor_job(TPLinkRouterCoordinator.request, self.router, callback)
 
     async def set_vpn_server(self, kind: VPN, enable: bool) -> None:
-        def callback():
-            self.router.set_vpn(kind, enable)
-        await self.hass.async_add_executor_job(TPLinkRouterCoordinator.request, self.router, callback)
+        async with self.lock:
+            def callback():
+                self.router.set_vpn(kind, enable)
+            await self.hass.async_add_executor_job(TPLinkRouterCoordinator.request, self.router, callback)
 
     async def set_vpn_client(self, enable: bool) -> None:
-        def callback():
-            self.router.set_vpn_client(enable)
-        await self.hass.async_add_executor_job(TPLinkRouterCoordinator.request, self.router, callback)
+        async with self.lock:
+            def callback():
+                self.router.set_vpn_client(enable)
+            await self.hass.async_add_executor_job(TPLinkRouterCoordinator.request, self.router, callback)
 
     async def set_vpn_client_server(self, server_id, enable: bool) -> None:
-        def callback():
-            self.router.set_vpn_client_server(server_id, enable)
-        await self.hass.async_add_executor_job(TPLinkRouterCoordinator.request, self.router, callback)
+        async with self.lock:
+            def callback():
+                self.router.set_vpn_client_server(server_id, enable)
+            await self.hass.async_add_executor_job(TPLinkRouterCoordinator.request, self.router, callback)
 
     async def set_vpn_client_device(self, mac: str, enable: bool) -> None:
-        def callback():
-            self.router.set_vpn_client_device(mac, enable)
-        await self.hass.async_add_executor_job(TPLinkRouterCoordinator.request, self.router, callback)
+        async with self.lock:
+            def callback():
+                self.router.set_vpn_client_device(mac, enable)
+            await self.hass.async_add_executor_job(TPLinkRouterCoordinator.request, self.router, callback)
 
     async def _async_update_data(self):
-        """Asynchronous update of all data."""
-        if self.scan_stopped_at is not None and self.scan_stopped_at > (datetime.now() - timedelta(minutes=20)):
-            return
-        self.scan_stopped_at = None
+        async with self.lock:
+            """Asynchronous update of all data."""
+            if self.scan_stopped_at is not None and self.scan_stopped_at > (datetime.now() - timedelta(minutes=20)):
+                return
+            self.scan_stopped_at = None
 
-        def callback():
-            status = self.router.get_status()
-            lte_status = self.lte_status
-            serving_cells = self.serving_cells
-            vpn_server_status = self.vpn_server_status
-            vpn_client_status = self.vpn_client_status
-            sms_list = None
+            def callback():
+                status = self.router.get_status()
+                lte_status = self.lte_status
+                serving_cells = self.serving_cells
+                vpn_server_status = self.vpn_server_status
+                vpn_client_status = self.vpn_client_status
+                sms_list = None
 
-            if self.lte_status is not None:
-                lte_status = self.router.get_lte_status()
-            if self.serving_cells is not None:
-                serving_cells = self.router.get_lte_serving_cells()
-            if self.vpn_server_status is not None:
-                vpn_server_status = self.router.get_vpn_status()
-            if self.vpn_client_status is not None:
-                vpn_client_status = self.router.get_vpn_client_status()
-            if hasattr(self.router, "get_sms") and self.lte_status is not None:
-                sms_list = self.router.get_sms()
+                if self.lte_status is not None:
+                    lte_status = self.router.get_lte_status()
+                if self.serving_cells is not None:
+                    serving_cells = self.router.get_lte_serving_cells()
+                if self.vpn_server_status is not None:
+                    vpn_server_status = self.router.get_vpn_status()
+                if self.vpn_client_status is not None:
+                    vpn_client_status = self.router.get_vpn_client_status()
+                if hasattr(self.router, "get_sms") and self.lte_status is not None:
+                    sms_list = self.router.get_sms()
 
-            return (
-                status,
-                lte_status,
-                serving_cells,
-                vpn_server_status,
-                vpn_client_status,
+                return (
+                    status,
+                    lte_status,
+                    serving_cells,
+                    vpn_server_status,
+                    vpn_client_status,
+                    sms_list,
+                )
+
+            (
+                self.status,
+                self.lte_status,
+                self.serving_cells,
+                self.vpn_server_status,
+                self.vpn_client_status,
                 sms_list,
+            ) = await self.hass.async_add_executor_job(
+                TPLinkRouterCoordinator.request, self.router, callback
             )
 
-        (
-            self.status,
-            self.lte_status,
-            self.serving_cells,
-            self.vpn_server_status,
-            self.vpn_client_status,
-            sms_list,
-        ) = await self.hass.async_add_executor_job(
-            TPLinkRouterCoordinator.request, self.router, callback
-        )
-
-        if sms_list is not None:
-            self._process_sms_list(sms_list)
-        self._last_update_time = datetime.now()
+            if sms_list is not None:
+                self._process_sms_list(sms_list)
+            self._last_update_time = datetime.now()
 
     def _process_sms_list(self, sms_list: list[SMS]) -> None:
         current_hashes: set[str] = set()
