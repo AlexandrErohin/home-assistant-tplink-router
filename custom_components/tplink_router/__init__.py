@@ -9,7 +9,14 @@ from homeassistant.const import (
 from datetime import datetime
 from homeassistant.core import HomeAssistant, ServiceCall
 from homeassistant.config_entries import ConfigEntry
-from .const import DOMAIN, DEFAULT_USER, EVENT_NEW_SMS, CONF_CLIENT_CLASS, CONF_SUPPORT_VPN
+from .const import (
+    DOMAIN,
+    DEFAULT_USER,
+    EVENT_NEW_SMS,
+    CONF_CLIENT_CLASS,
+    CONF_SUPPORT_VPN,
+    CONF_SUPPORT_TRACKER,
+)
 import logging
 from .coordinator import TPLinkRouterCoordinator
 from homeassistant.helpers import device_registry
@@ -139,7 +146,11 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     _async_add_listeners(hass, coordinator)
     hass.data.setdefault(DOMAIN, {})[entry.entry_id] = coordinator
 
-    await hass.config_entries.async_forward_entry_setups(entry, PLATFORMS)
+    platforms = list(PLATFORMS)
+    if not entry.data.get(CONF_SUPPORT_TRACKER, True):
+        platforms.remove(Platform.DEVICE_TRACKER)
+
+    await hass.config_entries.async_forward_entry_setups(entry, platforms)
     entry.async_on_unload(entry.add_update_listener(async_reload_entry))
 
     register_services(hass, coordinator)

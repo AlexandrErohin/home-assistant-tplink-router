@@ -9,7 +9,8 @@
           "password": "Mot de passe",
           "scan_interval": "Intervalle d'analyse des mises à jour en secondes",
           "verify_ssl": "Vérifier SSL pour la connexion https",
-          "support_vpn": "Inclure la prise en charge du serveur et du client VPN"
+          "support_vpn": "Inclure la prise en charge du serveur et du client VPN",
+          "support_tracker": "Inclure les traceurs d'appareils (désactiver pour les routeurs qui ne sont pas des points d'accès afin d'éviter les doublons)"
         }
       }
     }
@@ -24,7 +25,8 @@
           "password": "Mot de passe",
           "scan_interval": "Intervalle d'analyse des mises à jour en secondes",
           "verify_ssl": "Vérifier SSL pour la connexion https",
-          "support_vpn": "Inclure la prise en charge du serveur et du client VPN"
+          "support_vpn": "Inclure la prise en charge du serveur et du client VPN",
+          "support_tracker": "Inclure les traceurs d'appareils (désactiver pour les routeurs qui ne sont pas des points d'accès afin d'éviter les doublons)"
         }
       }
     }

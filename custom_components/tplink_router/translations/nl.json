@@ -9,7 +9,8 @@
           "password": "Wachtwoord",
           "scan_interval": "Scaninterval voor updates in seconden",
           "verify_ssl": "Verifieer SSL voor https-verbinding",
-          "support_vpn": "VPN-server- en VPN-clientondersteuning opnemen"
+          "support_vpn": "VPN-server- en VPN-clientondersteuning opnemen",
+          "support_tracker": "Apparaattrackers opnemen (uitschakelen voor routers die geen access points zijn om duplicaten te voorkomen)"
         }
       }
     }
@@ -24,7 +25,8 @@
           "password": "Wachtwoord",
           "scan_interval": "Scaninterval voor updates in seconden",
           "verify_ssl": "Verifieer SSL voor https-verbinding",
-          "support_vpn": "VPN-server- en VPN-clientondersteuning opnemen"
+          "support_vpn": "VPN-server- en VPN-clientondersteuning opnemen",
+          "support_tracker": "Apparaattrackers opnemen (uitschakelen voor routers die geen access points zijn om duplicaten te voorkomen)"
         }
       }
     }

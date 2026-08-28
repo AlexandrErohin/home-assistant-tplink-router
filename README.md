@@ -69,6 +69,8 @@ For LTE Routers
 ### Device Tracker
  - Track connected to router devices by MAC address with connection information
 
+When using multiple routers (for example, a WAN router and a separate access point), you can disable device trackers for the non-AP router in the integration options to avoid duplicate device entries.
+
 To find your device - Go to `Developer tools` and search for your MAC address - you’ll find sensor like `device_tracker.YOUR_MAC` or `device_tracker.YOUR_PHONE_NAME`.
 
 It will also fire Home Assistant event when a device connects to router

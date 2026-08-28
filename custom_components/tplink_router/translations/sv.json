@@ -9,7 +9,8 @@
           "password": "Lösenord",
           "scan_interval": "Uppdateringsintervall i sekunder",
           "verify_ssl": "Verifiera ssl för https anslutning",
-          "support_vpn": "Inkludera stöd för VPN-server och VPN-klient"
+          "support_vpn": "Inkludera stöd för VPN-server och VPN-klient",
+          "support_tracker": "Inkludera enhetsspårare (inaktivera för routrar som inte är accesspunkter för att undvika dubbletter)"
         }
       }
     }
@@ -24,7 +25,8 @@
           "password": "Lösenord",
           "scan_interval": "Uppdateringsintervall i sekunder",
           "verify_ssl": "Verifiera ssl för https anslutning",
-          "support_vpn": "Inkludera stöd för VPN-server och VPN-klient"
+          "support_vpn": "Inkludera stöd för VPN-server och VPN-klient",
+          "support_tracker": "Inkludera enhetsspårare (inaktivera för routrar som inte är accesspunkter för att undvika dubbletter)"
         }
       }
     }
