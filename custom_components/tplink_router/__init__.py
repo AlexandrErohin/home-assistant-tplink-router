@@ -197,10 +197,9 @@ def register_services(hass: HomeAssistant, coord: TPLinkRouterCoordinator) -> No
             _LOGGER.error('TplinkRouter Integration Exception - This device cannot send SMS')
             return
 
-        def callback():
-            coordinator.router.send_sms(service.data.get("number"), service.data.get("text"))
-        await hass.async_add_executor_job(
-            TPLinkRouterCoordinator.request, coordinator.router, callback
+        await coordinator.send_sms(
+            service.data.get("number"),
+            service.data.get("text"),
         )
 
     if not hass.services.has_service(DOMAIN, 'send_sms'):
