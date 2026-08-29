@@ -9,7 +9,10 @@ from homeassistant.const import (
 from datetime import datetime
 from homeassistant.core import HomeAssistant, ServiceCall
 from homeassistant.config_entries import ConfigEntry
-from .const import DOMAIN, DEFAULT_USER, EVENT_NEW_SMS, CONF_CLIENT_CLASS, CONF_SCAN_RETRIES, CONF_SCAN_BACKOFF
+from .const import (
+    DOMAIN, DEFAULT_USER, EVENT_NEW_SMS, CONF_CLIENT_CLASS,
+    CONF_SUPPORT_VPN, CONF_SCAN_RETRIES, CONF_SCAN_BACKOFF
+)
 import logging
 from .coordinator import TPLinkRouterCoordinator
 from homeassistant.helpers import device_registry
@@ -30,6 +33,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     if not (host.startswith('http://') or host.startswith('https://')):
         host = "http://{}".format(host)
     verify_ssl = entry.data[CONF_VERIFY_SSL] if CONF_VERIFY_SSL in entry.data else False
+    support_vpn = entry.data.get(CONF_SUPPORT_VPN, True)
     client_class = entry.data.get(CONF_CLIENT_CLASS)
     if not client_class:
         client = await TPLinkRouterCoordinator.get_client(
@@ -63,35 +67,57 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
         if hasattr(client, "get_lte_status"):
             try:
                 lte_stat = client.get_lte_status()
-            except Exception:
-                pass
-        # Check if router is vpn_server compatible
+            except Exception as err:
+                _LOGGER.debug(
+                    "TP-Link router %s: get_lte_status failed: %s",
+                    client.__class__.__name__,
+                    err,
+                )
+        # Check router VPN compatibility, if needed
         vpn_server_stat = None
-        if hasattr(client, "get_vpn_status"):
-            try:
-                vpn_server_stat = client.get_vpn_status()
-            except Exception:
-                pass
-        # Check if router is vpn_client compatible
         vpn_client_stat = None
-        if hasattr(client, "get_vpn_client_status"):
-            try:
-                vpn_client_stat = client.get_vpn_client_status()
-            except Exception:
-                pass
+        if support_vpn:
+            # Check if router is vpn_server compatible
+            if hasattr(client, "get_vpn_status"):
+                try:
+                    vpn_server_stat = client.get_vpn_status()
+                except Exception as err:
+                    _LOGGER.debug(
+                        "TP-Link router %s: get_vpn_status failed: %s",
+                        client.__class__.__name__,
+                        err,
+                    )
+            # Check if router is vpn_client compatible
+            if hasattr(client, "get_vpn_client_status"):
+                try:
+                    vpn_client_stat = client.get_vpn_client_status()
+                except Exception as err:
+                    _LOGGER.debug(
+                        "TP-Link router %s: get_vpn_client_status failed: %s",
+                        client.__class__.__name__,
+                        err,
+                    )
         # Check if router is serving_cells compatible
         serving_cells = None
         if hasattr(client, "get_lte_serving_cells"):
             try:
                 serving_cells = client.get_lte_serving_cells()
-            except Exception:
-                pass
+            except Exception as err:
+                _LOGGER.debug(
+                    "TP-Link router %s: get_lte_serving_cells failed: %s",
+                    client.__class__.__name__,
+                    err,
+                )
         sms_list = None
         if hasattr(client, "get_sms") and lte_stat is not None:
             try:
                 sms_list = client.get_sms()
-            except Exception:
-                pass
+            except Exception as err:
+                _LOGGER.debug(
+                    "TP-Link router %s: get_sms failed: %s",
+                    client.__class__.__name__,
+                    err,
+                )
         return firm, stat, lte_stat, vpn_server_stat, vpn_client_stat, serving_cells, sms_list
 
     (

@@ -1,6 +1,7 @@
 DEFAULT_NAME = "TP-Link Router"
 DOMAIN = "tplink_router"
 CONF_CLIENT_CLASS = "client_class"
+CONF_SUPPORT_VPN = "support_vpn"
 CONF_SCAN_RETRIES = "scan_retries"
 CONF_SCAN_BACKOFF = "scan_backoff"
 DEFAULT_USER = "admin"

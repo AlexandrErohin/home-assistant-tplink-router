@@ -8,7 +8,8 @@
           "username": "Utilisateur",
           "password": "Mot de passe",
           "scan_interval": "Intervalle d'analyse des mises à jour en secondes",
-          "verify_ssl": "Vérifier SSL pour la connexion https"
+          "verify_ssl": "Vérifier SSL pour la connexion https",
+          "support_vpn": "Inclure la prise en charge du serveur et du client VPN"
         }
       }
     }
@@ -22,7 +23,8 @@
           "username": "Utilisateur",
           "password": "Mot de passe",
           "scan_interval": "Intervalle d'analyse des mises à jour en secondes",
-          "verify_ssl": "Vérifier SSL pour la connexion https"
+          "verify_ssl": "Vérifier SSL pour la connexion https",
+          "support_vpn": "Inclure la prise en charge du serveur et du client VPN"
         }
       }
     }

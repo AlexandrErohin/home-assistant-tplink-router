@@ -8,7 +8,8 @@
           "username": "Kullanıcı Adı",
           "password": "Parola",
           "scan_interval": "Güncellemeler için tarama sıklığı (saniye)",
-          "verify_ssl": "HTTPS için SSL doğrula"
+          "verify_ssl": "HTTPS için SSL doğrula",
+          "support_vpn": "VPN sunucu ve istemci desteğini ekle"
         }
       }
     }
@@ -22,7 +23,8 @@
           "username": "Kullanıcı Adı",
           "password": "Parola",
           "scan_interval": "Güncellemeler için tarama sıklığı (saniye)",
-          "verify_ssl": "HTTPS için SSL doğrula"
+          "verify_ssl": "HTTPS için SSL doğrula",
+          "support_vpn": "VPN sunucu ve istemci desteğini ekle"
         }
       }
     }

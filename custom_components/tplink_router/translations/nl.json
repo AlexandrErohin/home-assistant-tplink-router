@@ -8,7 +8,8 @@
           "username": "Gebruikersnaam",
           "password": "Wachtwoord",
           "scan_interval": "Scaninterval voor updates in seconden",
-          "verify_ssl": "Verifieer SSL voor https-verbinding"
+          "verify_ssl": "Verifieer SSL voor https-verbinding",
+          "support_vpn": "VPN-server- en VPN-clientondersteuning opnemen"
         }
       }
     }
@@ -22,7 +23,8 @@
           "username": "Gebruikersnaam",
           "password": "Wachtwoord",
           "scan_interval": "Scaninterval voor updates in seconden",
-          "verify_ssl": "Verifieer SSL voor https-verbinding"
+          "verify_ssl": "Verifieer SSL voor https-verbinding",
+          "support_vpn": "VPN-server- en VPN-clientondersteuning opnemen"
         }
       }
     }

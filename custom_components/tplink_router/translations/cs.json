@@ -8,7 +8,8 @@
           "username": "Login",
           "password": "Heslo",
           "scan_interval": "Interval skenování v sekundách",
-          "verify_ssl": "Kontrolovat ssl pro HTTPS připojení"
+          "verify_ssl": "Kontrolovat ssl pro HTTPS připojení",
+          "support_vpn": "Zahrnout podporu pro VPN server a klienta"
         }
       }
     }
@@ -22,7 +23,8 @@
           "username": "Login",
           "password": "Heslo",
           "scan_interval": "Interval skenování v sekundách",
-          "verify_ssl": "Kontrolovat ssl pro HTTPS připojení"
+          "verify_ssl": "Kontrolovat ssl pro HTTPS připojení",
+          "support_vpn": "Zahrnout podporu pro VPN server a klienta"
         }
       }
     }

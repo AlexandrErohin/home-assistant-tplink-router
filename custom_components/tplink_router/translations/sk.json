@@ -8,7 +8,8 @@
           "username": "Meno",
           "password": "Heslo",
           "scan_interval": "Interval skenovania aktualizácií v sekundách",
-          "verify_ssl": "Overte ssl pre pripojenie https"
+          "verify_ssl": "Overte ssl pre pripojenie https",
+          "support_vpn": "Zahrnúť podporu pre VPN server a klienta"
         }
       }
     }
@@ -22,7 +23,8 @@
           "username": "Meno",
           "password": "Heslo",
           "scan_interval": "Interval skenovania aktualizácií v sekundách",
-          "verify_ssl": "Overte ssl pre pripojenie https"
+          "verify_ssl": "Overte ssl pre pripojenie https",
+          "support_vpn": "Zahrnúť podporu pre VPN server a klienta"
         }
       }
     }

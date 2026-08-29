@@ -8,7 +8,8 @@
           "username": "Login",
           "password": "Lösenord",
           "scan_interval": "Uppdateringsintervall i sekunder",
-          "verify_ssl": "Verifiera ssl för https anslutning"
+          "verify_ssl": "Verifiera ssl för https anslutning",
+          "support_vpn": "Inkludera stöd för VPN-server och VPN-klient"
         }
       }
     }
@@ -22,7 +23,8 @@
           "username": "Login",
           "password": "Lösenord",
           "scan_interval": "Uppdateringsintervall i sekunder",
-          "verify_ssl": "Verifiera ssl för https anslutning"
+          "verify_ssl": "Verifiera ssl för https anslutning",
+          "support_vpn": "Inkludera stöd för VPN-server och VPN-klient"
         }
       }
     }

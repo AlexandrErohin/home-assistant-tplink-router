@@ -11,7 +11,8 @@
           "scan_interval": "[%key:common::config_flow::data::scan_interval%]",
           "scan_retries": "Number of attempts for each data update",
           "scan_backoff": "Seconds between retries",
-          "verify_ssl": "[%key:common::config_flow::data::verify_ssl%]"
+          "verify_ssl": "[%key:common::config_flow::data::verify_ssl%]",
+          "support_vpn": "Include support for VPN server and client"
         }
       }
     }
@@ -26,7 +27,8 @@
           "scan_interval": "[%key:common::config_flow::data::scan_interval%]",
           "scan_retries": "Number of attempts for each data update",
           "scan_backoff": "Seconds between retries",
-          "verify_ssl": "[%key:common::config_flow::data::verify_ssl%]"
+          "verify_ssl": "[%key:common::config_flow::data::verify_ssl%]",
+          "support_vpn": "Include support for VPN server and client"
         }
       }
     }
