@@ -17,7 +17,8 @@ from tplinkrouterc6u import (
     SMS,
     ServingCell,
     VpnClientStatus,
-    VPNStatus
+    VPNStatus,
+    PortStatus
 )
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers.device_registry import CONNECTION_NETWORK_MAC, DeviceInfo
@@ -41,6 +42,7 @@ class TPLinkRouterCoordinator(DataUpdateCoordinator):
             vpn_server_status: VPNStatus | None = None,
             vpn_client_status: VpnClientStatus | None = None,
             serving_cells: list[ServingCell] | None = None,
+            port_status: list[PortStatus] | None = None,
     ) -> None:
         self.router = router
         self.unique_id = unique_id
@@ -48,6 +50,7 @@ class TPLinkRouterCoordinator(DataUpdateCoordinator):
         self.tracked = {}
         self.lte_status = lte_status
         self.serving_cells = serving_cells
+        self.port_status = port_status
         self.device_info = DeviceInfo(
             configuration_url=router.host,
             connections={(CONNECTION_NETWORK_MAC, self.status.lan_macaddr)},
@@ -155,6 +158,7 @@ class TPLinkRouterCoordinator(DataUpdateCoordinator):
                 serving_cells = self.serving_cells
                 vpn_server_status = self.vpn_server_status
                 vpn_client_status = self.vpn_client_status
+                port_status = self.port_status
                 sms_list = None
 
                 if self.lte_status is not None:
@@ -165,6 +169,16 @@ class TPLinkRouterCoordinator(DataUpdateCoordinator):
                     vpn_server_status = self.router.get_vpn_status()
                 if self.vpn_client_status is not None:
                     vpn_client_status = self.router.get_vpn_client_status()
+                if hasattr(self.router, "get_port_status"):
+                    try:
+                        port_status = self.router.get_port_status()
+                    except Exception as err:
+                        self.logger.debug(
+                            "TP-Link router %s: get_port_status failed: %s",
+                            self.router.__class__.__name__,
+                            err,
+                        )
+                        port_status = None
                 if hasattr(self.router, "get_sms") and self.lte_status is not None:
                     sms_list = self.router.get_sms()
 
@@ -174,6 +188,7 @@ class TPLinkRouterCoordinator(DataUpdateCoordinator):
                     serving_cells,
                     vpn_server_status,
                     vpn_client_status,
+                    port_status,
                     sms_list,
                 )
 
@@ -183,6 +198,7 @@ class TPLinkRouterCoordinator(DataUpdateCoordinator):
                 self.serving_cells,
                 self.vpn_server_status,
                 self.vpn_client_status,
+                self.port_status,
                 sms_list,
             ) = await self.hass.async_add_executor_job(
                 TPLinkRouterCoordinator.request, self.router, callback

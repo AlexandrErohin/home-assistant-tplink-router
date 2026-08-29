@@ -24,6 +24,7 @@ from homeassistant.helpers import device_registry
 PLATFORMS: list[Platform] = [
     Platform.DEVICE_TRACKER,
     Platform.SENSOR,
+    Platform.BINARY_SENSOR,
     Platform.SWITCH,
     Platform.BUTTON,
 ]
@@ -112,6 +113,17 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
                     client.__class__.__name__,
                     err,
                 )
+        # Check if router is port_status compatible
+        port_status = None
+        if hasattr(client, "get_port_status"):
+            try:
+                port_status = client.get_port_status()
+            except Exception as err:
+                _LOGGER.debug(
+                    "TP-Link router %s: get_port_status failed: %s",
+                    client.__class__.__name__,
+                    err,
+                )
         sms_list = None
         if hasattr(client, "get_sms") and lte_stat is not None:
             try:
@@ -122,7 +134,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
                     client.__class__.__name__,
                     err,
                 )
-        return firm, stat, lte_stat, vpn_server_stat, vpn_client_stat, serving_cells, sms_list
+        return firm, stat, lte_stat, vpn_server_stat, vpn_client_stat, serving_cells, port_status, sms_list
 
     (
         firmware,
@@ -131,6 +143,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
         vpn_server_stat,
         vpn_client_status,
         serving_cells,
+        port_status,
         sms_list,
     ) = await hass.async_add_executor_job(
         TPLinkRouterCoordinator.request, client, callback
@@ -138,7 +151,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     # Create device coordinator and fetch data
     coordinator = TPLinkRouterCoordinator(hass, client, entry.data[CONF_SCAN_INTERVAL], firmware, status,
                                           lte_status, _LOGGER, entry.entry_id, vpn_server_stat, vpn_client_status,
-                                          serving_cells)
+                                          serving_cells, port_status)
 
     if sms_list is not None:
         coordinator._process_sms_list(sms_list)
