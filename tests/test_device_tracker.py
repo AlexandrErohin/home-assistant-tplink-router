@@ -1,6 +1,5 @@
 import logging
 
-from custom_components.tplink_router.coordinator import TPLinkRouterCoordinator
 from custom_components.tplink_router.device_tracker import TPLinkTracker
 
 

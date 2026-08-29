@@ -3,7 +3,14 @@ from unittest.mock import Mock
 
 import pytest
 
-from custom_components.tplink_router.utils import prefer, run_with_retry, safe_call
+from tplinkrouterc6u import AuthorizeError
+
+from custom_components.tplink_router.utils import (
+    is_retryable_error,
+    prefer,
+    run_with_retry,
+    safe_call,
+)
 
 
 def test_run_with_retry_with_zero_retries_still_runs_once():
@@ -60,6 +67,34 @@ def test_run_with_retry_logs_warning():
     with pytest.raises(ValueError):
         run_with_retry(cb, retries=2, backoff_seconds=0, logger=logger)
     assert logger.warning.call_count == 2
+
+
+def test_run_with_retry_does_not_retry_non_retryable_error():
+    calls = []
+
+    def cb():
+        calls.append(1)
+        raise AuthorizeError("Login failed")
+
+    with pytest.raises(AuthorizeError):
+        run_with_retry(cb, retries=5, backoff_seconds=0, is_retryable=is_retryable_error)
+    assert calls == [1]
+
+
+def test_is_retryable_error_rejects_authorize_error():
+    assert not is_retryable_error(AuthorizeError("Login failed"))
+
+
+def test_is_retryable_error_rejects_cannot_authorize_message():
+    assert not is_retryable_error(ValueError("TplinkRouter - Cannot authorize! Error - 'data'"))
+
+
+def test_is_retryable_error_rejects_401():
+    assert not is_retryable_error(RuntimeError("Network error: 401 Client Error: OK"))
+
+
+def test_is_retryable_error_accepts_transient_errors():
+    assert is_retryable_error(TimeoutError("Read timed out"))
 
 
 def test_safe_call_returns_value():

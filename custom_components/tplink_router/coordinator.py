@@ -1,9 +1,10 @@
 from __future__ import annotations
 import hashlib
+import asyncio
 from datetime import timedelta, datetime
 from logging import Logger
 from collections.abc import Callable
-from typing import Type
+from typing import Any, Type
 from homeassistant.helpers.update_coordinator import DataUpdateCoordinator
 from tplinkrouterc6u import (
     VPN,
@@ -24,7 +25,7 @@ from .const import (
     DOMAIN,
     DEFAULT_NAME,
 )
-from .utils import run_with_retry, safe_call
+from .utils import run_with_retry, safe_call, is_retryable_error
 
 
 def collect_status(
@@ -95,6 +96,7 @@ class TPLinkRouterCoordinator(DataUpdateCoordinator):
         self._last_update_time: datetime | None = None
         self._sms_hashes: set[str] = set()
         self.new_sms: list[SMS] = []
+        self._lock = asyncio.Lock()
 
         super().__init__(
             hass,
@@ -125,72 +127,90 @@ class TPLinkRouterCoordinator(DataUpdateCoordinator):
                 # Do not block updates if logout fails.
                 pass
 
+    async def _run_router_request(self, callback: Callable) -> Any:
+        async with self._lock:
+            return await self.hass.async_add_executor_job(
+                TPLinkRouterCoordinator.request, self.router, callback
+            )
+
     async def reboot(self) -> None:
-        await self.hass.async_add_executor_job(TPLinkRouterCoordinator.request, self.router, self.router.reboot)
+        await self._run_router_request(self.router.reboot)
 
     async def set_wifi(self, wifi: Connection, enable: bool) -> None:
         def callback():
             self.router.set_wifi(wifi, enable)
 
-        await self.hass.async_add_executor_job(TPLinkRouterCoordinator.request, self.router, callback)
+        await self._run_router_request(callback)
 
     async def set_vpn_server(self, kind: VPN, enable: bool) -> None:
         def callback():
             self.router.set_vpn(kind, enable)
-        await self.hass.async_add_executor_job(TPLinkRouterCoordinator.request, self.router, callback)
+
+        await self._run_router_request(callback)
 
     async def set_vpn_client(self, enable: bool) -> None:
         def callback():
             self.router.set_vpn_client(enable)
-        await self.hass.async_add_executor_job(TPLinkRouterCoordinator.request, self.router, callback)
+
+        await self._run_router_request(callback)
 
     async def set_vpn_client_server(self, server_id, enable: bool) -> None:
         def callback():
             self.router.set_vpn_client_server(server_id, enable)
-        await self.hass.async_add_executor_job(TPLinkRouterCoordinator.request, self.router, callback)
+
+        await self._run_router_request(callback)
 
     async def set_vpn_client_device(self, mac: str, enable: bool) -> None:
         def callback():
             self.router.set_vpn_client_device(mac, enable)
-        await self.hass.async_add_executor_job(TPLinkRouterCoordinator.request, self.router, callback)
+
+        await self._run_router_request(callback)
+
+    async def send_sms(self, number: str, text: str) -> None:
+        def callback():
+            self.router.send_sms(number, text)
+
+        await self._run_router_request(callback)
 
     async def _async_update_data(self):
         """Asynchronous update of all data."""
-        if self.scan_stopped_at is not None and self.scan_stopped_at > (datetime.now() - timedelta(minutes=20)):
-            return
-        self.scan_stopped_at = None
+        async with self._lock:
+            if self.scan_stopped_at is not None and self.scan_stopped_at > (datetime.now() - timedelta(minutes=20)):
+                return
+            self.scan_stopped_at = None
 
-        def update_once():
-            return TPLinkRouterCoordinator.request(
-                self.router,
-                lambda: collect_status(
+            def update_once():
+                return TPLinkRouterCoordinator.request(
                     self.router,
-                    self.lte_status,
-                    self.serving_cells,
-                    self.vpn_server_status,
-                    self.vpn_client_status,
-                    self.logger,
-                ),
+                    lambda: collect_status(
+                        self.router,
+                        self.lte_status,
+                        self.serving_cells,
+                        self.vpn_server_status,
+                        self.vpn_client_status,
+                        self.logger,
+                    ),
+                )
+
+            (
+                self.status,
+                self.lte_status,
+                self.serving_cells,
+                self.vpn_server_status,
+                self.vpn_client_status,
+                sms_list,
+            ) = await self.hass.async_add_executor_job(
+                run_with_retry,
+                update_once,
+                self.retries,
+                self.backoff_seconds,
+                self.logger,
+                is_retryable_error,
             )
 
-        (
-            self.status,
-            self.lte_status,
-            self.serving_cells,
-            self.vpn_server_status,
-            self.vpn_client_status,
-            sms_list,
-        ) = await self.hass.async_add_executor_job(
-            run_with_retry,
-            update_once,
-            self.retries,
-            self.backoff_seconds,
-            self.logger,
-        )
-
-        if sms_list is not None:
-            self._process_sms_list(sms_list)
-        self._last_update_time = datetime.now()
+            if sms_list is not None:
+                self._process_sms_list(sms_list)
+            self._last_update_time = datetime.now()
 
     def _process_sms_list(self, sms_list: list[SMS]) -> None:
         current_hashes: set[str] = set()

@@ -9,7 +9,8 @@
           "password": "Parola",
           "scan_interval": "Güncellemeler için tarama sıklığı (saniye)",
           "verify_ssl": "HTTPS için SSL doğrula",
-          "support_vpn": "VPN sunucu ve istemci desteğini ekle"
+          "support_vpn": "VPN sunucu ve istemci desteğini ekle",
+          "support_tracker": "Cihaz izleyicilerini ekle (yinelenmeleri önlemek için erişim noktası olmayan routerlarda devre dışı bırak)"
         }
       }
     }
@@ -24,7 +25,8 @@
           "password": "Parola",
           "scan_interval": "Güncellemeler için tarama sıklığı (saniye)",
           "verify_ssl": "HTTPS için SSL doğrula",
-          "support_vpn": "VPN sunucu ve istemci desteğini ekle"
+          "support_vpn": "VPN sunucu ve istemci desteğini ekle",
+          "support_tracker": "Cihaz izleyicilerini ekle (yinelenmeleri önlemek için erişim noktası olmayan routerlarda devre dışı bırak)"
         }
       }
     }

@@ -10,8 +10,14 @@ from datetime import datetime
 from homeassistant.core import HomeAssistant, ServiceCall
 from homeassistant.config_entries import ConfigEntry
 from .const import (
-    DOMAIN, DEFAULT_USER, EVENT_NEW_SMS, CONF_CLIENT_CLASS,
-    CONF_SUPPORT_VPN, CONF_SCAN_RETRIES, CONF_SCAN_BACKOFF
+    DOMAIN,
+    DEFAULT_USER,
+    EVENT_NEW_SMS,
+    CONF_CLIENT_CLASS,
+    CONF_SUPPORT_VPN,
+    CONF_SUPPORT_TRACKER,
+    CONF_SCAN_RETRIES,
+    CONF_SCAN_BACKOFF,
 )
 import logging
 from .coordinator import TPLinkRouterCoordinator
@@ -144,7 +150,11 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     _async_add_listeners(hass, coordinator)
     hass.data.setdefault(DOMAIN, {})[entry.entry_id] = coordinator
 
-    await hass.config_entries.async_forward_entry_setups(entry, PLATFORMS)
+    platforms = list(PLATFORMS)
+    if not entry.data.get(CONF_SUPPORT_TRACKER, True):
+        platforms.remove(Platform.DEVICE_TRACKER)
+
+    await hass.config_entries.async_forward_entry_setups(entry, platforms)
     entry.async_on_unload(entry.add_update_listener(async_reload_entry))
 
     register_services(hass, coordinator)
@@ -191,10 +201,9 @@ def register_services(hass: HomeAssistant, coord: TPLinkRouterCoordinator) -> No
             _LOGGER.error('TplinkRouter Integration Exception - This device cannot send SMS')
             return
 
-        def callback():
-            coordinator.router.send_sms(service.data.get("number"), service.data.get("text"))
-        await hass.async_add_executor_job(
-            TPLinkRouterCoordinator.request, coordinator.router, callback
+        await coordinator.send_sms(
+            service.data.get("number"),
+            service.data.get("text"),
         )
 
     if not hass.services.has_service(DOMAIN, 'send_sms'):
