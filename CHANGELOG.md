@@ -1,5 +1,10 @@
 # Changelog
 
+## [Unreleased]
+
+### Added
+- Option to give each tracked client its own device entry (`tracker_as_device`, off by default) - tracked clients currently only get a device card if another integration already registered a device sharing their MAC, otherwise they're bare entities easy to overlook ([#397](https://github.com/AlexandrErohin/home-assistant-tplink-router/pull/397))
+
 ## [2.37.0] - 2026-08-29
 
 ### Added
