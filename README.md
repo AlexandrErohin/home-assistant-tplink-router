@@ -73,6 +73,8 @@ When using multiple routers (for example, a WAN router and a separate access poi
 
 To find your device - Go to `Developer tools` and search for your MAC address - you’ll find sensor like `device_tracker.YOUR_MAC` or `device_tracker.YOUR_PHONE_NAME`.
 
+By default tracked clients don't get their own entry in `Settings > Devices & Services > Devices` - they're plain entities, findable via the Entities list. Enable "Give each tracked client its own device entry" in the integration options if you'd rather see one device card per client; it's off by default since busy networks can end up with a lot of device entries.
+
 It will also fire Home Assistant event when a device connects to router
 
 ### Services

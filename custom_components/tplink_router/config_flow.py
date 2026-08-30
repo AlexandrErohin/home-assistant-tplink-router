@@ -6,7 +6,8 @@ from homeassistant.core import callback
 import homeassistant.helpers.config_validation as cv
 from homeassistant.data_entry_flow import FlowResult
 from .const import (
-    DOMAIN, DEFAULT_USER, DEFAULT_HOST, CONF_CLIENT_CLASS, CONF_SUPPORT_VPN, CONF_SUPPORT_TRACKER
+    DOMAIN, DEFAULT_USER, DEFAULT_HOST, CONF_CLIENT_CLASS, CONF_SUPPORT_VPN, CONF_SUPPORT_TRACKER,
+    CONF_TRACKER_AS_DEVICE
 )
 from .coordinator import TPLinkRouterCoordinator
 from homeassistant.const import (
@@ -33,6 +34,7 @@ class ConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
                 vol.Required(CONF_VERIFY_SSL, default=False): cv.boolean,
                 vol.Required(CONF_SUPPORT_VPN, default=True): cv.boolean,
                 vol.Required(CONF_SUPPORT_TRACKER, default=True): cv.boolean,
+                vol.Required(CONF_TRACKER_AS_DEVICE, default=False): cv.boolean,
             },
             extra=vol.ALLOW_EXTRA
         )
@@ -83,6 +85,10 @@ class ConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
                             CONF_SUPPORT_TRACKER,
                             default=user_input.get(CONF_SUPPORT_TRACKER, True)
                         ): cv.boolean,
+                        vol.Required(
+                            CONF_TRACKER_AS_DEVICE,
+                            default=user_input.get(CONF_TRACKER_AS_DEVICE, False)
+                        ): cv.boolean,
                     },
                     extra=vol.ALLOW_EXTRA
                 )
@@ -130,6 +136,9 @@ class OptionsFlow(config_entries.OptionsFlowWithConfigEntry):
                 vol.Required(CONF_VERIFY_SSL, default=data.get(CONF_VERIFY_SSL)): cv.boolean,
                 vol.Required(CONF_SUPPORT_VPN, default=data.get(CONF_SUPPORT_VPN, True)): cv.boolean,
                 vol.Required(CONF_SUPPORT_TRACKER, default=data.get(CONF_SUPPORT_TRACKER, True)): cv.boolean,
+                vol.Required(
+                    CONF_TRACKER_AS_DEVICE, default=data.get(CONF_TRACKER_AS_DEVICE, False)
+                ): cv.boolean,
             },
             extra=vol.ALLOW_EXTRA
         )

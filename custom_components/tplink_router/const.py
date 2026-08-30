@@ -3,6 +3,7 @@ DOMAIN = "tplink_router"
 CONF_CLIENT_CLASS = "client_class"
 CONF_SUPPORT_VPN = "support_vpn"
 CONF_SUPPORT_TRACKER = "support_tracker"
+CONF_TRACKER_AS_DEVICE = "tracker_as_device"
 DEFAULT_USER = "admin"
 DEFAULT_HOST = "http://192.168.0.1"
 
