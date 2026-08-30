@@ -136,6 +136,12 @@ class TPLinkRouterCoordinator(DataUpdateCoordinator):
 
         await self._run_router_request(callback)
 
+    async def set_ipv4_dhcps(self, enable: bool) -> None:
+        def callback():
+            self.router.set_ipv4_dhcps(enable)
+
+        await self._run_router_request(callback)
+
     async def send_sms(self, number: str, text: str) -> None:
         def callback():
             self.router.send_sms(number, text)
