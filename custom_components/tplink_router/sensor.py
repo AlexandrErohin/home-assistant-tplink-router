@@ -2,6 +2,7 @@ from dataclasses import dataclass
 from collections.abc import Callable
 from typing import Any
 from homeassistant.components.sensor import (
+    RestoreSensor,
     SensorStateClass,
     SensorEntity,
     SensorEntityDescription,
@@ -18,6 +19,7 @@ from homeassistant.core import HomeAssistant
 from .const import DOMAIN
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 from homeassistant.helpers.update_coordinator import CoordinatorEntity
+from homeassistant.util import dt as dt_util
 from .coordinator import TPLinkRouterCoordinator
 from tplinkrouterc6u import Status, LTEStatus, VPNStatus, ServingCell
 
@@ -121,6 +123,74 @@ SENSOR_TYPES = (
             name="Total clients",
             icon="mdi:account-multiple",
             state_class=SensorStateClass.TOTAL,
+        ),
+    ),
+    TPLinkRouterSensorConfig(
+        value=lambda status: round(
+            sum(
+                int(device.up_speed or 0)
+                for device in status.devices
+                if getattr(device, "active", False)
+            ) * 8 / 1_000_000,
+            2,
+        ),
+        description=SensorEntityDescription(
+            key="total_upload_mbps",
+            name="Total current upload",
+            icon="mdi:upload-network",
+            state_class=SensorStateClass.MEASUREMENT,
+            native_unit_of_measurement="Mbit/s",
+            suggested_display_precision=2,
+        ),
+    ),
+    TPLinkRouterSensorConfig(
+        value=lambda status: round(
+            sum(
+                int(device.down_speed or 0)
+                for device in status.devices
+                if getattr(device, "active", False)
+            ) * 8 / 1_000_000,
+            2,
+        ),
+        description=SensorEntityDescription(
+            key="total_download_mbps",
+            name="Total current download",
+            icon="mdi:download-network",
+            state_class=SensorStateClass.MEASUREMENT,
+            native_unit_of_measurement="Mbit/s",
+            suggested_display_precision=2,
+        ),
+    ),
+    TPLinkRouterSensorConfig(
+        value=lambda status: sum(
+            1
+            for device in status.devices
+            if (
+                getattr(device, "active", False)
+                and device.type.get_band() == "2G"
+            )
+        ),
+        description=SensorEntityDescription(
+            key="clients_2g",
+            name="Active 2.4 GHz clients",
+            icon="mdi:wifi",
+            state_class=SensorStateClass.MEASUREMENT,
+        ),
+    ),
+    TPLinkRouterSensorConfig(
+        value=lambda status: sum(
+            1
+            for device in status.devices
+            if (
+                getattr(device, "active", False)
+                and device.type.get_band() == "5G"
+            )
+        ),
+        description=SensorEntityDescription(
+            key="clients_5g",
+            name="Active 5 GHz clients",
+            icon="mdi:wifi",
+            state_class=SensorStateClass.MEASUREMENT,
         ),
     ),
     TPLinkRouterSensorConfig(
@@ -565,6 +635,37 @@ VPN_SERVER_SENSOR_TYPES = (
 )
 
 
+TRAFFIC_DIRECTIONS = ("download", "upload")
+
+TRAFFIC_PERIODS = ("day", "month", "total")
+
+TRAFFIC_DIRECTION_NAMES = {
+    "download": "Downloaded",
+    "upload": "Uploaded",
+}
+
+TRAFFIC_PERIOD_NAMES = {
+    "day": "today",
+    "month": "this month",
+    "total": "total",
+}
+
+
+def build_traffic_counters(
+    coordinator: TPLinkRouterCoordinator,
+) -> list["TPLinkRouterTrafficCounter"]:
+    """Create traffic counter sensors."""
+    return [
+        TPLinkRouterTrafficCounter(
+            coordinator=coordinator,
+            direction=direction,
+            period=period,
+        )
+        for direction in TRAFFIC_DIRECTIONS
+        for period in TRAFFIC_PERIODS
+    ]
+
+
 async def async_setup_entry(
     hass: HomeAssistant, entry: ConfigEntry, async_add_entities: AddEntitiesCallback
 ) -> None:
@@ -587,7 +688,162 @@ async def async_setup_entry(
         for sensor in VPN_SERVER_SENSOR_TYPES:
             sensors.append(TPLinkRouterSensor(coordinator, sensor))
 
+    traffic_counters = build_traffic_counters(coordinator)
+
+    coordinator.register_traffic_counters(traffic_counters)
+
+    sensors.extend(traffic_counters)
+
     async_add_entities(sensors, False)
+
+
+
+class TPLinkRouterTrafficCounter(
+    CoordinatorEntity[TPLinkRouterCoordinator],
+    RestoreSensor,
+):
+    """Accumulate router client traffic for a day, month, or lifetime."""
+
+    _attr_has_entity_name = True
+    _attr_native_unit_of_measurement = UnitOfInformation.GIGABYTES
+    _attr_state_class = SensorStateClass.TOTAL_INCREASING
+    _attr_suggested_display_precision = 3
+
+    def __init__(
+        self,
+        coordinator: TPLinkRouterCoordinator,
+        direction: str,
+        period: str,
+    ) -> None:
+        super().__init__(coordinator)
+
+        if direction not in TRAFFIC_DIRECTIONS:
+            raise ValueError(f"Unsupported traffic direction: {direction}")
+
+        if period not in TRAFFIC_PERIODS:
+            raise ValueError(f"Unsupported counter period: {period}")
+
+        self._direction = direction
+        self._period = period
+        self._value_gb = 0.0
+        self._last_update_time = None
+        self._current_period_key = None
+
+        direction_name = TRAFFIC_DIRECTION_NAMES[direction]
+        period_name = TRAFFIC_PERIOD_NAMES[period]
+
+        self._attr_name = f"{direction_name} {period_name}"
+
+        self._attr_unique_id = (
+            f"{coordinator.unique_id}_{DOMAIN}_"
+            f"{direction}_{period}_traffic"
+        )
+
+        self._attr_icon = (
+            "mdi:database-arrow-down"
+            if direction == "download"
+            else "mdi:database-arrow-up"
+        )
+
+        self._attr_device_info = coordinator.device_info
+        self._attr_native_value = 0.0
+
+    def _period_key(self, now):
+        """Return the current counter period identifier."""
+        if self._period == "day":
+            return now.date().isoformat()
+
+        if self._period == "month":
+            return f"{now.year:04d}-{now.month:02d}"
+
+        return "total"
+
+    def _bytes_per_second(self) -> int:
+        """Return total current client traffic in bytes per second."""
+        devices = getattr(self.coordinator.status, "devices", None) or []
+
+        field = (
+            "down_speed"
+            if self._direction == "download"
+            else "up_speed"
+        )
+
+        return sum(
+            int(getattr(device, field, 0) or 0)
+            for device in devices
+            if getattr(device, "active", False)
+        )
+
+    async def async_added_to_hass(self) -> None:
+        """Restore the counter and register coordinator updates."""
+        await super().async_added_to_hass()
+
+        now = dt_util.now()
+        current_period_key = self._period_key(now)
+
+        last_sensor_data = await self.async_get_last_sensor_data()
+        last_state = await self.async_get_last_state()
+
+        if last_sensor_data is not None and last_state is not None:
+            restored_period_key = self._period_key(
+                dt_util.as_local(last_state.last_updated)
+            )
+
+            if restored_period_key == current_period_key:
+                try:
+                    self._value_gb = float(last_sensor_data.native_value)
+                except (TypeError, ValueError):
+                    self._value_gb = 0.0
+
+        self._current_period_key = current_period_key
+        self._last_update_time = now
+        self._attr_native_value = round(self._value_gb, 3)
+
+    @callback
+    def reset(self) -> None:
+        """Reset the accumulated traffic and start counting from now."""
+        now = dt_util.now()
+
+        self._value_gb = 0.0
+        self._current_period_key = self._period_key(now)
+        self._last_update_time = now
+        self._attr_native_value = 0.0
+
+        self.async_write_ha_state()
+
+    @callback
+    def _handle_coordinator_update(self) -> None:
+        """Integrate the current byte rate over elapsed time."""
+        now = dt_util.now()
+        period_key = self._period_key(now)
+
+        if self._current_period_key != period_key:
+            self._value_gb = 0.0
+            self._current_period_key = period_key
+            self._last_update_time = now
+
+        elif self._last_update_time is not None:
+            elapsed_seconds = (
+                now - self._last_update_time
+            ).total_seconds()
+
+            # Ignore abnormal intervals caused by clock changes or
+            # very long Home Assistant/router outages.
+            if 0 < elapsed_seconds <= 3600:
+                bytes_transferred = (
+                    self._bytes_per_second() * elapsed_seconds
+                )
+
+                self._value_gb += bytes_transferred / 1_000_000_000
+
+            self._last_update_time = now
+
+        else:
+            self._last_update_time = now
+
+        self._attr_native_value = round(self._value_gb, 3)
+        self.async_write_ha_state()
+
 
 
 class TPLinkRouterSensor(CoordinatorEntity[TPLinkRouterCoordinator], SensorEntity):
