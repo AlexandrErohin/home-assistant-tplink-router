@@ -22,6 +22,10 @@ _LOGGER = logging.getLogger(__name__)
 
 class ConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
 
+    def __init__(self):
+        self.data_initial = {}
+        self.data = {}
+
     async def async_step_user(self, user_input=None):
         """Handle the initial step."""
         errors = {}
@@ -31,20 +35,27 @@ class ConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
                 vol.Required(CONF_PASSWORD): cv.string,
                 vol.Required(CONF_SCAN_INTERVAL, default=30): int,
                 vol.Required(CONF_VERIFY_SSL, default=False): cv.boolean,
-                vol.Required(CONF_SUPPORT_VPN, default=True): cv.boolean,
-                vol.Required(CONF_SUPPORT_TRACKER, default=True): cv.boolean,
-            },
-            extra=vol.ALLOW_EXTRA
+            }
         )
         if user_input is not None:
+            self.data_initial = user_input
+            return await self.async_step_custom()
+
+        return self.async_show_form(step_id="user", data_schema=schema, errors=errors)
+
+    async def async_step_custom(self, user_input=None):
+        errors = {}
+        if user_input is not None:
+            self.data = {**self.data_initial, **user_input}
+
             try:
                 router = await TPLinkRouterCoordinator.get_client(
                     hass=self.hass,
-                    host=user_input[CONF_HOST],
-                    password=user_input[CONF_PASSWORD],
-                    username=user_input.get(CONF_USERNAME, DEFAULT_USER),
+                    host=self.data[CONF_HOST],
+                    password=self.data[CONF_PASSWORD],
+                    username=self.data.get(CONF_USERNAME, DEFAULT_USER),
                     logger=_LOGGER,
-                    verify_ssl=user_input[CONF_VERIFY_SSL],
+                    verify_ssl=self.data[CONF_VERIFY_SSL],
                 )
 
                 def authorize_and_status():
@@ -54,40 +65,51 @@ class ConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
                 await self.async_set_unique_id(status.lan_macaddr.lower())
                 self._abort_if_unique_id_configured()
 
-                user_input[CONF_CLIENT_CLASS] = router.__class__.__name__
-                return self.async_create_entry(title=user_input[CONF_HOST], data=user_input)
+                self.data[CONF_CLIENT_CLASS] = router.__class__.__name__
+                return self.async_create_entry(title=self.data[CONF_HOST], data=self.data)
+                
             except Exception as error:
                 _LOGGER.error("TplinkRouter Integration Exception - %s", error)
                 errors["base"] = str(error)
                 schema = vol.Schema(
                     {
-                        vol.Required(CONF_HOST, default=user_input.get(CONF_HOST, DEFAULT_HOST)): str,
+                        vol.Required(CONF_HOST, default=self.data.get(CONF_HOST, DEFAULT_HOST)): str,
                         vol.Required(CONF_PASSWORD): cv.string,
                         vol.Required(
                             CONF_USERNAME,
-                            default=user_input.get(CONF_USERNAME, DEFAULT_USER),
+                            default=self.data.get(CONF_USERNAME, DEFAULT_USER),
                         ): str,
                         vol.Required(
                             CONF_SCAN_INTERVAL,
-                            default=user_input.get(CONF_SCAN_INTERVAL, 30),
+                            default=self.data.get(CONF_SCAN_INTERVAL, 30),
                         ): int,
                         vol.Required(
                             CONF_VERIFY_SSL,
-                            default=user_input.get(CONF_VERIFY_SSL, False),
+                            default=self.data.get(CONF_VERIFY_SSL, False),
                         ): cv.boolean,
-                        vol.Required(
-                            CONF_SUPPORT_VPN,
-                            default=user_input.get(CONF_SUPPORT_VPN, True)
-                        ): cv.boolean,
-                        vol.Required(
-                            CONF_SUPPORT_TRACKER,
-                            default=user_input.get(CONF_SUPPORT_TRACKER, True)
-                        ): cv.boolean,
-                    },
-                    extra=vol.ALLOW_EXTRA
+                    }
                 )
 
-        return self.async_show_form(step_id="user", data_schema=schema, errors=errors)
+                return self.async_show_form(step_id="user", data_schema=schema, errors=errors)
+                
+        custom_schema = vol.Schema(
+            {
+                vol.Required(
+                    CONF_SUPPORT_VPN, 
+                    default=self.data.get(CONF_SUPPORT_VPN, True)
+                    ): cv.boolean,
+                vol.Required(
+                    CONF_SUPPORT_TRACKER, 
+                    default=self.data.get(CONF_SUPPORT_TRACKER, True)
+                    ): cv.boolean,
+            },
+            extra=vol.ALLOW_EXTRA)
+
+        return self.async_show_form(
+            step_id="custom",
+            data_schema=custom_schema,
+            errors=errors,
+        )
 
     @staticmethod
     @callback

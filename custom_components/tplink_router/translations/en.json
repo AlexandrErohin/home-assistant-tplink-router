@@ -8,7 +8,12 @@
           "username": "Login",
           "password": "Password",
           "scan_interval": "Scan interval for updates in seconds",
-          "verify_ssl": "Verify ssl for https connection",
+          "verify_ssl": "Verify SSL for https connection"
+        }
+      },
+      "custom": {
+        "description": "Customisation options",
+        "data": {
           "support_vpn": "Include support for VPN server and client",
           "support_tracker": "Include device trackers (disable for non-access-point routers to avoid duplicates)"
         }
@@ -24,7 +29,7 @@
           "username": "Login",
           "password": "Password",
           "scan_interval": "Scan interval for updates in seconds",
-          "verify_ssl": "Verify ssl for https connection",
+          "verify_ssl": "Verify SSL for https connection",
           "support_vpn": "Include support for VPN server and client",
           "support_tracker": "Include device trackers (disable for non-access-point routers to avoid duplicates)"
         }
