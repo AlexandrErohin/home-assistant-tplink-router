@@ -2,6 +2,7 @@ from dataclasses import dataclass
 from collections.abc import Callable
 from typing import Any
 from homeassistant.components.sensor import (
+    SensorDeviceClass,
     SensorStateClass,
     SensorEntity,
     SensorEntityDescription,
@@ -14,7 +15,7 @@ from homeassistant.const import (
     UnitOfFrequency,
 )
 from homeassistant.config_entries import ConfigEntry
-from homeassistant.core import HomeAssistant
+from homeassistant.core import HomeAssistant, callback
 from .const import DOMAIN
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 from homeassistant.helpers.update_coordinator import CoordinatorEntity
@@ -589,6 +590,33 @@ async def async_setup_entry(
 
     async_add_entities(sensors, False)
 
+    tracked: set[int] = set()
+
+    @callback
+    def coordinator_updated():
+        update_items(coordinator, async_add_entities, tracked)
+
+    entry.async_on_unload(coordinator.async_add_listener(coordinator_updated))
+    coordinator_updated()
+
+
+@callback
+def update_items(
+        coordinator: TPLinkRouterCoordinator,
+        async_add_entities: AddEntitiesCallback,
+        tracked: set[int],
+) -> None:
+    if coordinator.port_status is None:
+        return
+    new_sensors = []
+    for port in coordinator.port_status:
+        if port.port in tracked:
+            continue
+        tracked.add(port.port)
+        new_sensors.append(TPLinkRouterPortLinkSpeedSensor(coordinator, port.port))
+    if new_sensors:
+        async_add_entities(new_sensors)
+
 
 class TPLinkRouterSensor(CoordinatorEntity[TPLinkRouterCoordinator], SensorEntity):
     _attr_has_entity_name = True
@@ -615,3 +643,60 @@ class TPLinkRouterSensor(CoordinatorEntity[TPLinkRouterCoordinator], SensorEntit
     def available(self) -> bool:
         """Return True if entity is available."""
         return self.native_value is not None
+
+
+class TPLinkRouterPortLinkSpeedSensor(CoordinatorEntity[TPLinkRouterCoordinator], SensorEntity):
+    _attr_has_entity_name = True
+
+    def __init__(
+        self,
+        coordinator: TPLinkRouterCoordinator,
+        port: int
+    ) -> None:
+        super().__init__(coordinator)
+
+        self._port = port
+        self._attr_device_info = coordinator.device_info
+        self.entity_description = SensorEntityDescription(
+            key=f"port_{port}_link_speed",
+            name=f"Port {port} link speed",
+            device_class=SensorDeviceClass.DATA_RATE,
+            state_class=SensorStateClass.MEASUREMENT,
+            native_unit_of_measurement=UnitOfDataRate.MEGABITS_PER_SECOND,
+        )
+        self._attr_unique_id = f"{coordinator.unique_id}_{DOMAIN}_{self.entity_description.key}"
+
+    @property
+    def _current_port_status(self):
+        if not self.coordinator.port_status:
+            return None
+        return next((item for item in self.coordinator.port_status if item.port == self._port), None)
+
+    @property
+    def native_value(self):
+        """Return the sensor value from current coordinator data."""
+        port_status = self._current_port_status
+        if port_status is None:
+            return None
+        return port_status.negotiated_speed
+
+    @property
+    def extra_state_attributes(self) -> dict[str, Any] | None:
+        port_status = self._current_port_status
+        if port_status is None:
+            return None
+        return {
+            "duplex": port_status.negotiated_duplex,
+            "enabled": port_status.enabled,
+            "auto_negotiation": port_status.auto_negotiation,
+            "configured_speed": port_status.configured_speed,
+            "configured_duplex": port_status.configured_duplex,
+            "flow_control_enabled": port_status.flow_control_enabled,
+            "flow_control_active": port_status.flow_control_active,
+            "lag": port_status.lag,
+        }
+
+    @property
+    def available(self) -> bool:
+        """Return True if entity is available."""
+        return super().available and self._current_port_status is not None
