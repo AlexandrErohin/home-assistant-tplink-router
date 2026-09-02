@@ -140,18 +140,26 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
                 )
         return firm, stat, lte_stat, vpn_server_stat, vpn_client_stat, serving_cells, port_status, sms_list
 
-    (
-        firmware,
-        status,
-        lte_status,
-        vpn_server_stat,
-        vpn_client_status,
-        serving_cells,
-        port_status,
-        sms_list,
-    ) = await hass.async_add_executor_job(
-        TPLinkRouterCoordinator.request, client, callback
-    )
+    try:
+        (
+            firmware,
+            status,
+            lte_status,
+            vpn_server_stat,
+            vpn_client_status,
+            serving_cells,
+            port_status,
+            sms_list,
+        ) = await hass.async_add_executor_job(
+            TPLinkRouterCoordinator.request, client, callback
+        )
+    except Exception as error:
+        _LOGGER.error(
+            "TPLink Router setup failed for %s: %s",
+            host,
+            error,
+        )
+        return False
     # Create device coordinator and fetch data
     coordinator = TPLinkRouterCoordinator(hass, client, entry.data[CONF_SCAN_INTERVAL], firmware, status,
                                           lte_status, _LOGGER, entry.entry_id, vpn_server_stat, vpn_client_status,
