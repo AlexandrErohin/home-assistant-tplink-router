@@ -26,6 +26,7 @@ from .const import (
     DOMAIN,
     DEFAULT_NAME,
     DEFAULT_SCAN_PAUSE,
+    DEFAULT_OFFLINE_TIMEOUT,
 )
 from .utils import safe_call, is_retryable_error
 
@@ -84,6 +85,7 @@ class TPLinkRouterCoordinator(DataUpdateCoordinator):
             retries: int = 3,
             backoff_seconds: float = 1.0,
             scan_pause_minutes: int = DEFAULT_SCAN_PAUSE,
+            offline_timeout_seconds: int = DEFAULT_OFFLINE_TIMEOUT,
     ) -> None:
         self.router = router
         self.unique_id = unique_id
@@ -95,6 +97,7 @@ class TPLinkRouterCoordinator(DataUpdateCoordinator):
         self.retries = retries
         self.backoff_seconds = backoff_seconds
         self.scan_pause_minutes = scan_pause_minutes
+        self.offline_timeout_seconds = offline_timeout_seconds
         self.device_info = DeviceInfo(
             configuration_url=router.host,
             connections={(CONNECTION_NETWORK_MAC, self.status.lan_macaddr)},

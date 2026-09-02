@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from datetime import datetime, timedelta
 from typing import TypeAlias
 from homeassistant.components.device_tracker import ScannerEntity
 from homeassistant.components.device_tracker.const import SourceType
@@ -21,6 +22,13 @@ from .const import (
 from tplinkrouterc6u import Device
 
 MAC_ADDR: TypeAlias = str
+
+
+def mark_offline_if_expired(tracker: "TPLinkTracker", now: datetime, timeout_seconds: int) -> bool:
+    """Return True when a missing device should be marked offline after the grace period."""
+    if timeout_seconds == 0:
+        return True
+    return now - tracker.last_seen >= timedelta(seconds=timeout_seconds)
 
 
 async def async_setup_entry(
@@ -66,6 +74,8 @@ def update_items(
     new_tracked: list[TPLinkTracker] = []
     active: list[MAC_ADDR] = []
     fire_event = tracked != {}
+    now = datetime.now()
+    timeout = coordinator.offline_timeout_seconds
     for device in coordinator.status.devices:
         active.append(device.macaddr)
         if device.macaddr not in tracked:
@@ -81,12 +91,13 @@ def update_items(
             if fire_event and tracked[device.macaddr].active and not device.active:
                 coordinator.hass.bus.fire(EVENT_OFFLINE, tracked[device.macaddr].data)
         tracked[device.macaddr].active = device.active
+        tracked[device.macaddr].last_seen = now
 
     if new_tracked:
         async_add_entities(new_tracked)
 
     for mac in tracked:
-        if mac not in active and tracked[mac].active:
+        if mac not in active and tracked[mac].active and mark_offline_if_expired(tracked[mac], now, timeout):
             tracked[mac].active = False
             coordinator.hass.bus.fire(EVENT_OFFLINE, tracked[mac].data)
 
@@ -107,6 +118,7 @@ class TPLinkTracker(CoordinatorEntity, RestoreEntity, ScannerEntity):
         self._restored_attributes: dict[str, str] = {}
         self._last_hostname = ""
         self._last_ip_address = ""
+        self.last_seen = datetime.now()
         if data:
             self._remember(data)
         super().__init__(coordinator)

@@ -1,6 +1,10 @@
 import logging
+from datetime import datetime
 
-from custom_components.tplink_router.device_tracker import TPLinkTracker
+from custom_components.tplink_router.device_tracker import (
+    TPLinkTracker,
+    mark_offline_if_expired,
+)
 
 
 class FakeDevice:
@@ -75,3 +79,24 @@ def test_hostname_falls_back_to_restored_when_device_blank():
     assert tracker.hostname == "restored-phone"
     assert tracker.ip_address == "192.168.1.70"
     assert tracker.name == "restored-phone"
+
+
+def test_mark_offline_if_expired_with_zero_timeout_is_immediate():
+    tracker = build_tracker()
+    tracker.last_seen = datetime(2026, 1, 1, 12, 0, 0)
+    now = datetime(2026, 1, 1, 12, 0, 30)
+    assert mark_offline_if_expired(tracker, now, timeout_seconds=0) is True
+
+
+def test_mark_offline_if_expired_respects_timeout():
+    tracker = build_tracker()
+    tracker.last_seen = datetime(2026, 1, 1, 12, 0, 0)
+    now = datetime(2026, 1, 1, 12, 2, 0)  # 2 minutes later
+    assert mark_offline_if_expired(tracker, now, timeout_seconds=300) is False
+
+
+def test_mark_offline_if_expired_fires_after_timeout():
+    tracker = build_tracker()
+    tracker.last_seen = datetime(2026, 1, 1, 12, 0, 0)
+    now = datetime(2026, 1, 1, 12, 6, 0)  # 6 minutes later
+    assert mark_offline_if_expired(tracker, now, timeout_seconds=300) is True
