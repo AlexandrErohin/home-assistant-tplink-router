@@ -10,7 +10,11 @@
           "scan_interval": "Interval skenovania aktualizácií v sekundách",
           "verify_ssl": "Overte ssl pre pripojenie https",
           "support_vpn": "Zahrnúť podporu pre VPN server a klienta",
-          "support_tracker": "Zahrnúť sledovanie zariadení (vypnite pre routery, ktoré nie sú prístupové body, aby sa predišlo duplicitám)"
+          "support_tracker": "Zahrnúť sledovanie zariadení (vypnite pre routery, ktoré nie sú prístupové body, aby sa predišlo duplicitám)",
+          "scan_retries": "Počet pokusov pre každú aktualizáciu dát",
+          "scan_backoff": "Sekundy medzi pokusmi",
+          "scan_pause": "Minúty pred automatickým opätovným zapnutím načítania dát (0 = nikdy)",
+          "offline_timeout": "Sekundy, počas ktorých chýbajúce zariadenie zostane „doma“ pred offline (0 = hneď)"
         }
       }
     }
@@ -26,7 +30,11 @@
           "scan_interval": "Interval skenovania aktualizácií v sekundách",
           "verify_ssl": "Overte ssl pre pripojenie https",
           "support_vpn": "Zahrnúť podporu pre VPN server a klienta",
-          "support_tracker": "Zahrnúť sledovanie zariadení (vypnite pre routery, ktoré nie sú prístupové body, aby sa predišlo duplicitám)"
+          "support_tracker": "Zahrnúť sledovanie zariadení (vypnite pre routery, ktoré nie sú prístupové body, aby sa predišlo duplicitám)",
+          "scan_retries": "Počet pokusov pre každú aktualizáciu dát",
+          "scan_backoff": "Sekundy medzi pokusmi",
+          "scan_pause": "Minúty pred automatickým opätovným zapnutím načítania dát (0 = nikdy)",
+          "offline_timeout": "Sekundy, počas ktorých chýbajúce zariadenie zostane „doma“ pred offline (0 = hneď)"
         }
       }
     }

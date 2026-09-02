@@ -1,0 +1,3 @@
+pytest>=8,<10
+tplinkrouterc6u==5.32.1
+homeassistant>=2025.1.0

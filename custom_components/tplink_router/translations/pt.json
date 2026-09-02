@@ -10,7 +10,11 @@
           "scan_interval": "Intervalo de verificação para atualizações em segundos",
           "verify_ssl": "Verificar SSL para a conexão https",
           "support_vpn": "Incluir suporte para servidor e cliente VPN",
-          "support_tracker": "Incluir rastreadores de dispositivos (desative em routers que não são pontos de acesso para evitar duplicados)"
+          "support_tracker": "Incluir rastreadores de dispositivos (desative em routers que não são pontos de acesso para evitar duplicados)",
+          "scan_retries": "Número de tentativas para cada atualização de dados",
+          "scan_backoff": "Segundos entre tentativas",
+          "scan_pause": "Minutos antes da recolha de dados ser reativada automaticamente (0 = nunca)",
+          "offline_timeout": "Segundos em que um dispositivo em falta permanece 'home' antes de offline (0 = imediato)"
         }
       }
     }
@@ -26,7 +30,11 @@
           "scan_interval": "Intervalo de verificação para atualizações em segundos",
           "verify_ssl": "Verificar SSL para a conexão https",
           "support_vpn": "Incluir suporte para servidor e cliente VPN",
-          "support_tracker": "Incluir rastreadores de dispositivos (desative em routers que não são pontos de acesso para evitar duplicados)"
+          "support_tracker": "Incluir rastreadores de dispositivos (desative em routers que não são pontos de acesso para evitar duplicados)",
+          "scan_retries": "Número de tentativas para cada atualização de dados",
+          "scan_backoff": "Segundos entre tentativas",
+          "scan_pause": "Minutos antes da recolha de dados ser reativada automaticamente (0 = nunca)",
+          "offline_timeout": "Segundos em que um dispositivo em falta permanece 'home' antes de offline (0 = imediato)"
         }
       }
     }

@@ -1,4 +1,5 @@
 .git
+.worktrees/
 venv
 .idea
 .DS_Store

@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from datetime import datetime, timedelta
 from typing import TypeAlias
 from homeassistant.components.device_tracker import ScannerEntity
 from homeassistant.components.device_tracker.const import SourceType
@@ -11,6 +12,7 @@ from homeassistant.helpers.entity_platform import AddEntitiesCallback
 from homeassistant.helpers.restore_state import RestoreEntity
 from homeassistant.helpers.update_coordinator import CoordinatorEntity
 from .coordinator import TPLinkRouterCoordinator
+from .utils import prefer
 from .const import (
     DOMAIN,
     CONF_SUPPORT_TRACKER,
@@ -22,6 +24,13 @@ from .const import (
 from tplinkrouterc6u import Device
 
 MAC_ADDR: TypeAlias = str
+
+
+def mark_offline_if_expired(tracker: "TPLinkTracker", now: datetime, timeout_seconds: int) -> bool:
+    """Return True when a missing device should be marked offline after the grace period."""
+    if timeout_seconds == 0:
+        return True
+    return now - tracker.last_seen >= timedelta(seconds=timeout_seconds)
 
 
 async def async_setup_entry(
@@ -69,6 +78,8 @@ def update_items(
     new_tracked: list[TPLinkTracker] = []
     active: list[MAC_ADDR] = []
     fire_event = tracked != {}
+    now = datetime.now()
+    timeout = coordinator.offline_timeout_seconds
     for device in coordinator.status.devices:
         active.append(device.macaddr)
         if device.macaddr not in tracked:
@@ -78,17 +89,19 @@ def update_items(
                 coordinator.hass.bus.fire(EVENT_NEW_DEVICE, tracked[device.macaddr].data)
         else:
             tracked[device.macaddr].device = device
+            tracked[device.macaddr]._remember(device)
             if fire_event and not tracked[device.macaddr].active and device.active:
                 coordinator.hass.bus.fire(EVENT_ONLINE, tracked[device.macaddr].data)
             if fire_event and tracked[device.macaddr].active and not device.active:
                 coordinator.hass.bus.fire(EVENT_OFFLINE, tracked[device.macaddr].data)
         tracked[device.macaddr].active = device.active
+        tracked[device.macaddr].last_seen = now
 
     if new_tracked:
         async_add_entities(new_tracked)
 
     for mac in tracked:
-        if mac not in active and tracked[mac].active:
+        if mac not in active and tracked[mac].active and mark_offline_if_expired(tracked[mac], now, timeout):
             tracked[mac].active = False
             coordinator.hass.bus.fire(EVENT_OFFLINE, tracked[mac].data)
 
@@ -109,7 +122,19 @@ class TPLinkTracker(CoordinatorEntity, RestoreEntity, ScannerEntity):
         self.active = data.active if data else False
         self._as_device = as_device
         self._restored_attributes: dict[str, str] = {}
+        self._last_hostname = ""
+        self._last_ip_address = ""
+        self.last_seen = datetime.now()
+        if data:
+            self._remember(data)
         super().__init__(coordinator)
+
+    def _remember(self, data: Device) -> None:
+        """Remember the last meaningful hostname/IP so events never fire blank."""
+        if data.hostname:
+            self._last_hostname = data.hostname
+        if data.ipaddr and str(data.ipaddr) != "0.0.0.0":
+            self._last_ip_address = str(data.ipaddr)
 
     @property
     def is_connected(self) -> bool:
@@ -125,15 +150,25 @@ class TPLinkTracker(CoordinatorEntity, RestoreEntity, ScannerEntity):
     def name(self) -> str:
         """Return the name of the client."""
         if self.device is not None:
-            return self.device.hostname if self.device.hostname != "" else self._mac
-        return self._restored_attributes.get("hostname") or self._mac
+            return (
+                self.device.hostname
+                or self._last_hostname
+                or self._restored_attributes.get("hostname")
+                or self._mac
+            )
+        return self._restored_attributes.get("hostname") or self._last_hostname or self._mac
 
     @property
     def hostname(self) -> str:
         """Return the hostname of the client."""
         if self.device is not None:
-            return self.device.hostname
-        return self._restored_attributes.get("hostname", "")
+            return (
+                self.device.hostname
+                or self._last_hostname
+                or self._restored_attributes.get("hostname")
+                or ""
+            )
+        return self._restored_attributes.get("hostname") or self._last_hostname or ""
 
     @property
     def mac_address(self) -> MAC_ADDR:
@@ -143,9 +178,14 @@ class TPLinkTracker(CoordinatorEntity, RestoreEntity, ScannerEntity):
     @property
     def ip_address(self) -> str:
         """Return the ip address of the client."""
+        restored_ip = self._restored_attributes.get("ip_address") or ""
         if self.device is not None:
-            return self.device.ipaddr
-        return self._restored_attributes.get("ip_address", "")
+            return prefer(
+                self.device.ipaddr,
+                self._last_ip_address or restored_ip,
+                "",
+            )
+        return restored_ip or self._last_ip_address or ""
 
     @property
     def unique_id(self) -> str:
@@ -221,3 +261,9 @@ class TPLinkTracker(CoordinatorEntity, RestoreEntity, ScannerEntity):
         if last_state is None:
             return
         self._restored_attributes = dict(last_state.attributes)
+        hostname = self._restored_attributes.get("hostname")
+        if hostname:
+            self._last_hostname = hostname
+        ip_address = self._restored_attributes.get("ip_address")
+        if ip_address and str(ip_address) != "0.0.0.0":
+            self._last_ip_address = str(ip_address)

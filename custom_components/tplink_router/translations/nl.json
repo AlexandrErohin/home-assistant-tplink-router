@@ -10,7 +10,11 @@
           "scan_interval": "Scaninterval voor updates in seconden",
           "verify_ssl": "Verifieer SSL voor https-verbinding",
           "support_vpn": "VPN-server- en VPN-clientondersteuning opnemen",
-          "support_tracker": "Apparaattrackers opnemen (uitschakelen voor routers die geen access points zijn om duplicaten te voorkomen)"
+          "support_tracker": "Apparaattrackers opnemen (uitschakelen voor routers die geen access points zijn om duplicaten te voorkomen)",
+          "scan_retries": "Aantal pogingen per data-update",
+          "scan_backoff": "Seconden tussen pogingen",
+          "scan_pause": "Minuten voordat data-ophalen automatisch weer wordt ingeschakeld (0 = nooit)",
+          "offline_timeout": "Seconden dat een ontbrekend apparaat 'home' blijft vóór offline (0 = direct)"
         }
       }
     }
@@ -26,7 +30,11 @@
           "scan_interval": "Scaninterval voor updates in seconden",
           "verify_ssl": "Verifieer SSL voor https-verbinding",
           "support_vpn": "VPN-server- en VPN-clientondersteuning opnemen",
-          "support_tracker": "Apparaattrackers opnemen (uitschakelen voor routers die geen access points zijn om duplicaten te voorkomen)"
+          "support_tracker": "Apparaattrackers opnemen (uitschakelen voor routers die geen access points zijn om duplicaten te voorkomen)",
+          "scan_retries": "Aantal pogingen per data-update",
+          "scan_backoff": "Seconden tussen pogingen",
+          "scan_pause": "Minuten voordat data-ophalen automatisch weer wordt ingeschakeld (0 = nooit)",
+          "offline_timeout": "Seconden dat een ontbrekend apparaat 'home' blijft vóór offline (0 = direct)"
         }
       }
     }
