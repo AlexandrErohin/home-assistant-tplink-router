@@ -25,6 +25,7 @@ from homeassistant.helpers.device_registry import CONNECTION_NETWORK_MAC, Device
 from .const import (
     DOMAIN,
     DEFAULT_NAME,
+    DEFAULT_SCAN_PAUSE,
 )
 from .utils import safe_call, is_retryable_error
 
@@ -82,6 +83,7 @@ class TPLinkRouterCoordinator(DataUpdateCoordinator):
             port_status: list[PortStatus] | None = None,
             retries: int = 3,
             backoff_seconds: float = 1.0,
+            scan_pause_minutes: int = DEFAULT_SCAN_PAUSE,
     ) -> None:
         self.router = router
         self.unique_id = unique_id
@@ -92,6 +94,7 @@ class TPLinkRouterCoordinator(DataUpdateCoordinator):
         self.port_status = port_status
         self.retries = retries
         self.backoff_seconds = backoff_seconds
+        self.scan_pause_minutes = scan_pause_minutes
         self.device_info = DeviceInfo(
             configuration_url=router.host,
             connections={(CONNECTION_NETWORK_MAC, self.status.lan_macaddr)},
@@ -211,7 +214,7 @@ class TPLinkRouterCoordinator(DataUpdateCoordinator):
                 # not for inter-attempt backoff, so switch/reboot/SMS can proceed.
                 async with self._lock:
                     if self.scan_stopped_at is not None and self.scan_stopped_at > (
-                        datetime.now() - timedelta(minutes=20)
+                        datetime.now() - timedelta(minutes=self.scan_pause_minutes)
                     ):
                         return
                     self.scan_stopped_at = None

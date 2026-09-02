@@ -18,8 +18,10 @@ from .const import (
     CONF_SUPPORT_TRACKER,
     CONF_SCAN_RETRIES,
     CONF_SCAN_BACKOFF,
+    CONF_SCAN_PAUSE,
     DEFAULT_SCAN_RETRIES,
     DEFAULT_SCAN_BACKOFF,
+    DEFAULT_SCAN_PAUSE,
 )
 import logging
 from .coordinator import TPLinkRouterCoordinator
@@ -165,7 +167,8 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
                                           lte_status, _LOGGER, entry.entry_id, vpn_server_stat, vpn_client_status,
                                           serving_cells, port_status,
                                           retries=entry.data.get(CONF_SCAN_RETRIES, DEFAULT_SCAN_RETRIES),
-                                          backoff_seconds=entry.data.get(CONF_SCAN_BACKOFF, DEFAULT_SCAN_BACKOFF))
+                                          backoff_seconds=entry.data.get(CONF_SCAN_BACKOFF, DEFAULT_SCAN_BACKOFF),
+                                          scan_pause_minutes=entry.data.get(CONF_SCAN_PAUSE, DEFAULT_SCAN_PAUSE))
 
     if sms_list is not None:
         coordinator._process_sms_list(sms_list)
