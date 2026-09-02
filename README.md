@@ -182,15 +182,25 @@ The default data is preset already.
 If you got an error please try to use HTTPS connection first
 
 NOTE!
-1. If you use `https` connection - You need to turn on "Local Management via HTTPS" (advanced->system->administration) in the router web UI
+1. If you use `https` connection - for most routers turn on "Local Management via HTTPS" (advanced->system->administration). Some models (e.g. Archer NX200) already accept local HTTPS without enabling Remote Management via HTTPS.
 2. If you use `https` connection to your router you may get error `certificate verify failed: EE certificate key too weak`. To fix this - unset `Verify ssl`
 3. Use Local Password which is for Log In with Local Password. Login with TP-LINK ID doesnt work
 
 <img src="https://raw.githubusercontent.com/AlexandrErohin/home-assistant-tplink-router/master/docs/media/router.png" width="30%">
 
-4. If you got error - `check if the default router username is correct` The default username for most routers is `admin`. Some routers have the default username - `user`.
+4. If you got error - `check if the default router username is correct` The default username for most routers is `admin`. Some routers (e.g. Archer NX200) use `user` instead — try Login `user` with your normal Local Password.
 5. If you got error - `use web encrypted password instead` Read [web encrypted password](#encrypted_pass)
 6. The TP-Link Web Interface only supports upto 1 user logged in at a time (for security reasons, apparently). So you will be logged out from router web interface when the integration updates data
+
+### Archer NX200 (and similar EX / 5G routers)
+If setup fails with HTML/welcome-page responses or login errors while the router is reachable:
+
+1. Host: `https://192.168.x.1` (not `http://`)
+2. Login: `user` (not `admin`)
+3. Password: normal Local Password (web encrypted password is not needed)
+4. Verify SSL: off
+
+Remote Management via HTTPS can stay off — local HTTPS access is enough.
 
 ### <a id="encrypted_pass">Web Encrypted Password</a>
 If you got error - `use web encrypted password instead. Check the documentation!`
