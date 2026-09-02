@@ -18,8 +18,12 @@ from .const import (
     CONF_SUPPORT_TRACKER,
     CONF_SCAN_RETRIES,
     CONF_SCAN_BACKOFF,
+    CONF_SCAN_PAUSE,
+    CONF_OFFLINE_TIMEOUT,
     DEFAULT_SCAN_RETRIES,
     DEFAULT_SCAN_BACKOFF,
+    DEFAULT_SCAN_PAUSE,
+    DEFAULT_OFFLINE_TIMEOUT,
 )
 import logging
 from .coordinator import TPLinkRouterCoordinator
@@ -140,24 +144,35 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
                 )
         return firm, stat, lte_stat, vpn_server_stat, vpn_client_stat, serving_cells, port_status, sms_list
 
-    (
-        firmware,
-        status,
-        lte_status,
-        vpn_server_stat,
-        vpn_client_status,
-        serving_cells,
-        port_status,
-        sms_list,
-    ) = await hass.async_add_executor_job(
-        TPLinkRouterCoordinator.request, client, callback
-    )
+    try:
+        (
+            firmware,
+            status,
+            lte_status,
+            vpn_server_stat,
+            vpn_client_status,
+            serving_cells,
+            port_status,
+            sms_list,
+        ) = await hass.async_add_executor_job(
+            TPLinkRouterCoordinator.request, client, callback
+        )
+    except Exception as error:
+        _LOGGER.error(
+            "TPLink Router setup failed for %s: %s",
+            host,
+            error,
+        )
+        return False
     # Create device coordinator and fetch data
     coordinator = TPLinkRouterCoordinator(hass, client, entry.data[CONF_SCAN_INTERVAL], firmware, status,
                                           lte_status, _LOGGER, entry.entry_id, vpn_server_stat, vpn_client_status,
                                           serving_cells, port_status,
                                           retries=entry.data.get(CONF_SCAN_RETRIES, DEFAULT_SCAN_RETRIES),
-                                          backoff_seconds=entry.data.get(CONF_SCAN_BACKOFF, DEFAULT_SCAN_BACKOFF))
+                                          backoff_seconds=entry.data.get(CONF_SCAN_BACKOFF, DEFAULT_SCAN_BACKOFF),
+                                          scan_pause_minutes=entry.data.get(CONF_SCAN_PAUSE, DEFAULT_SCAN_PAUSE),
+                                          offline_timeout_seconds=entry.data.get(
+                                              CONF_OFFLINE_TIMEOUT, DEFAULT_OFFLINE_TIMEOUT))
 
     if sms_list is not None:
         coordinator._process_sms_list(sms_list)

@@ -1,5 +1,6 @@
 import logging
 
+from custom_components.tplink_router.const import DEFAULT_SCAN_PAUSE
 from custom_components.tplink_router.coordinator import collect_status
 
 
@@ -60,3 +61,7 @@ def test_collect_status_skips_port_status_when_disabled():
     )
     assert result[5] is None
     assert router.port_calls == 0
+
+
+def test_scan_pause_default_is_twenty_minutes():
+    assert DEFAULT_SCAN_PAUSE == 20
