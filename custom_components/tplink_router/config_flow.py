@@ -6,7 +6,8 @@ from homeassistant.core import callback
 import homeassistant.helpers.config_validation as cv
 from homeassistant.data_entry_flow import FlowResult
 from .const import (
-    DOMAIN, DEFAULT_USER, DEFAULT_HOST, CONF_CLIENT_CLASS, CONF_SUPPORT_VPN, CONF_SUPPORT_TRACKER
+    DOMAIN, DEFAULT_USER, DEFAULT_HOST, CONF_CLIENT_CLASS,
+    CONF_SUPPORT_VPN, CONF_SUPPORT_TRACKER, CONF_SCAN_RETRIES, CONF_SCAN_BACKOFF
 )
 from .coordinator import TPLinkRouterCoordinator
 from homeassistant.const import (
@@ -30,6 +31,8 @@ class ConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
                 vol.Required(CONF_HOST, default=DEFAULT_HOST): str,
                 vol.Required(CONF_PASSWORD): cv.string,
                 vol.Required(CONF_SCAN_INTERVAL, default=30): int,
+                vol.Optional(CONF_SCAN_RETRIES, default=3): cv.positive_int,
+                vol.Optional(CONF_SCAN_BACKOFF, default=1.0): cv.positive_float,
                 vol.Required(CONF_VERIFY_SSL, default=False): cv.boolean,
                 vol.Required(CONF_SUPPORT_VPN, default=True): cv.boolean,
                 vol.Required(CONF_SUPPORT_TRACKER, default=True): cv.boolean,
@@ -71,6 +74,14 @@ class ConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
                             CONF_SCAN_INTERVAL,
                             default=user_input.get(CONF_SCAN_INTERVAL, 30),
                         ): int,
+                        vol.Optional(
+                            CONF_SCAN_RETRIES,
+                            default=user_input.get(CONF_SCAN_RETRIES, 3),
+                        ): cv.positive_int,
+                        vol.Optional(
+                            CONF_SCAN_BACKOFF,
+                            default=user_input.get(CONF_SCAN_BACKOFF, 1.0),
+                        ): cv.positive_float,
                         vol.Required(
                             CONF_VERIFY_SSL,
                             default=user_input.get(CONF_VERIFY_SSL, False),
@@ -127,6 +138,8 @@ class OptionsFlow(config_entries.OptionsFlowWithConfigEntry):
                 vol.Required(CONF_USERNAME, default=data.get(CONF_USERNAME, DEFAULT_USER)): cv.string,
                 vol.Required(CONF_PASSWORD, default=data.get(CONF_PASSWORD)): cv.string,
                 vol.Required(CONF_SCAN_INTERVAL, default=data.get(CONF_SCAN_INTERVAL)): int,
+                vol.Optional(CONF_SCAN_RETRIES, default=data.get(CONF_SCAN_RETRIES, 3)): cv.positive_int,
+                vol.Optional(CONF_SCAN_BACKOFF, default=data.get(CONF_SCAN_BACKOFF, 1.0)): cv.positive_float,
                 vol.Required(CONF_VERIFY_SSL, default=data.get(CONF_VERIFY_SSL)): cv.boolean,
                 vol.Required(CONF_SUPPORT_VPN, default=data.get(CONF_SUPPORT_VPN, True)): cv.boolean,
                 vol.Required(CONF_SUPPORT_TRACKER, default=data.get(CONF_SUPPORT_TRACKER, True)): cv.boolean,
