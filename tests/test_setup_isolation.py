@@ -41,7 +41,7 @@ def test_coordinator_retries_but_does_not_retry_auth_errors():
     assert router.authorize.call_count == 1
 
 
-def test_async_setup_entry_returns_false_when_initial_request_fails():
+def test_async_setup_entry_returns_false_when_initial_request_fails(caplog):
     """A failing initial request must fail this entry gracefully, not raise."""
     hass = FakeHass()
     entry = Mock()
@@ -62,4 +62,6 @@ def test_async_setup_entry_returns_false_when_initial_request_fails():
     ), patch.object(
         TPLinkRouterCoordinator, "request", side_effect=Exception("Cannot authorize!")
     ):
-        assert asyncio.run(async_setup_entry(hass, entry)) is False
+        with caplog.at_level(logging.ERROR):
+            assert asyncio.run(async_setup_entry(hass, entry)) is False
+    assert "TPLink Router setup failed for" in caplog.text

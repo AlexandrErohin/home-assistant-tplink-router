@@ -10,6 +10,7 @@ from .const import (
     CONF_SUPPORT_VPN, CONF_SUPPORT_TRACKER, CONF_SCAN_RETRIES, CONF_SCAN_BACKOFF,
     CONF_SCAN_PAUSE, CONF_OFFLINE_TIMEOUT, DEFAULT_SCAN_RETRIES, DEFAULT_SCAN_BACKOFF,
     DEFAULT_SCAN_PAUSE, DEFAULT_OFFLINE_TIMEOUT, MAX_SCAN_RETRIES, MAX_SCAN_BACKOFF,
+    MAX_SCAN_PAUSE,
 )
 from .coordinator import TPLinkRouterCoordinator
 from homeassistant.const import (
@@ -30,6 +31,14 @@ SCAN_BACKOFF_SCHEMA = vol.All(
     cv.positive_float,
     vol.Range(min=0.1, max=MAX_SCAN_BACKOFF),
 )
+SCAN_PAUSE_SCHEMA = vol.All(
+    vol.Coerce(int),
+    vol.Range(min=1, max=MAX_SCAN_PAUSE),
+)
+OFFLINE_TIMEOUT_SCHEMA = vol.All(
+    vol.Coerce(int),
+    vol.Range(min=0),
+)
 
 
 class ConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
@@ -44,8 +53,8 @@ class ConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
                 vol.Required(CONF_SCAN_INTERVAL, default=30): int,
                 vol.Optional(CONF_SCAN_RETRIES, default=DEFAULT_SCAN_RETRIES): SCAN_RETRIES_SCHEMA,
                 vol.Optional(CONF_SCAN_BACKOFF, default=DEFAULT_SCAN_BACKOFF): SCAN_BACKOFF_SCHEMA,
-                vol.Optional(CONF_SCAN_PAUSE, default=DEFAULT_SCAN_PAUSE): cv.positive_int,
-                vol.Optional(CONF_OFFLINE_TIMEOUT, default=DEFAULT_OFFLINE_TIMEOUT): cv.positive_int,
+                vol.Optional(CONF_SCAN_PAUSE, default=DEFAULT_SCAN_PAUSE): SCAN_PAUSE_SCHEMA,
+                vol.Optional(CONF_OFFLINE_TIMEOUT, default=DEFAULT_OFFLINE_TIMEOUT): OFFLINE_TIMEOUT_SCHEMA,
                 vol.Required(CONF_VERIFY_SSL, default=False): cv.boolean,
                 vol.Required(CONF_SUPPORT_VPN, default=True): cv.boolean,
                 vol.Required(CONF_SUPPORT_TRACKER, default=True): cv.boolean,
@@ -98,11 +107,11 @@ class ConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
                         vol.Optional(
                             CONF_SCAN_PAUSE,
                             default=user_input.get(CONF_SCAN_PAUSE, DEFAULT_SCAN_PAUSE),
-                        ): cv.positive_int,
+                        ): SCAN_PAUSE_SCHEMA,
                         vol.Optional(
                             CONF_OFFLINE_TIMEOUT,
                             default=user_input.get(CONF_OFFLINE_TIMEOUT, DEFAULT_OFFLINE_TIMEOUT),
-                        ): cv.positive_int,
+                        ): OFFLINE_TIMEOUT_SCHEMA,
                         vol.Required(
                             CONF_VERIFY_SSL,
                             default=user_input.get(CONF_VERIFY_SSL, False),
@@ -170,11 +179,11 @@ class OptionsFlow(config_entries.OptionsFlowWithConfigEntry):
                 vol.Optional(
                     CONF_SCAN_PAUSE,
                     default=data.get(CONF_SCAN_PAUSE, DEFAULT_SCAN_PAUSE),
-                ): cv.positive_int,
+                ): SCAN_PAUSE_SCHEMA,
                 vol.Optional(
                     CONF_OFFLINE_TIMEOUT,
                     default=data.get(CONF_OFFLINE_TIMEOUT, DEFAULT_OFFLINE_TIMEOUT),
-                ): cv.positive_int,
+                ): OFFLINE_TIMEOUT_SCHEMA,
                 vol.Required(CONF_VERIFY_SSL, default=data.get(CONF_VERIFY_SSL)): cv.boolean,
                 vol.Required(CONF_SUPPORT_VPN, default=data.get(CONF_SUPPORT_VPN, True)): cv.boolean,
                 vol.Required(CONF_SUPPORT_TRACKER, default=data.get(CONF_SUPPORT_TRACKER, True)): cv.boolean,
