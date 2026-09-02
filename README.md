@@ -38,6 +38,10 @@ If you forget to enable it back - it would be automatically enable after 20 minu
  - 6Ghz IoT wifi network Enable/Disable
  - VPN Client (for some routers)
  - Control VPN Server List (for some routers)
+ - LAN IPv4 DHCP Server Enable/Disable (for some routers)
+
+> [!WARNING]
+> Disabling the LAN IPv4 DHCP server can leave clients without an IP address (including the Home Assistant host, if it uses DHCP). Prefer static addresses or another DHCP server before turning this switch off.
 
 ### Sensors
  - Total amount of wired clients

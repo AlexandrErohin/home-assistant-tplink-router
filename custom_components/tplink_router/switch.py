@@ -182,13 +182,14 @@ DHCP_SERVER_SWITCH_TYPES = (
         property='lan_ipv4_dhcp_enable',
         method=lambda coordinator, value: coordinator.set_ipv4_dhcps(value),
         description=SwitchEntityDescription(
-            key="ipv4_dhcps",
-            name="DHCP server enable",
+            key="lan_ipv4_dhcp_enable",
+            name="LAN IPv4 DHCP Server",
             icon="mdi:server-network",
             entity_category=EntityCategory.CONFIG,
         ),
     ),
 )
+
 
 async def async_setup_entry(
         hass: HomeAssistant,
