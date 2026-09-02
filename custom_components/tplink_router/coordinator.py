@@ -17,7 +17,8 @@ from tplinkrouterc6u import (
     SMS,
     ServingCell,
     VpnClientStatus,
-    VPNStatus
+    VPNStatus,
+    PortStatus,
 )
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers.device_registry import CONNECTION_NETWORK_MAC, DeviceInfo
@@ -34,9 +35,10 @@ def collect_status(
         serving_cells: list[ServingCell] | None,
         vpn_server_status: VPNStatus | None,
         vpn_client_status: VpnClientStatus | None,
+        port_status: list[PortStatus] | None,
         logger: Logger,
 ) -> tuple[Status, LTEStatus | None, list[ServingCell] | None, VPNStatus | None,
-           VpnClientStatus | None, list[SMS] | None]:
+           VpnClientStatus | None, list[PortStatus] | None, list[SMS] | None]:
     """Gather all status data from the router; a failing SMS fetch must not break the update."""
     status = router.get_status()
     sms_list = None
@@ -48,9 +50,19 @@ def collect_status(
         vpn_server_status = router.get_vpn_status()
     if vpn_client_status is not None:
         vpn_client_status = router.get_vpn_client_status()
+    if port_status is not None:
+        port_status = router.get_port_status()
     if hasattr(router, "get_sms") and lte_status is not None:
         sms_list = safe_call(router.get_sms, logger, "fetch SMS")
-    return status, lte_status, serving_cells, vpn_server_status, vpn_client_status, sms_list
+    return (
+        status,
+        lte_status,
+        serving_cells,
+        vpn_server_status,
+        vpn_client_status,
+        port_status,
+        sms_list,
+    )
 
 
 class TPLinkRouterCoordinator(DataUpdateCoordinator):
@@ -67,6 +79,7 @@ class TPLinkRouterCoordinator(DataUpdateCoordinator):
             vpn_server_status: VPNStatus | None = None,
             vpn_client_status: VpnClientStatus | None = None,
             serving_cells: list[ServingCell] | None = None,
+            port_status: list[PortStatus] | None = None,
             retries: int = 3,
             backoff_seconds: float = 1.0,
     ) -> None:
@@ -76,6 +89,7 @@ class TPLinkRouterCoordinator(DataUpdateCoordinator):
         self.tracked = {}
         self.lte_status = lte_status
         self.serving_cells = serving_cells
+        self.port_status = port_status
         self.retries = retries
         self.backoff_seconds = backoff_seconds
         self.device_info = DeviceInfo(
@@ -188,6 +202,7 @@ class TPLinkRouterCoordinator(DataUpdateCoordinator):
                         self.serving_cells,
                         self.vpn_server_status,
                         self.vpn_client_status,
+                        self.port_status,
                         self.logger,
                     ),
                 )
@@ -198,6 +213,7 @@ class TPLinkRouterCoordinator(DataUpdateCoordinator):
                 self.serving_cells,
                 self.vpn_server_status,
                 self.vpn_client_status,
+                self.port_status,
                 sms_list,
             ) = await self.hass.async_add_executor_job(
                 run_with_retry,
