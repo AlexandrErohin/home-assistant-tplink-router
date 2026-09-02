@@ -66,8 +66,18 @@ For LTE Routers
 - LTE SNR
 - LTE ISP Name
 
+### Binary Sensors
+For TL-SG108E (and switches with `get_port_status`):
+ - Per-port connectivity (link up/down)
+
+### Port Sensors
+For TL-SG108E (and switches with `get_port_status`):
+ - Per-port negotiated link speed (Mbps), with attributes for duplex, enabled, auto-negotiation, configured speed/duplex, flow control, LAG and TX/RX packet counters
+
 ### Device Tracker
  - Track connected to router devices by MAC address with connection information
+
+When using multiple routers (for example, a WAN router and a separate access point), you can disable device trackers for the non-AP router in the integration options to avoid duplicate device entries.
 
 To find your device - Go to `Developer tools` and search for your MAC address - you’ll find sensor like `device_tracker.YOUR_MAC` or `device_tracker.YOUR_PHONE_NAME`.
 
@@ -180,15 +190,25 @@ The default data is preset already.
 If you got an error please try to use HTTPS connection first
 
 NOTE!
-1. If you use `https` connection - You need to turn on "Local Management via HTTPS" (advanced->system->administration) in the router web UI
+1. If you use `https` connection - for most routers turn on "Local Management via HTTPS" (advanced->system->administration). Some models (e.g. Archer NX200) already accept local HTTPS without enabling Remote Management via HTTPS.
 2. If you use `https` connection to your router you may get error `certificate verify failed: EE certificate key too weak`. To fix this - unset `Verify ssl`
 3. Use Local Password which is for Log In with Local Password. Login with TP-LINK ID doesnt work
 
 <img src="https://raw.githubusercontent.com/AlexandrErohin/home-assistant-tplink-router/master/docs/media/router.png" width="30%">
 
-4. If you got error - `check if the default router username is correct` The default username for most routers is `admin`. Some routers have the default username - `user`.
+4. If you got error - `check if the default router username is correct` The default username for most routers is `admin`. Some routers (e.g. Archer NX200) use `user` instead — try Login `user` with your normal Local Password.
 5. If you got error - `use web encrypted password instead` Read [web encrypted password](#encrypted_pass)
 6. The TP-Link Web Interface only supports upto 1 user logged in at a time (for security reasons, apparently). So you will be logged out from router web interface when the integration updates data
+
+### Archer NX200 (and similar EX / 5G routers)
+If setup fails with HTML/welcome-page responses or login errors while the router is reachable:
+
+1. Host: `https://192.168.x.1` (not `http://`)
+2. Login: `user` (not `admin`)
+3. Password: normal Local Password (web encrypted password is not needed)
+4. Verify SSL: off
+
+Remote Management via HTTPS can stay off — local HTTPS access is enough.
 
 ### <a id="encrypted_pass">Web Encrypted Password</a>
 If you got error - `use web encrypted password instead. Check the documentation!`
@@ -204,7 +224,13 @@ You may edit configuration data like:
 1. Router url
 2. Password
 3. Scan interval
-4. Verify https
+4. Scan retries (1–10; default 3) — how many times a failed data poll is retried
+5. Scan backoff (0.1–30s; default 1.0) — delay between retries, grows with each attempt
+6. Verify https
+7. Include support for VPN server/client (enable/disable VPN status polling and related VPN entities)
+8. Include device trackers (disable for non-AP routers to avoid duplicate entries)
+
+Transient poll failures (timeouts, dropped connections, session expiry) are retried automatically. Authorization failures (wrong password / HTTP 401) are not retried. A failing SMS mailbox fetch does not fail the whole update.
 
 To do that:
 
@@ -235,6 +261,7 @@ To do that:
 - Archer AX50 v1.0
 - Archer AX53 (v1.0, v2)
 - Archer AX55 (v1.0, V1.60, v4.0)
+- Archer AX55 Pro v1.0
 - Archer AX58 v1.0
 - Archer AX6000 V1
 - Archer AX72 V1

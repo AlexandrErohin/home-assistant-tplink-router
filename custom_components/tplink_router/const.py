@@ -1,8 +1,16 @@
 DEFAULT_NAME = "TP-Link Router"
 DOMAIN = "tplink_router"
 CONF_CLIENT_CLASS = "client_class"
+CONF_SUPPORT_VPN = "support_vpn"
+CONF_SUPPORT_TRACKER = "support_tracker"
+CONF_SCAN_RETRIES = "scan_retries"
+CONF_SCAN_BACKOFF = "scan_backoff"
 DEFAULT_USER = "admin"
 DEFAULT_HOST = "http://192.168.0.1"
+DEFAULT_SCAN_RETRIES = 3
+DEFAULT_SCAN_BACKOFF = 1.0
+MAX_SCAN_RETRIES = 10
+MAX_SCAN_BACKOFF = 30.0
 
 EVENT_NEW_DEVICE = f"{DOMAIN}_new_device"
 EVENT_ONLINE = f"{DOMAIN}_device_online"

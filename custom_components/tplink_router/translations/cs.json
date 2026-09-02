@@ -8,7 +8,11 @@
           "username": "Login",
           "password": "Heslo",
           "scan_interval": "Interval skenování v sekundách",
-          "verify_ssl": "Kontrolovat ssl pro HTTPS připojení"
+          "verify_ssl": "Kontrolovat ssl pro HTTPS připojení",
+          "support_vpn": "Zahrnout podporu pro VPN server a klienta",
+          "support_tracker": "Zahrnout sledování zařízení (vypněte u routerů, které nejsou přístupové body, aby se předešlo duplicitám)",
+          "scan_retries": "Počet pokusů pro každou aktualizaci dat",
+          "scan_backoff": "Sekundy mezi pokusy"
         }
       }
     }
@@ -22,7 +26,11 @@
           "username": "Login",
           "password": "Heslo",
           "scan_interval": "Interval skenování v sekundách",
-          "verify_ssl": "Kontrolovat ssl pro HTTPS připojení"
+          "verify_ssl": "Kontrolovat ssl pro HTTPS připojení",
+          "support_vpn": "Zahrnout podporu pro VPN server a klienta",
+          "support_tracker": "Zahrnout sledování zařízení (vypněte u routerů, které nejsou přístupové body, aby se předešlo duplicitám)",
+          "scan_retries": "Počet pokusů pro každou aktualizaci dat",
+          "scan_backoff": "Sekundy mezi pokusy"
         }
       }
     }

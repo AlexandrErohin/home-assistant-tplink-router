@@ -8,7 +8,11 @@
           "username": "Login",
           "password": "Lösenord",
           "scan_interval": "Uppdateringsintervall i sekunder",
-          "verify_ssl": "Verifiera ssl för https anslutning"
+          "verify_ssl": "Verifiera ssl för https anslutning",
+          "support_vpn": "Inkludera stöd för VPN-server och VPN-klient",
+          "support_tracker": "Inkludera enhetsspårare (inaktivera för routrar som inte är accesspunkter för att undvika dubbletter)",
+          "scan_retries": "Antal försök för varje datauppdatering",
+          "scan_backoff": "Sekunder mellan försök"
         }
       }
     }
@@ -22,7 +26,11 @@
           "username": "Login",
           "password": "Lösenord",
           "scan_interval": "Uppdateringsintervall i sekunder",
-          "verify_ssl": "Verifiera ssl för https anslutning"
+          "verify_ssl": "Verifiera ssl för https anslutning",
+          "support_vpn": "Inkludera stöd för VPN-server och VPN-klient",
+          "support_tracker": "Inkludera enhetsspårare (inaktivera för routrar som inte är accesspunkter för att undvika dubbletter)",
+          "scan_retries": "Antal försök för varje datauppdatering",
+          "scan_backoff": "Sekunder mellan försök"
         }
       }
     }

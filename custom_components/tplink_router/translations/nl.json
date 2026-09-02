@@ -8,7 +8,11 @@
           "username": "Gebruikersnaam",
           "password": "Wachtwoord",
           "scan_interval": "Scaninterval voor updates in seconden",
-          "verify_ssl": "Verifieer SSL voor https-verbinding"
+          "verify_ssl": "Verifieer SSL voor https-verbinding",
+          "support_vpn": "VPN-server- en VPN-clientondersteuning opnemen",
+          "support_tracker": "Apparaattrackers opnemen (uitschakelen voor routers die geen access points zijn om duplicaten te voorkomen)",
+          "scan_retries": "Aantal pogingen per data-update",
+          "scan_backoff": "Seconden tussen pogingen"
         }
       }
     }
@@ -22,7 +26,11 @@
           "username": "Gebruikersnaam",
           "password": "Wachtwoord",
           "scan_interval": "Scaninterval voor updates in seconden",
-          "verify_ssl": "Verifieer SSL voor https-verbinding"
+          "verify_ssl": "Verifieer SSL voor https-verbinding",
+          "support_vpn": "VPN-server- en VPN-clientondersteuning opnemen",
+          "support_tracker": "Apparaattrackers opnemen (uitschakelen voor routers die geen access points zijn om duplicaten te voorkomen)",
+          "scan_retries": "Aantal pogingen per data-update",
+          "scan_backoff": "Seconden tussen pogingen"
         }
       }
     }

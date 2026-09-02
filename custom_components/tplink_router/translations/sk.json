@@ -8,7 +8,11 @@
           "username": "Meno",
           "password": "Heslo",
           "scan_interval": "Interval skenovania aktualizácií v sekundách",
-          "verify_ssl": "Overte ssl pre pripojenie https"
+          "verify_ssl": "Overte ssl pre pripojenie https",
+          "support_vpn": "Zahrnúť podporu pre VPN server a klienta",
+          "support_tracker": "Zahrnúť sledovanie zariadení (vypnite pre routery, ktoré nie sú prístupové body, aby sa predišlo duplicitám)",
+          "scan_retries": "Počet pokusov pre každú aktualizáciu dát",
+          "scan_backoff": "Sekundy medzi pokusmi"
         }
       }
     }
@@ -22,7 +26,11 @@
           "username": "Meno",
           "password": "Heslo",
           "scan_interval": "Interval skenovania aktualizácií v sekundách",
-          "verify_ssl": "Overte ssl pre pripojenie https"
+          "verify_ssl": "Overte ssl pre pripojenie https",
+          "support_vpn": "Zahrnúť podporu pre VPN server a klienta",
+          "support_tracker": "Zahrnúť sledovanie zariadení (vypnite pre routery, ktoré nie sú prístupové body, aby sa predišlo duplicitám)",
+          "scan_retries": "Počet pokusov pre každú aktualizáciu dát",
+          "scan_backoff": "Sekundy medzi pokusmi"
         }
       }
     }
