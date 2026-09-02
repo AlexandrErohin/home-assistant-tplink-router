@@ -66,6 +66,14 @@ For LTE Routers
 - LTE SNR
 - LTE ISP Name
 
+### Binary Sensors
+For TL-SG108E (and switches with `get_port_status`):
+ - Per-port connectivity (link up/down)
+
+### Port Sensors
+For TL-SG108E (and switches with `get_port_status`):
+ - Per-port negotiated link speed (Mbps), with attributes for duplex, enabled, auto-negotiation, configured speed/duplex, flow control, LAG and TX/RX packet counters
+
 ### Device Tracker
  - Track connected to router devices by MAC address with connection information
 

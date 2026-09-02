@@ -169,16 +169,8 @@ class TPLinkRouterCoordinator(DataUpdateCoordinator):
                     vpn_server_status = self.router.get_vpn_status()
                 if self.vpn_client_status is not None:
                     vpn_client_status = self.router.get_vpn_client_status()
-                if hasattr(self.router, "get_port_status"):
-                    try:
-                        port_status = self.router.get_port_status()
-                    except Exception as err:
-                        self.logger.debug(
-                            "TP-Link router %s: get_port_status failed: %s",
-                            self.router.__class__.__name__,
-                            err,
-                        )
-                        port_status = None
+                if self.port_status is not None:
+                    port_status = self.router.get_port_status()
                 if hasattr(self.router, "get_sms") and self.lte_status is not None:
                     sms_list = self.router.get_sms()
 
