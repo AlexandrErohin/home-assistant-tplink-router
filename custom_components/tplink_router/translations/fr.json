@@ -12,7 +12,9 @@
           "support_vpn": "Inclure la prise en charge du serveur et du client VPN",
           "support_tracker": "Inclure les traceurs d'appareils (désactiver pour les routeurs qui ne sont pas des points d'accès afin d'éviter les doublons)",
           "scan_retries": "Nombre de tentatives pour chaque mise à jour des données",
-          "scan_backoff": "Secondes entre les tentatives"
+          "scan_backoff": "Secondes entre les tentatives",
+          "scan_pause": "Minutes avant la réactivation automatique de la collecte de données (0 = jamais)",
+          "offline_timeout": "Secondes pendant lesquelles un appareil manquant reste « home » avant offline (0 = immédiat)"
         }
       }
     }
@@ -30,7 +32,9 @@
           "support_vpn": "Inclure la prise en charge du serveur et du client VPN",
           "support_tracker": "Inclure les traceurs d'appareils (désactiver pour les routeurs qui ne sont pas des points d'accès afin d'éviter les doublons)",
           "scan_retries": "Nombre de tentatives pour chaque mise à jour des données",
-          "scan_backoff": "Secondes entre les tentatives"
+          "scan_backoff": "Secondes entre les tentatives",
+          "scan_pause": "Minutes avant la réactivation automatique de la collecte de données (0 = jamais)",
+          "offline_timeout": "Secondes pendant lesquelles un appareil manquant reste « home » avant offline (0 = immédiat)"
         }
       }
     }

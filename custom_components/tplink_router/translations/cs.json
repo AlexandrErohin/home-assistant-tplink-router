@@ -12,7 +12,9 @@
           "support_vpn": "Zahrnout podporu pro VPN server a klienta",
           "support_tracker": "Zahrnout sledování zařízení (vypněte u routerů, které nejsou přístupové body, aby se předešlo duplicitám)",
           "scan_retries": "Počet pokusů pro každou aktualizaci dat",
-          "scan_backoff": "Sekundy mezi pokusy"
+          "scan_backoff": "Sekundy mezi pokusy",
+          "scan_pause": "Minuty před automatickým opětovným zapnutím načítání dat (0 = nikdy)",
+          "offline_timeout": "Sekundy, po které chybějící zařízení zůstane „doma“ před offline (0 = ihned)"
         }
       }
     }
@@ -30,7 +32,9 @@
           "support_vpn": "Zahrnout podporu pro VPN server a klienta",
           "support_tracker": "Zahrnout sledování zařízení (vypněte u routerů, které nejsou přístupové body, aby se předešlo duplicitám)",
           "scan_retries": "Počet pokusů pro každou aktualizaci dat",
-          "scan_backoff": "Sekundy mezi pokusy"
+          "scan_backoff": "Sekundy mezi pokusy",
+          "scan_pause": "Minuty před automatickým opětovným zapnutím načítání dat (0 = nikdy)",
+          "offline_timeout": "Sekundy, po které chybějící zařízení zůstane „doma“ před offline (0 = ihned)"
         }
       }
     }

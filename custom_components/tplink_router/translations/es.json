@@ -12,7 +12,9 @@
           "support_vpn": "Incluir compatibilidad para servidor y cliente VPN",
           "support_tracker": "Incluir rastreadores de dispositivos (desactivar en routers que no son puntos de acceso para evitar duplicados)",
           "scan_retries": "Número de intentos por cada actualización de datos",
-          "scan_backoff": "Segundos entre reintentos"
+          "scan_backoff": "Segundos entre reintentos",
+          "scan_pause": "Minutos antes de reactivar automáticamente la obtención de datos (0 = nunca)",
+          "offline_timeout": "Segundos que un dispositivo ausente sigue como 'home' antes de offline (0 = inmediato)"
         }
       }
     }
@@ -30,7 +32,9 @@
           "support_vpn": "Incluir compatibilidad para servidor y cliente VPN",
           "support_tracker": "Incluir rastreadores de dispositivos (desactivar en routers que no son puntos de acceso para evitar duplicados)",
           "scan_retries": "Número de intentos por cada actualización de datos",
-          "scan_backoff": "Segundos entre reintentos"
+          "scan_backoff": "Segundos entre reintentos",
+          "scan_pause": "Minutos antes de reactivar automáticamente la obtención de datos (0 = nunca)",
+          "offline_timeout": "Segundos que un dispositivo ausente sigue como 'home' antes de offline (0 = inmediato)"
         }
       }
     }

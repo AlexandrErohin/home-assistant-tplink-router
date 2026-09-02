@@ -1,7 +1,20 @@
+import asyncio
 import logging
+from datetime import datetime, timedelta
+from unittest.mock import Mock
+
+import pytest
 
 from custom_components.tplink_router.const import DEFAULT_SCAN_PAUSE
-from custom_components.tplink_router.coordinator import collect_status
+from custom_components.tplink_router.coordinator import (
+    TPLinkRouterCoordinator,
+    collect_status,
+)
+
+
+class FakeHass:
+    async def async_add_executor_job(self, fn, *args):
+        return fn(*args)
 
 
 class FakeRouter:
@@ -23,6 +36,33 @@ class FakeRouter:
 
     def get_sms(self):
         raise RuntimeError("inbox too big")
+
+
+def _bare_coordinator(**overrides):
+    router = Mock()
+    router.authorize.side_effect = Exception(
+        "TplinkRouter - Cannot authorize! Error - 'data'"
+    )
+    router.logout.side_effect = None
+
+    coord = TPLinkRouterCoordinator.__new__(TPLinkRouterCoordinator)
+    coord.hass = FakeHass()
+    coord.router = router
+    coord.retries = 3
+    coord.backoff_seconds = 0
+    coord.scan_pause_minutes = DEFAULT_SCAN_PAUSE
+    coord._lock = asyncio.Lock()
+    coord.scan_stopped_at = None
+    coord.status = Mock()
+    coord.lte_status = None
+    coord.serving_cells = None
+    coord.vpn_server_status = None
+    coord.vpn_client_status = None
+    coord.port_status = None
+    coord.logger = logging.getLogger("test")
+    for key, value in overrides.items():
+        setattr(coord, key, value)
+    return coord, router
 
 
 def test_collect_status_ignores_sms_failure():
@@ -65,3 +105,33 @@ def test_collect_status_skips_port_status_when_disabled():
 
 def test_scan_pause_default_is_twenty_minutes():
     assert DEFAULT_SCAN_PAUSE == 20
+
+
+def test_coordinator_retries_but_does_not_retry_auth_errors():
+    """The retry loop must not retry permanent auth failures."""
+    coord, router = _bare_coordinator()
+    with pytest.raises(Exception, match="Cannot authorize"):
+        asyncio.run(coord._async_update_data())
+    assert router.authorize.call_count == 1
+
+
+def test_scan_pause_zero_keeps_fetching_disabled():
+    """scan_pause=0 must not auto-clear scan_stopped_at."""
+    coord, router = _bare_coordinator(
+        scan_pause_minutes=0,
+        scan_stopped_at=datetime.now() - timedelta(days=1),
+    )
+    assert asyncio.run(coord._async_update_data()) is None
+    assert router.authorize.call_count == 0
+    assert coord.scan_stopped_at is not None
+
+
+def test_scan_pause_expires_and_resumes_fetching():
+    coord, router = _bare_coordinator(
+        scan_pause_minutes=20,
+        scan_stopped_at=datetime.now() - timedelta(minutes=21),
+    )
+    with pytest.raises(Exception, match="Cannot authorize"):
+        asyncio.run(coord._async_update_data())
+    assert router.authorize.call_count == 1
+    assert coord.scan_stopped_at is None

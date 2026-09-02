@@ -10,7 +10,7 @@ from .const import (
     CONF_SUPPORT_VPN, CONF_SUPPORT_TRACKER, CONF_SCAN_RETRIES, CONF_SCAN_BACKOFF,
     CONF_SCAN_PAUSE, CONF_OFFLINE_TIMEOUT, DEFAULT_SCAN_RETRIES, DEFAULT_SCAN_BACKOFF,
     DEFAULT_SCAN_PAUSE, DEFAULT_OFFLINE_TIMEOUT, MAX_SCAN_RETRIES, MAX_SCAN_BACKOFF,
-    MAX_SCAN_PAUSE,
+    MAX_SCAN_PAUSE, MAX_OFFLINE_TIMEOUT,
 )
 from .coordinator import TPLinkRouterCoordinator
 from homeassistant.const import (
@@ -33,11 +33,11 @@ SCAN_BACKOFF_SCHEMA = vol.All(
 )
 SCAN_PAUSE_SCHEMA = vol.All(
     vol.Coerce(int),
-    vol.Range(min=1, max=MAX_SCAN_PAUSE),
+    vol.Range(min=0, max=MAX_SCAN_PAUSE),
 )
 OFFLINE_TIMEOUT_SCHEMA = vol.All(
     vol.Coerce(int),
-    vol.Range(min=0),
+    vol.Range(min=0, max=MAX_OFFLINE_TIMEOUT),
 )
 
 

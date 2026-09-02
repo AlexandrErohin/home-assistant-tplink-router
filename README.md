@@ -26,7 +26,7 @@ See [Supported routers](#supports)
 
 ### Switches
  - Router data fetching - you may disable router data fetching before accessing the router, so it wont logging your out.
-If you forget to enable it back - it would be automatically enable after 20 minutes
+If you forget to enable it back - it would be automatically enable after the configured `scan_pause` minutes (default 20; set to `0` to keep fetching disabled until you turn the switch on again)
  - 2.4Ghz host wifi Enable/Disable
  - 5Ghz host wifi Enable/Disable
  - 6Ghz host wifi Enable/Disable
@@ -82,6 +82,8 @@ For TL-SG108E (and switches with `get_port_status`):
  - Track connected to router devices by MAC address with connection information
 
 When using multiple routers (for example, a WAN router and a separate access point), you can disable device trackers for the non-AP router in the integration options to avoid duplicate device entries.
+
+`offline_timeout` (seconds, default `0`) keeps a device marked home for a grace period after it disappears from the router's client list, which reduces false "not home" flips for phones that briefly drop Wi‑Fi to save battery. `0` means mark offline immediately (previous behavior). The grace period applies only when the MAC leaves the client list; if the router still lists the device with `active=false`, it is marked offline immediately.
 
 To find your device - Go to `Developer tools` and search for your MAC address - you’ll find sensor like `device_tracker.YOUR_MAC` or `device_tracker.YOUR_PHONE_NAME`.
 
@@ -230,11 +232,14 @@ You may edit configuration data like:
 3. Scan interval
 4. Scan retries (1–10; default 3) — how many times a failed data poll is retried
 5. Scan backoff (0.1–30s; default 1.0) — delay between retries, grows with each attempt
-6. Verify https
-7. Include support for VPN server/client (enable/disable VPN status polling and related VPN entities)
-8. Include device trackers (disable for non-AP routers to avoid duplicate entries)
+6. Scan pause (0–1440 minutes; default 20) — how long "Router data fetching" stays off before auto re-enable (`0` = never auto re-enable)
+7. Offline timeout (0–86400 seconds; default 0) — grace period before a missing device tracker goes offline
+8. Verify https
+9. Include support for VPN server/client (enable/disable VPN status polling and related VPN entities)
+10. Include device trackers (disable for non-AP routers to avoid duplicate entries)
 
 Transient poll failures (timeouts, dropped connections, session expiry) are retried automatically. Authorization failures (wrong password / HTTP 401) are not retried. A failing SMS mailbox fetch does not fail the whole update.
+An unreachable router during setup fails only that config entry (`Failed to set up`) and does not block other TP-Link Router entries.
 
 To do that:
 

@@ -12,7 +12,9 @@
           "support_vpn": "Inkludera stöd för VPN-server och VPN-klient",
           "support_tracker": "Inkludera enhetsspårare (inaktivera för routrar som inte är accesspunkter för att undvika dubbletter)",
           "scan_retries": "Antal försök för varje datauppdatering",
-          "scan_backoff": "Sekunder mellan försök"
+          "scan_backoff": "Sekunder mellan försök",
+          "scan_pause": "Minuter innan datahämtning aktiveras automatiskt igen (0 = aldrig)",
+          "offline_timeout": "Sekunder som en saknad enhet förblir 'home' innan offline (0 = omedelbart)"
         }
       }
     }
@@ -30,7 +32,9 @@
           "support_vpn": "Inkludera stöd för VPN-server och VPN-klient",
           "support_tracker": "Inkludera enhetsspårare (inaktivera för routrar som inte är accesspunkter för att undvika dubbletter)",
           "scan_retries": "Antal försök för varje datauppdatering",
-          "scan_backoff": "Sekunder mellan försök"
+          "scan_backoff": "Sekunder mellan försök",
+          "scan_pause": "Minuter innan datahämtning aktiveras automatiskt igen (0 = aldrig)",
+          "offline_timeout": "Sekunder som en saknad enhet förblir 'home' innan offline (0 = omedelbart)"
         }
       }
     }

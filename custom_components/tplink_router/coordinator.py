@@ -222,11 +222,18 @@ class TPLinkRouterCoordinator(DataUpdateCoordinator):
                 # Hold the router lock only for the authorize/request/logout cycle,
                 # not for inter-attempt backoff, so switch/reboot/SMS can proceed.
                 async with self._lock:
-                    if self.scan_stopped_at is not None and self.scan_stopped_at > (
-                        datetime.now() - timedelta(minutes=self.scan_pause_minutes)
-                    ):
-                        return
-                    self.scan_stopped_at = None
+                    if self.scan_stopped_at is not None:
+                        # scan_pause_minutes == 0 keeps fetching paused until turned
+                        # back on manually (no automatic re-enable).
+                        if (
+                            self.scan_pause_minutes <= 0
+                            or self.scan_stopped_at > (
+                                datetime.now()
+                                - timedelta(minutes=self.scan_pause_minutes)
+                            )
+                        ):
+                            return
+                        self.scan_stopped_at = None
 
                     (
                         self.status,

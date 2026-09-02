@@ -47,104 +47,105 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
         host = "http://{}".format(host)
     verify_ssl = entry.data[CONF_VERIFY_SSL] if CONF_VERIFY_SSL in entry.data else False
     support_vpn = entry.data.get(CONF_SUPPORT_VPN, True)
-    client_class = entry.data.get(CONF_CLIENT_CLASS)
-    if not client_class:
-        client = await TPLinkRouterCoordinator.get_client(
-            hass=hass,
-            host=host,
-            password=entry.data[CONF_PASSWORD],
-            username=entry.data.get(CONF_USERNAME, DEFAULT_USER),
-            logger=_LOGGER,
-            verify_ssl=verify_ssl
-        )
-        new_data = dict(entry.data)
-        new_data[CONF_CLIENT_CLASS] = client.__class__.__name__
-        hass.config_entries.async_update_entry(
-            entry,
-            data=new_data,
-        )
-    else:
-        client = TPLinkRouterCoordinator.get_client_by_class(client_class)(
-            host=host,
-            password=entry.data[CONF_PASSWORD],
-            username=entry.data.get(CONF_USERNAME, DEFAULT_USER),
-            logger=_LOGGER,
-            verify_ssl=verify_ssl
-        )
-
-    def callback():
-        firm = client.get_firmware()
-        stat = client.get_status()
-        # Check if router is lte_status compatible
-        lte_stat = None
-        if hasattr(client, "get_lte_status"):
-            try:
-                lte_stat = client.get_lte_status()
-            except Exception as err:
-                _LOGGER.debug(
-                    "TP-Link router %s: get_lte_status failed: %s",
-                    client.__class__.__name__,
-                    err,
-                )
-        # Check router VPN compatibility, if needed
-        vpn_server_stat = None
-        vpn_client_stat = None
-        if support_vpn:
-            # Check if router is vpn_server compatible
-            if hasattr(client, "get_vpn_status"):
-                try:
-                    vpn_server_stat = client.get_vpn_status()
-                except Exception as err:
-                    _LOGGER.debug(
-                        "TP-Link router %s: get_vpn_status failed: %s",
-                        client.__class__.__name__,
-                        err,
-                    )
-            # Check if router is vpn_client compatible
-            if hasattr(client, "get_vpn_client_status"):
-                try:
-                    vpn_client_stat = client.get_vpn_client_status()
-                except Exception as err:
-                    _LOGGER.debug(
-                        "TP-Link router %s: get_vpn_client_status failed: %s",
-                        client.__class__.__name__,
-                        err,
-                    )
-        # Check if router is serving_cells compatible
-        serving_cells = None
-        if hasattr(client, "get_lte_serving_cells"):
-            try:
-                serving_cells = client.get_lte_serving_cells()
-            except Exception as err:
-                _LOGGER.debug(
-                    "TP-Link router %s: get_lte_serving_cells failed: %s",
-                    client.__class__.__name__,
-                    err,
-                )
-        # Check if router is port_status compatible
-        port_status = None
-        if hasattr(client, "get_port_status"):
-            try:
-                port_status = client.get_port_status()
-            except Exception as err:
-                _LOGGER.debug(
-                    "TP-Link router %s: get_port_status failed: %s",
-                    client.__class__.__name__,
-                    err,
-                )
-        sms_list = None
-        if hasattr(client, "get_sms") and lte_stat is not None:
-            try:
-                sms_list = client.get_sms()
-            except Exception as err:
-                _LOGGER.debug(
-                    "TP-Link router %s: get_sms failed: %s",
-                    client.__class__.__name__,
-                    err,
-                )
-        return firm, stat, lte_stat, vpn_server_stat, vpn_client_stat, serving_cells, port_status, sms_list
 
     try:
+        client_class = entry.data.get(CONF_CLIENT_CLASS)
+        if not client_class:
+            client = await TPLinkRouterCoordinator.get_client(
+                hass=hass,
+                host=host,
+                password=entry.data[CONF_PASSWORD],
+                username=entry.data.get(CONF_USERNAME, DEFAULT_USER),
+                logger=_LOGGER,
+                verify_ssl=verify_ssl
+            )
+            new_data = dict(entry.data)
+            new_data[CONF_CLIENT_CLASS] = client.__class__.__name__
+            hass.config_entries.async_update_entry(
+                entry,
+                data=new_data,
+            )
+        else:
+            client = TPLinkRouterCoordinator.get_client_by_class(client_class)(
+                host=host,
+                password=entry.data[CONF_PASSWORD],
+                username=entry.data.get(CONF_USERNAME, DEFAULT_USER),
+                logger=_LOGGER,
+                verify_ssl=verify_ssl
+            )
+
+        def callback():
+            firm = client.get_firmware()
+            stat = client.get_status()
+            # Check if router is lte_status compatible
+            lte_stat = None
+            if hasattr(client, "get_lte_status"):
+                try:
+                    lte_stat = client.get_lte_status()
+                except Exception as err:
+                    _LOGGER.debug(
+                        "TP-Link router %s: get_lte_status failed: %s",
+                        client.__class__.__name__,
+                        err,
+                    )
+            # Check router VPN compatibility, if needed
+            vpn_server_stat = None
+            vpn_client_stat = None
+            if support_vpn:
+                # Check if router is vpn_server compatible
+                if hasattr(client, "get_vpn_status"):
+                    try:
+                        vpn_server_stat = client.get_vpn_status()
+                    except Exception as err:
+                        _LOGGER.debug(
+                            "TP-Link router %s: get_vpn_status failed: %s",
+                            client.__class__.__name__,
+                            err,
+                        )
+                # Check if router is vpn_client compatible
+                if hasattr(client, "get_vpn_client_status"):
+                    try:
+                        vpn_client_stat = client.get_vpn_client_status()
+                    except Exception as err:
+                        _LOGGER.debug(
+                            "TP-Link router %s: get_vpn_client_status failed: %s",
+                            client.__class__.__name__,
+                            err,
+                        )
+            # Check if router is serving_cells compatible
+            serving_cells = None
+            if hasattr(client, "get_lte_serving_cells"):
+                try:
+                    serving_cells = client.get_lte_serving_cells()
+                except Exception as err:
+                    _LOGGER.debug(
+                        "TP-Link router %s: get_lte_serving_cells failed: %s",
+                        client.__class__.__name__,
+                        err,
+                    )
+            # Check if router is port_status compatible
+            port_status = None
+            if hasattr(client, "get_port_status"):
+                try:
+                    port_status = client.get_port_status()
+                except Exception as err:
+                    _LOGGER.debug(
+                        "TP-Link router %s: get_port_status failed: %s",
+                        client.__class__.__name__,
+                        err,
+                    )
+            sms_list = None
+            if hasattr(client, "get_sms") and lte_stat is not None:
+                try:
+                    sms_list = client.get_sms()
+                except Exception as err:
+                    _LOGGER.debug(
+                        "TP-Link router %s: get_sms failed: %s",
+                        client.__class__.__name__,
+                        err,
+                    )
+            return firm, stat, lte_stat, vpn_server_stat, vpn_client_stat, serving_cells, port_status, sms_list
+
         (
             firmware,
             status,
@@ -162,6 +163,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
             "TPLink Router setup failed for %s: %s",
             host,
             error,
+            exc_info=True,
         )
         return False
     # Create device coordinator and fetch data
