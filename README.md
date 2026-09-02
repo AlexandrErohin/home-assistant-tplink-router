@@ -224,8 +224,13 @@ You may edit configuration data like:
 1. Router url
 2. Password
 3. Scan interval
-4. Verify https
-5. Include support for VPN server/client (enable/disable VPN status polling and related VPN entities)
+4. Scan retries (1–10; default 3) — how many times a failed data poll is retried
+5. Scan backoff (0.1–30s; default 1.0) — delay between retries, grows with each attempt
+6. Verify https
+7. Include support for VPN server/client (enable/disable VPN status polling and related VPN entities)
+8. Include device trackers (disable for non-AP routers to avoid duplicate entries)
+
+Transient poll failures (timeouts, dropped connections, session expiry) are retried automatically. Authorization failures (wrong password / HTTP 401) are not retried. A failing SMS mailbox fetch does not fail the whole update.
 
 To do that:
 

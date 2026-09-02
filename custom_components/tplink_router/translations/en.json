@@ -8,6 +8,8 @@
           "username": "Login",
           "password": "Password",
           "scan_interval": "Scan interval for updates in seconds",
+          "scan_retries": "Number of attempts for each data update",
+          "scan_backoff": "Seconds between retries",
           "verify_ssl": "Verify ssl for https connection",
           "support_vpn": "Include support for VPN server and client",
           "support_tracker": "Include device trackers (disable for non-access-point routers to avoid duplicates)"
@@ -24,6 +26,8 @@
           "username": "Login",
           "password": "Password",
           "scan_interval": "Scan interval for updates in seconds",
+          "scan_retries": "Number of attempts for each data update",
+          "scan_backoff": "Seconds between retries",
           "verify_ssl": "Verify ssl for https connection",
           "support_vpn": "Include support for VPN server and client",
           "support_tracker": "Include device trackers (disable for non-access-point routers to avoid duplicates)"

@@ -18,7 +18,7 @@ from tplinkrouterc6u import (
     ServingCell,
     VpnClientStatus,
     VPNStatus,
-    PortStatus
+    PortStatus,
 )
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers.device_registry import CONNECTION_NETWORK_MAC, DeviceInfo
@@ -26,6 +26,43 @@ from .const import (
     DOMAIN,
     DEFAULT_NAME,
 )
+from .utils import safe_call, is_retryable_error
+
+
+def collect_status(
+        router: AbstractRouter,
+        lte_status: LTEStatus | None,
+        serving_cells: list[ServingCell] | None,
+        vpn_server_status: VPNStatus | None,
+        vpn_client_status: VpnClientStatus | None,
+        port_status: list[PortStatus] | None,
+        logger: Logger,
+) -> tuple[Status, LTEStatus | None, list[ServingCell] | None, VPNStatus | None,
+           VpnClientStatus | None, list[PortStatus] | None, list[SMS] | None]:
+    """Gather all status data from the router; a failing SMS fetch must not break the update."""
+    status = router.get_status()
+    sms_list = None
+    if lte_status is not None:
+        lte_status = router.get_lte_status()
+    if serving_cells is not None:
+        serving_cells = router.get_lte_serving_cells()
+    if vpn_server_status is not None:
+        vpn_server_status = router.get_vpn_status()
+    if vpn_client_status is not None:
+        vpn_client_status = router.get_vpn_client_status()
+    if port_status is not None:
+        port_status = router.get_port_status()
+    if hasattr(router, "get_sms") and lte_status is not None:
+        sms_list = safe_call(router.get_sms, logger, "fetch SMS")
+    return (
+        status,
+        lte_status,
+        serving_cells,
+        vpn_server_status,
+        vpn_client_status,
+        port_status,
+        sms_list,
+    )
 
 
 class TPLinkRouterCoordinator(DataUpdateCoordinator):
@@ -43,6 +80,8 @@ class TPLinkRouterCoordinator(DataUpdateCoordinator):
             vpn_client_status: VpnClientStatus | None = None,
             serving_cells: list[ServingCell] | None = None,
             port_status: list[PortStatus] | None = None,
+            retries: int = 3,
+            backoff_seconds: float = 1.0,
     ) -> None:
         self.router = router
         self.unique_id = unique_id
@@ -51,6 +90,8 @@ class TPLinkRouterCoordinator(DataUpdateCoordinator):
         self.lte_status = lte_status
         self.serving_cells = serving_cells
         self.port_status = port_status
+        self.retries = retries
+        self.backoff_seconds = backoff_seconds
         self.device_info = DeviceInfo(
             configuration_url=router.host,
             connections={(CONNECTION_NETWORK_MAC, self.status.lan_macaddr)},
@@ -147,58 +188,63 @@ class TPLinkRouterCoordinator(DataUpdateCoordinator):
 
     async def _async_update_data(self):
         """Asynchronous update of all data."""
-        async with self._lock:
-            if self.scan_stopped_at is not None and self.scan_stopped_at > (datetime.now() - timedelta(minutes=20)):
-                return
-            self.scan_stopped_at = None
+        retries = max(1, int(self.retries))
+        last_error: Exception | None = None
 
-            def callback():
-                status = self.router.get_status()
-                lte_status = self.lte_status
-                serving_cells = self.serving_cells
-                vpn_server_status = self.vpn_server_status
-                vpn_client_status = self.vpn_client_status
-                port_status = self.port_status
-                sms_list = None
-
-                if self.lte_status is not None:
-                    lte_status = self.router.get_lte_status()
-                if self.serving_cells is not None:
-                    serving_cells = self.router.get_lte_serving_cells()
-                if self.vpn_server_status is not None:
-                    vpn_server_status = self.router.get_vpn_status()
-                if self.vpn_client_status is not None:
-                    vpn_client_status = self.router.get_vpn_client_status()
-                if self.port_status is not None:
-                    port_status = self.router.get_port_status()
-                if hasattr(self.router, "get_sms") and self.lte_status is not None:
-                    sms_list = self.router.get_sms()
-
-                return (
-                    status,
-                    lte_status,
-                    serving_cells,
-                    vpn_server_status,
-                    vpn_client_status,
-                    port_status,
-                    sms_list,
-                )
-
-            (
-                self.status,
-                self.lte_status,
-                self.serving_cells,
-                self.vpn_server_status,
-                self.vpn_client_status,
-                self.port_status,
-                sms_list,
-            ) = await self.hass.async_add_executor_job(
-                TPLinkRouterCoordinator.request, self.router, callback
+        def update_once():
+            return TPLinkRouterCoordinator.request(
+                self.router,
+                lambda: collect_status(
+                    self.router,
+                    self.lte_status,
+                    self.serving_cells,
+                    self.vpn_server_status,
+                    self.vpn_client_status,
+                    self.port_status,
+                    self.logger,
+                ),
             )
 
-            if sms_list is not None:
-                self._process_sms_list(sms_list)
-            self._last_update_time = datetime.now()
+        for attempt in range(retries):
+            try:
+                # Hold the router lock only for the authorize/request/logout cycle,
+                # not for inter-attempt backoff, so switch/reboot/SMS can proceed.
+                async with self._lock:
+                    if self.scan_stopped_at is not None and self.scan_stopped_at > (
+                        datetime.now() - timedelta(minutes=20)
+                    ):
+                        return
+                    self.scan_stopped_at = None
+
+                    (
+                        self.status,
+                        self.lte_status,
+                        self.serving_cells,
+                        self.vpn_server_status,
+                        self.vpn_client_status,
+                        self.port_status,
+                        sms_list,
+                    ) = await self.hass.async_add_executor_job(update_once)
+
+                if sms_list is not None:
+                    self._process_sms_list(sms_list)
+                self._last_update_time = datetime.now()
+                return
+            except Exception as error:
+                if not is_retryable_error(error):
+                    raise
+                last_error = error
+                self.logger.warning(
+                    "TPLink Router request attempt %s/%s failed: %s",
+                    attempt + 1,
+                    retries,
+                    error,
+                )
+                if attempt < retries - 1:
+                    await asyncio.sleep(self.backoff_seconds * (attempt + 1))
+
+        if last_error is not None:
+            raise last_error
 
     def _process_sms_list(self, sms_list: list[SMS]) -> None:
         current_hashes: set[str] = set()

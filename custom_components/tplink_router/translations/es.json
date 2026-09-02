@@ -10,7 +10,9 @@
           "scan_interval": "Intervalo de escaneo para actualizaciones en segundos",
           "verify_ssl": "Verificar SSL para conexión https",
           "support_vpn": "Incluir compatibilidad para servidor y cliente VPN",
-          "support_tracker": "Incluir rastreadores de dispositivos (desactivar en routers que no son puntos de acceso para evitar duplicados)"
+          "support_tracker": "Incluir rastreadores de dispositivos (desactivar en routers que no son puntos de acceso para evitar duplicados)",
+          "scan_retries": "Número de intentos por cada actualización de datos",
+          "scan_backoff": "Segundos entre reintentos"
         }
       }
     }
@@ -26,7 +28,9 @@
           "scan_interval": "Intervalo de escaneo para actualizaciones en segundos",
           "verify_ssl": "Verificar SSL para conexión https",
           "support_vpn": "Incluir compatibilidad para servidor y cliente VPN",
-          "support_tracker": "Incluir rastreadores de dispositivos (desactivar en routers que no son puntos de acceso para evitar duplicados)"
+          "support_tracker": "Incluir rastreadores de dispositivos (desactivar en routers que no son puntos de acceso para evitar duplicados)",
+          "scan_retries": "Número de intentos por cada actualización de datos",
+          "scan_backoff": "Segundos entre reintentos"
         }
       }
     }
