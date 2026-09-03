@@ -1,5 +1,6 @@
 from dataclasses import dataclass
 from collections.abc import Callable
+from functools import partial
 from typing import Any
 from homeassistant.components.sensor import (
     SensorDeviceClass,
@@ -22,7 +23,8 @@ from homeassistant.helpers.entity_platform import AddEntitiesCallback
 from homeassistant.helpers.update_coordinator import CoordinatorEntity
 from .coordinator import TPLinkRouterCoordinator
 from .port import find_port_status, update_port_items
-from tplinkrouterc6u import Status, LTEStatus, VPNStatus, ServingCell
+from .mesh import find_mesh_node, mesh_device_info, update_mesh_items
+from tplinkrouterc6u import Status, LTEStatus, VPNStatus, ServingCell, MeshNode
 
 
 @dataclass
@@ -50,6 +52,11 @@ class TPLinkRouterVPNServerSensorConfig(TPLinkRouterSensorConfigBase[VPNStatus])
 @dataclass
 class TPLinkRouterServingCellSensorConfig(TPLinkRouterSensorConfigBase[list[ServingCell]]):
     sensor_type: str = "serving_cells"
+
+
+@dataclass
+class TPLinkRouterMeshNodeSensorConfig(TPLinkRouterSensorConfigBase[MeshNode]):
+    sensor_type: str = "mesh_node"
 
 
 # --- Serving cell helpers ---
@@ -567,6 +574,64 @@ VPN_SERVER_SENSOR_TYPES = (
     ),
 )
 
+# Backhaul metrics describe a unit's uplink to the mesh, so they read None on
+# the master, which has none. Home Assistant renders that as "unknown".
+MESH_NODE_SENSOR_TYPES = (
+    TPLinkRouterMeshNodeSensorConfig(
+        value=lambda node: node.signal_2g,
+        description=SensorEntityDescription(
+            key="mesh_signal_2g",
+            name="Backhaul signal 2.4GHz",
+            device_class=SensorDeviceClass.SIGNAL_STRENGTH,
+            native_unit_of_measurement=SIGNAL_STRENGTH_DECIBELS_MILLIWATT,
+            state_class=SensorStateClass.MEASUREMENT,
+            entity_category=EntityCategory.DIAGNOSTIC,
+        ),
+    ),
+    TPLinkRouterMeshNodeSensorConfig(
+        value=lambda node: node.signal_5g,
+        description=SensorEntityDescription(
+            key="mesh_signal_5g",
+            name="Backhaul signal 5GHz",
+            device_class=SensorDeviceClass.SIGNAL_STRENGTH,
+            native_unit_of_measurement=SIGNAL_STRENGTH_DECIBELS_MILLIWATT,
+            state_class=SensorStateClass.MEASUREMENT,
+            entity_category=EntityCategory.DIAGNOSTIC,
+        ),
+    ),
+    TPLinkRouterMeshNodeSensorConfig(
+        value=lambda node: node.rx_rate_5g,
+        description=SensorEntityDescription(
+            key="mesh_rx_rate_5g",
+            name="Backhaul RX rate 5GHz",
+            device_class=SensorDeviceClass.DATA_RATE,
+            native_unit_of_measurement=UnitOfDataRate.MEGABITS_PER_SECOND,
+            state_class=SensorStateClass.MEASUREMENT,
+            entity_category=EntityCategory.DIAGNOSTIC,
+        ),
+    ),
+    TPLinkRouterMeshNodeSensorConfig(
+        value=lambda node: node.tx_rate_5g,
+        description=SensorEntityDescription(
+            key="mesh_tx_rate_5g",
+            name="Backhaul TX rate 5GHz",
+            device_class=SensorDeviceClass.DATA_RATE,
+            native_unit_of_measurement=UnitOfDataRate.MEGABITS_PER_SECOND,
+            state_class=SensorStateClass.MEASUREMENT,
+            entity_category=EntityCategory.DIAGNOSTIC,
+        ),
+    ),
+    TPLinkRouterMeshNodeSensorConfig(
+        value=lambda node: node.internet_status,
+        description=SensorEntityDescription(
+            key="mesh_internet_status",
+            name="Internet status",
+            icon="mdi:web",
+            entity_category=EntityCategory.DIAGNOSTIC,
+        ),
+    ),
+)
+
 
 async def async_setup_entry(
     hass: HomeAssistant, entry: ConfigEntry, async_add_entities: AddEntitiesCallback
@@ -593,6 +658,7 @@ async def async_setup_entry(
     async_add_entities(sensors, False)
 
     tracked: set[int] = set()
+    tracked_mesh: set[tuple[str, str]] = set()
 
     @callback
     def coordinator_updated():
@@ -602,6 +668,14 @@ async def async_setup_entry(
             tracked,
             TPLinkRouterPortLinkSpeedSensor,
         )
+        for config in MESH_NODE_SENSOR_TYPES:
+            update_mesh_items(
+                coordinator,
+                async_add_entities,
+                tracked_mesh,
+                partial(TPLinkRouterMeshNodeSensor, config=config),
+                key=config.description.key,
+            )
 
     entry.async_on_unload(coordinator.async_add_listener(coordinator_updated))
     coordinator_updated()
@@ -692,3 +766,49 @@ class TPLinkRouterPortLinkSpeedSensor(CoordinatorEntity[TPLinkRouterCoordinator]
     def available(self) -> bool:
         """Return True if entity is available."""
         return super().available and self._current_port_status is not None
+
+
+class TPLinkRouterMeshNodeSensor(CoordinatorEntity[TPLinkRouterCoordinator], SensorEntity):
+    """One metric of one mesh unit, published under that unit's own device."""
+
+    _attr_has_entity_name = True
+
+    def __init__(
+        self,
+        coordinator: TPLinkRouterCoordinator,
+        macaddr: str,
+        config: TPLinkRouterMeshNodeSensorConfig,
+    ) -> None:
+        super().__init__(coordinator)
+
+        self._macaddr = macaddr
+        self._config = config
+        self.entity_description = config.description
+        self._attr_device_info = mesh_device_info(coordinator, self._current_node)
+        self._attr_unique_id = f"{macaddr}_{DOMAIN}_{config.description.key}"
+
+    @property
+    def _current_node(self) -> MeshNode | None:
+        return find_mesh_node(self.coordinator, self._macaddr)
+
+    @property
+    def native_value(self) -> Any:
+        node = self._current_node
+        return self._config.value(node) if node is not None else None
+
+    @property
+    def extra_state_attributes(self) -> dict[str, Any] | None:
+        node = self._current_node
+        if node is None:
+            return None
+        return {
+            "role": node.role,
+            "ip_address": node.ipaddr,
+            "group_status": node.group_status,
+            "parent_mac_address": node.parent_macaddr,
+        }
+
+    @property
+    def available(self) -> bool:
+        """Return True if entity is available."""
+        return super().available and self._current_node is not None
