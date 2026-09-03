@@ -80,6 +80,9 @@ For TL-SG108E (and switches with `get_port_status`):
 
 ### Device Tracker
  - Track connected to router devices by MAC address with connection information
+ - On EasyMesh networks, one tracker per mesh node (the main router included), carrying the node's model, role, uplink type, client count and the MAC of the node it uplinks through
+
+Mesh node trackers appear only when the router reports an EasyMesh network and the installed `tplinkrouterc6u` exposes `get_mesh_devices`; otherwise nothing is created and nothing is logged. Their attributes reuse the names `ha-tplink-deco` publishes (`device_type`, `device_model`, `connection_type`), so a dashboard or card written for one works for the other. The uplink quality is published as `signal_level`, a 1 to 3 bar level, rather than as `signal`, which for clients is a dBm value.
 
 When using multiple routers (for example, a WAN router and a separate access point), you can disable device trackers for the non-AP router in the integration options to avoid duplicate device entries.
 
