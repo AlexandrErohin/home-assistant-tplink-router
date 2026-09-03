@@ -8,6 +8,7 @@ import pytest
 from custom_components.tplink_router.const import DEFAULT_SCAN_PAUSE
 from custom_components.tplink_router.coordinator import (
     TPLinkRouterCoordinator,
+    collect_mesh_devices,
     collect_status,
 )
 
@@ -68,27 +69,27 @@ def _bare_coordinator(**overrides):
 def test_collect_status_ignores_sms_failure():
     router = FakeRouter()
     result = collect_status(
-        router, object(), None, None, None, None, logging.getLogger("test")
+        router, object(), None, None, None, None, None, logging.getLogger("test")
     )
     assert result[0] == "STATUS_OK"
     assert result[5] is None
-    assert result[6] is None
+    assert result[7] is None
 
 
 def test_collect_status_does_not_call_get_sms_without_lte():
     router = FakeRouter()
     result = collect_status(
-        router, None, None, None, None, None, logging.getLogger("test")
+        router, None, None, None, None, None, None, logging.getLogger("test")
     )
     assert result[0] == "STATUS_OK"
     assert result[1] is None
-    assert result[6] is None
+    assert result[7] is None
 
 
 def test_collect_status_refreshes_port_status_when_enabled():
     router = FakeRouter()
     result = collect_status(
-        router, None, None, None, None, [], logging.getLogger("test")
+        router, None, None, None, None, [], None, logging.getLogger("test")
     )
     assert result[5] == ["PORT_OK"]
     assert router.port_calls == 1
@@ -97,7 +98,7 @@ def test_collect_status_refreshes_port_status_when_enabled():
 def test_collect_status_skips_port_status_when_disabled():
     router = FakeRouter()
     result = collect_status(
-        router, None, None, None, None, None, logging.getLogger("test")
+        router, None, None, None, None, None, None, logging.getLogger("test")
     )
     assert result[5] is None
     assert router.port_calls == 0
@@ -135,3 +136,59 @@ def test_scan_pause_expires_and_resumes_fetching():
         asyncio.run(coord._async_update_data())
     assert router.authorize.call_count == 1
     assert coord.scan_stopped_at is None
+
+
+def test_collect_mesh_devices_returns_none_when_the_client_lacks_the_method():
+    """An older tplinkrouterc6u has no get_mesh_devices; asking again is pointless."""
+    class OldRouter:
+        pass
+
+    assert collect_mesh_devices(OldRouter(), logging.getLogger("test")) is None
+
+
+def test_collect_mesh_devices_returns_none_on_not_implemented():
+    """Clients using the AbstractRouter default must not be polled every cycle."""
+    class Unsupported:
+        def get_mesh_devices(self):
+            raise NotImplementedError("nope")
+
+    assert collect_mesh_devices(Unsupported(), logging.getLogger("test")) is None
+
+
+def test_collect_mesh_devices_returns_empty_list_on_transient_failure():
+    """A transient error must not permanently disable the node list."""
+    class Flaky:
+        def get_mesh_devices(self):
+            raise TimeoutError("boom")
+
+    assert collect_mesh_devices(Flaky(), logging.getLogger("test")) == []
+
+
+def test_collect_mesh_devices_passes_the_node_list_through():
+    class MeshRouter:
+        def get_mesh_devices(self):
+            return ["NODE"]
+
+    assert collect_mesh_devices(MeshRouter(), logging.getLogger("test")) == ["NODE"]
+
+
+def test_collect_status_skips_mesh_when_disabled():
+    router = FakeRouter()
+    router.get_mesh_devices = lambda: ["NODE"]
+
+    result = collect_status(
+        router, None, None, None, None, None, None, logging.getLogger("test")
+    )
+
+    assert result[6] is None
+
+
+def test_collect_status_fetches_mesh_when_enabled():
+    router = FakeRouter()
+    router.get_mesh_devices = lambda: ["NODE"]
+
+    result = collect_status(
+        router, None, None, None, None, None, [], logging.getLogger("test")
+    )
+
+    assert result[6] == ["NODE"]
