@@ -187,10 +187,10 @@ def test_update_items_defers_offline_marking_until_timeout():
 
 
 class FakeMeshNode:
-    """Mirrors the fields of tplinkrouterc6u MeshDevice used by the tracker."""
+    """Mirrors the fields of tplinkrouterc6u MeshNode used by the tracker."""
 
     def __init__(self, mac, name="", model="", role="satellite_router", status="connected",
-                 parent_mac=None, ip="10.1.1.2", client_num=0, signal_strength=None,
+                 parent_mac=None, ip="10.1.1.2", client_num=0, signal_level=None,
                  support_reboot=None, device_type="RangeExtender", connect_type="wireless"):
         self.macaddr = mac
         self.name = name
@@ -200,7 +200,7 @@ class FakeMeshNode:
         self.parent_macaddr = parent_mac
         self.ipaddr = ip
         self.client_num = client_num
-        self.signal_strength = signal_strength
+        self.signal_level = signal_level
         self.support_reboot = support_reboot
         self.device_type = device_type
         self.connect_type = connect_type
@@ -228,7 +228,7 @@ class FakeMeshCoordinator:
     unique_id = "entry-1"
 
     def __init__(self, nodes):
-        self.mesh_devices = nodes
+        self.mesh_nodes = nodes
 
 
 def test_update_mesh_items_creates_one_tracker_per_node():
@@ -251,7 +251,7 @@ def test_update_mesh_items_reuses_existing_trackers():
 
     update_mesh_items(coord, add_entities, tracked)
     first = tracked["24-00-00-00-00-01"]
-    coord.mesh_devices = [FakeMeshNode("24-00-00-00-00-01", name="Main", client_num=7)]
+    coord.mesh_nodes = [FakeMeshNode("24-00-00-00-00-01", name="Main", client_num=7)]
     update_mesh_items(coord, add_entities, tracked)
 
     assert tracked["24-00-00-00-00-01"] is first
@@ -266,7 +266,7 @@ def test_update_mesh_items_marks_missing_node_disconnected_without_removing_it()
     update_mesh_items(coord, Mock(), tracked)
     assert tracked["24-00-00-00-00-02"].is_connected is True
 
-    coord.mesh_devices = []
+    coord.mesh_nodes = []
     update_mesh_items(coord, Mock(), tracked)
 
     assert "24-00-00-00-00-02" in tracked
@@ -304,7 +304,7 @@ def test_mesh_tracker_exposes_the_deco_attribute_names():
     node = FakeMeshNode(
         "24-00-00-00-00-02", name="Satellite", model="Archer AX55",
         device_type="WirelessRouter", connect_type="wireless",
-        parent_mac="24-00-00-00-00-01", client_num=9, signal_strength=2,
+        parent_mac="24-00-00-00-00-01", client_num=9, signal_level=2,
         support_reboot=True,
     )
     attributes = build_mesh_tracker(node).extra_state_attributes
@@ -321,7 +321,7 @@ def test_mesh_tracker_exposes_the_deco_attribute_names():
 
 def test_mesh_tracker_does_not_publish_the_bar_level_as_signal():
     """Clients report signal in dBm; a node reports a 1 to 3 level, so the keys differ."""
-    node = FakeMeshNode("24-00-00-00-00-02", signal_strength=3)
+    node = FakeMeshNode("24-00-00-00-00-02", signal_level=3)
     attributes = build_mesh_tracker(node).extra_state_attributes
 
     assert attributes["signal_level"] == 3

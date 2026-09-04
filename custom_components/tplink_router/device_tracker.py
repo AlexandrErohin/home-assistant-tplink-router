@@ -121,7 +121,7 @@ def update_mesh_items(
     """Create or refresh one tracker per EasyMesh node reported by the main router."""
     new_tracked: list[TPLinkMeshTracker] = []
     seen: set[MAC_ADDR] = set()
-    for node in coordinator.mesh_devices or []:
+    for node in coordinator.mesh_nodes or []:
         mac = node.macaddr
         if not mac:
             continue
@@ -146,7 +146,7 @@ class TPLinkMeshTracker(CoordinatorEntity, ScannerEntity):
     """Representation of an EasyMesh node, the main router included."""
 
     def __init__(self, coordinator: TPLinkRouterCoordinator, node) -> None:
-        """Initialize from a tplinkrouterc6u MeshDevice."""
+        """Initialize from a tplinkrouterc6u MeshNode."""
         self.node = node
         self._mac = node.macaddr
         self._name = node.name or node.model or node.macaddr
@@ -209,11 +209,11 @@ class TPLinkMeshTracker(CoordinatorEntity, ScannerEntity):
             attributes['parent_mac'] = node.parent_macaddr
         if node.client_num is not None:
             attributes['client_num'] = node.client_num
-        if node.signal_strength is not None:
+        if node.signal_level is not None:
             # Deliberately not exposed as 'signal': clients report dBm there, while a
             # node reports a 1 to 3 bar level. Sharing the key would put values with
             # different units in the same column.
-            attributes['signal_level'] = node.signal_strength
+            attributes['signal_level'] = node.signal_level
         if node.support_reboot is not None:
             attributes['support_reboot'] = node.support_reboot
         if node.location is not None:
