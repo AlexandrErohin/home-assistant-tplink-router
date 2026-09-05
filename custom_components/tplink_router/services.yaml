@@ -12,3 +12,39 @@ send_sms:
       required: true
       selector:
         device:
+
+add_reservation:
+  fields:
+    device:
+      required: true
+      selector:
+        device:
+          integration: tplink_router
+    mac:
+      required: true
+      selector:
+        text:
+    ip:
+      required: true
+      selector:
+        text:
+    comment:
+      required: false
+      selector:
+        text:
+    enable:
+      default: true
+      selector:
+        boolean:
+
+delete_reservation:
+  fields:
+    device:
+      required: true
+      selector:
+        device:
+          integration: tplink_router
+    mac:
+      required: true
+      selector:
+        text:

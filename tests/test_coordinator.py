@@ -135,3 +135,35 @@ def test_scan_pause_expires_and_resumes_fetching():
         asyncio.run(coord._async_update_data())
     assert router.authorize.call_count == 1
     assert coord.scan_stopped_at is None
+
+
+def test_collect_status_reads_reservations():
+    router = FakeRouter()
+    router.get_ipv4_reservations = Mock(return_value=["RESV"])
+    result = collect_status(
+        router, None, None, None, None, None, logging.getLogger("test")
+    )
+    assert result[7] == ["RESV"]
+
+
+@pytest.mark.asyncio
+async def test_coordinator_add_and_delete_reservation():
+    coord, router = _bare_coordinator()
+    router.add_ipv4_reservation = Mock()
+    router.delete_ipv4_reservation = Mock()
+
+    async def fake_run(cb):
+        cb()
+    coord._run_router_request = fake_run
+
+    async def fake_refresh():
+        pass
+    coord.async_request_refresh = fake_refresh
+
+    await coord.add_ipv4_reservation("02:00:00:00:00:16", "192.168.1.100", "test", True)
+    router.add_ipv4_reservation.assert_called_once_with(
+        "02:00:00:00:00:16", "192.168.1.100", "test", True
+    )
+
+    await coord.delete_ipv4_reservation("02:00:00:00:00:16")
+    router.delete_ipv4_reservation.assert_called_once_with("02:00:00:00:00:16")
