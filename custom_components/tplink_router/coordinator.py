@@ -116,6 +116,7 @@ class TPLinkRouterCoordinator(DataUpdateCoordinator):
             backoff_seconds: float = 1.0,
             scan_pause_minutes: int = DEFAULT_SCAN_PAUSE,
             offline_timeout_seconds: int = DEFAULT_OFFLINE_TIMEOUT,
+            reservations: list[IPv4Reservation] | None = None,
     ) -> None:
         self.router = router
         self.unique_id = unique_id
@@ -141,7 +142,7 @@ class TPLinkRouterCoordinator(DataUpdateCoordinator):
 
         self.vpn_server_status = vpn_server_status
         self.vpn_client_status = vpn_client_status
-        self.reservations: list[IPv4Reservation] | None = None
+        self.reservations: list[IPv4Reservation] | None = reservations
 
         self.scan_stopped_at: datetime | None = None
         self._last_update_time: datetime | None = None

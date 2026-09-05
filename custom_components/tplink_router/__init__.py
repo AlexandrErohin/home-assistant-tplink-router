@@ -144,7 +144,27 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
                         client.__class__.__name__,
                         err,
                     )
-            return firm, stat, lte_stat, vpn_server_stat, vpn_client_stat, serving_cells, port_status, sms_list
+            reservations = None
+            if hasattr(client, "get_ipv4_reservations"):
+                try:
+                    reservations = client.get_ipv4_reservations()
+                except Exception as err:
+                    _LOGGER.debug(
+                        "TP-Link router %s: get_ipv4_reservations failed: %s",
+                        client.__class__.__name__,
+                        err,
+                    )
+            return (
+                firm,
+                stat,
+                lte_stat,
+                vpn_server_stat,
+                vpn_client_stat,
+                serving_cells,
+                port_status,
+                sms_list,
+                reservations,
+            )
 
         (
             firmware,
@@ -155,6 +175,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
             serving_cells,
             port_status,
             sms_list,
+            reservations,
         ) = await hass.async_add_executor_job(
             TPLinkRouterCoordinator.request, client, callback
         )
@@ -174,7 +195,8 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
                                           backoff_seconds=entry.data.get(CONF_SCAN_BACKOFF, DEFAULT_SCAN_BACKOFF),
                                           scan_pause_minutes=entry.data.get(CONF_SCAN_PAUSE, DEFAULT_SCAN_PAUSE),
                                           offline_timeout_seconds=entry.data.get(
-                                              CONF_OFFLINE_TIMEOUT, DEFAULT_OFFLINE_TIMEOUT))
+                                              CONF_OFFLINE_TIMEOUT, DEFAULT_OFFLINE_TIMEOUT),
+                                          reservations=reservations)
 
     if sms_list is not None:
         coordinator._process_sms_list(sms_list)
