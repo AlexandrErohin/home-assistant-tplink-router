@@ -31,6 +31,31 @@ from .const import (
 )
 from .utils import safe_call, is_retryable_error
 
+try:
+    from urllib.parse import urlencode
+    from tplinkrouterc6u.client.c6u import TplinkRouter
+    from tplinkrouterc6u.common.helper import get_mac
+    from tplinkrouterc6u.common.exception import ClientException
+
+    if not hasattr(TplinkRouter, "delete_ipv4_reservation"):
+        def _delete_ipv4_reservation(self, macaddr: str) -> None:
+            raw = self.request(self._url_ipv4_reservations, "operation=load")
+            items = self._as_list(raw, "list", "IPv4 reservation")
+            normalized_mac = str(get_mac(macaddr))
+            target_idx = next(
+                (i for i, item in enumerate(items) if str(get_mac(item.get("mac", ""))) == normalized_mac),
+                None,
+            )
+            if target_idx is None:
+                raise ClientException(f"Reservation not found for MAC: {macaddr}")
+
+            path = self._url_ipv4_reservations.split("&operation=")[0]
+            self.request(path, urlencode({"operation": "remove", "key": normalized_mac, "index": target_idx}))
+
+        TplinkRouter.delete_ipv4_reservation = _delete_ipv4_reservation
+except Exception:
+    pass
+
 
 def collect_status(
         router: AbstractRouter,
