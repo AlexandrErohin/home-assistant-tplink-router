@@ -344,6 +344,7 @@ def register_services(hass: HomeAssistant, coord: TPLinkRouterCoordinator) -> No
                 schema=DELETE_RESERVATION_SCHEMA,
             )
 
+
 def _async_add_listeners(hass: HomeAssistant, coord: TPLinkRouterCoordinator) -> None:
 
     if not hasattr(coord.router, "get_sms") or coord.lte_status is None:

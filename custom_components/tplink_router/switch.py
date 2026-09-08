@@ -197,7 +197,7 @@ WAN_SWITCH_TYPES = (
         description=SwitchEntityDescription(
             key="ewan_connect",
             name="E-WAN connect",
-            icon="mdi:connection",
+            icon="mdi:ethernet",
             entity_category=EntityCategory.CONFIG,
         ),
     ),
@@ -232,8 +232,11 @@ async def async_setup_entry(
     if hasattr(coordinator.router, "set_ipv4_dhcps"):
         for switch in DHCP_SERVER_SWITCH_TYPES:
             switches.append(TPLinkRouterSwitch(coordinator, switch))
-    
-    if hasattr(coordinator.router, "set_ewan_connect"):
+
+    if (
+        hasattr(coordinator.router, "set_ewan_connect")
+        and coordinator.status.ewan_connected is not None
+    ):
         for switch in WAN_SWITCH_TYPES:
             switches.append(TPLinkRouterSwitch(coordinator, switch))
 

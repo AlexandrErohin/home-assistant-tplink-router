@@ -39,6 +39,7 @@ If you forget to enable it back - it would be automatically enable after the con
  - VPN Client (for some routers)
  - Control VPN Server List (for some routers)
  - LAN IPv4 DHCP Server Enable/Disable (for some routers)
+ - E-WAN connect (for MR/EX-family routers with Ethernet WAN) — on = DHCP Renew, off = DHCP Release; useful to reset a stuck WAN link after reboot
 
 > [!WARNING]
 > Disabling the LAN IPv4 DHCP server can leave clients without an IP address (including the Home Assistant host, if it uses DHCP). Prefer static addresses or another DHCP server before turning this switch off.
@@ -363,7 +364,7 @@ To do that:
 - TL-MR150 v2
 - TL-MR6400 (v5, v5.3, v7)
 - TL-MR6500v
-- TL-R470GP-AC 4.0
+- TL-R470GP-AC (4.0, 6.0)
 - TL-R488GPM-AC 2.0
 - TL-SG108E v6.0
 - TL-WA1201 3.0
@@ -374,6 +375,7 @@ To do that:
 - TL-WDR3600 V1
 - TL-XDR3010 V2
 - TL-XDR5410 1.0
+- TL-XDR6010
 - TL-XDR6088 v1.0.30
 - VX420-G2h v1.1
 - VX800v v1
