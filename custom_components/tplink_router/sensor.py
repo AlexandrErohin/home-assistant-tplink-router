@@ -590,7 +590,7 @@ async def async_setup_entry(
         for sensor in VPN_SERVER_SENSOR_TYPES:
             sensors.append(TPLinkRouterSensor(coordinator, sensor))
 
-    if hasattr(coordinator.router, "get_ipv4_reservations"):
+    if coordinator.reservations is not None:
         sensors.append(TPLinkRouterReservationsSensor(coordinator))
 
     async_add_entities(sensors, False)

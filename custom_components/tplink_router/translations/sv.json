@@ -20,7 +20,8 @@
         "data": {
           "support_vpn": "Inkludera stöd för VPN-server och VPN-klient",
           "support_tracker": "Inkludera enhetsspårare (inaktivera för routrar som inte är accesspunkter för att undvika dubbletter)",
-          "tracker_as_device": "Ge varje spårad klient en egen enhetspost (av som standard; kan lägga till många enheter på upptagna nätverk)"
+          "tracker_as_device": "Ge varje spårad klient en egen enhetspost (av som standard; kan lägga till många enheter på upptagna nätverk)",
+          "support_dhcp_reservations": "Inkludera DHCP-reservationssensor och lägg till/ta bort-tjänster"
         }
       }
     }
@@ -41,7 +42,8 @@
           "scan_backoff": "Sekunder mellan försök",
           "scan_pause": "Minuter innan datahämtning aktiveras automatiskt igen (0 = aldrig)",
           "offline_timeout": "Sekunder som en saknad enhet förblir 'home' innan offline (0 = omedelbart)",
-          "tracker_as_device": "Ge varje spårad klient en egen enhetspost (av som standard; kan lägga till många enheter på upptagna nätverk)"
+          "tracker_as_device": "Ge varje spårad klient en egen enhetspost (av som standard; kan lägga till många enheter på upptagna nätverk)",
+          "support_dhcp_reservations": "Inkludera DHCP-reservationssensor och lägg till/ta bort-tjänster"
         }
       }
     }
@@ -62,6 +64,46 @@
         "device": {
           "name": "Router",
           "description": "Välj TP-Link router för att skicka sms"
+        }
+      }
+    },
+    "add_reservation": {
+      "name": "Lägg till DHCP-reservation",
+      "description": "Reservera en statisk IPv4-adress för en enhet på routern.",
+      "fields": {
+        "device": {
+          "name": "Router",
+          "description": "Välj TP-Link-routern"
+        },
+        "mac": {
+          "name": "MAC-adress",
+          "description": "Enhetens MAC-adress"
+        },
+        "ip": {
+          "name": "IP-adress",
+          "description": "Statisk IPv4-adress att tilldela"
+        },
+        "comment": {
+          "name": "Beskrivning",
+          "description": "Valfritt namn eller kommentar"
+        },
+        "enable": {
+          "name": "Aktiverad",
+          "description": "Aktivera eller inaktivera denna reservation"
+        }
+      }
+    },
+    "delete_reservation": {
+      "name": "Ta bort DHCP-reservation",
+      "description": "Ta bort en statisk IPv4-reservation från routern.",
+      "fields": {
+        "device": {
+          "name": "Router",
+          "description": "Välj TP-Link-routern"
+        },
+        "mac": {
+          "name": "MAC-adress",
+          "description": "MAC för reservationen som ska tas bort"
         }
       }
     }

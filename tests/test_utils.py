@@ -10,6 +10,8 @@ from custom_components.tplink_router.utils import (
     prefer,
     run_with_retry,
     safe_call,
+    validate_ipv4_address,
+    validate_mac_address,
 )
 
 
@@ -130,3 +132,31 @@ def test_prefer_falls_back_to_last_known_for_none():
 
 def test_prefer_uses_fallback_when_nothing_known():
     assert prefer(None, "") == ""
+
+
+@pytest.mark.parametrize(
+    "mac",
+    [
+        "AA:BB:CC:DD:EE:FF",
+        "aa-bb-cc-dd-ee-ff",
+        "AABBCCDDEEFF",
+    ],
+)
+def test_validate_mac_address_accepts_common_formats(mac):
+    assert validate_mac_address(mac) == mac.strip()
+
+
+@pytest.mark.parametrize("mac", ["", "GG:HH:II:JJ:KK:LL", "aa:bb:cc", "not-a-mac"])
+def test_validate_mac_address_rejects_invalid(mac):
+    with pytest.raises(ValueError):
+        validate_mac_address(mac)
+
+
+def test_validate_ipv4_address_accepts_valid():
+    assert validate_ipv4_address("192.168.1.10") == "192.168.1.10"
+
+
+@pytest.mark.parametrize("ip", ["", "999.1.1.1", "192.168.1", "not-an-ip"])
+def test_validate_ipv4_address_rejects_invalid(ip):
+    with pytest.raises(ValueError):
+        validate_ipv4_address(ip)

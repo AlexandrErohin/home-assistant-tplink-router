@@ -9,6 +9,7 @@ from homeassistant.data_entry_flow import AbortFlow
 from custom_components.tplink_router.config_flow import ConfigFlow
 from custom_components.tplink_router.const import (
     CONF_CLIENT_CLASS,
+    CONF_SUPPORT_DHCP_RESERVATIONS,
     CONF_SUPPORT_TRACKER,
     CONF_SUPPORT_VPN,
     CONF_TRACKER_AS_DEVICE,
@@ -83,6 +84,7 @@ def test_user_step_success_validates_then_shows_custom():
     }
     assert CONF_SUPPORT_VPN in schema_keys
     assert CONF_TRACKER_AS_DEVICE in schema_keys
+    assert CONF_SUPPORT_DHCP_RESERVATIONS in schema_keys
 
 
 def test_user_step_connection_error_stays_on_user(caplog):
@@ -135,6 +137,7 @@ def test_custom_step_creates_entry_with_merged_options():
                 CONF_SUPPORT_VPN: False,
                 CONF_SUPPORT_TRACKER: False,
                 CONF_TRACKER_AS_DEVICE: True,
+                CONF_SUPPORT_DHCP_RESERVATIONS: False,
             }
         )
     )
@@ -143,4 +146,5 @@ def test_custom_step_creates_entry_with_merged_options():
     assert result["data"][CONF_SUPPORT_VPN] is False
     assert result["data"][CONF_SUPPORT_TRACKER] is False
     assert result["data"][CONF_TRACKER_AS_DEVICE] is True
+    assert result["data"][CONF_SUPPORT_DHCP_RESERVATIONS] is False
     assert result["data"][CONF_CLIENT_CLASS] == "MockRouter"

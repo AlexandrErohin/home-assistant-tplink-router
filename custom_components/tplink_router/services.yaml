@@ -12,6 +12,7 @@ send_sms:
       required: true
       selector:
         device:
+          integration: tplink_router
 
 add_reservation:
   fields:

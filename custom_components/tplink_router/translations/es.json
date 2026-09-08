@@ -20,7 +20,8 @@
         "data": {
           "support_vpn": "Incluir compatibilidad para servidor y cliente VPN",
           "support_tracker": "Incluir rastreadores de dispositivos (desactivar en routers que no son puntos de acceso para evitar duplicados)",
-          "tracker_as_device": "Dar a cada cliente rastreado su propia entrada de dispositivo (desactivado por defecto; en redes ocupadas puede añadir muchos dispositivos)"
+          "tracker_as_device": "Dar a cada cliente rastreado su propia entrada de dispositivo (desactivado por defecto; en redes ocupadas puede añadir muchos dispositivos)",
+          "support_dhcp_reservations": "Incluir sensor de reservas DHCP y servicios de añadir/eliminar"
         }
       }
     }
@@ -41,7 +42,8 @@
           "scan_backoff": "Segundos entre reintentos",
           "scan_pause": "Minutos antes de reactivar automáticamente la obtención de datos (0 = nunca)",
           "offline_timeout": "Segundos que un dispositivo ausente sigue como 'home' antes de offline (0 = inmediato)",
-          "tracker_as_device": "Dar a cada cliente rastreado su propia entrada de dispositivo (desactivado por defecto; en redes ocupadas puede añadir muchos dispositivos)"
+          "tracker_as_device": "Dar a cada cliente rastreado su propia entrada de dispositivo (desactivado por defecto; en redes ocupadas puede añadir muchos dispositivos)",
+          "support_dhcp_reservations": "Incluir sensor de reservas DHCP y servicios de añadir/eliminar"
         }
       }
     }
@@ -62,6 +64,46 @@
         "device": {
           "name": "Router",
           "description": "Selecciona el router TP-Link para enviar SMS"
+        }
+      }
+    },
+    "add_reservation": {
+      "name": "Añadir reserva DHCP",
+      "description": "Reservar una dirección IPv4 estática para un dispositivo en el router.",
+      "fields": {
+        "device": {
+          "name": "Router",
+          "description": "Selecciona el router TP-Link"
+        },
+        "mac": {
+          "name": "Dirección MAC",
+          "description": "Dirección MAC del dispositivo"
+        },
+        "ip": {
+          "name": "Dirección IP",
+          "description": "Dirección IPv4 estática a asignar"
+        },
+        "comment": {
+          "name": "Descripción",
+          "description": "Nombre o comentario opcional"
+        },
+        "enable": {
+          "name": "Activada",
+          "description": "Activar o desactivar esta reserva"
+        }
+      }
+    },
+    "delete_reservation": {
+      "name": "Eliminar reserva DHCP",
+      "description": "Eliminar una reserva IPv4 estática del router.",
+      "fields": {
+        "device": {
+          "name": "Router",
+          "description": "Selecciona el router TP-Link"
+        },
+        "mac": {
+          "name": "Dirección MAC",
+          "description": "MAC de la reserva a eliminar"
         }
       }
     }

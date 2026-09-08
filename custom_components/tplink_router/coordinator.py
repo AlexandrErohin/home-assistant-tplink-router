@@ -31,31 +31,6 @@ from .const import (
 )
 from .utils import safe_call, is_retryable_error
 
-try:
-    from urllib.parse import urlencode
-    from tplinkrouterc6u.client.c6u import TplinkRouter
-    from tplinkrouterc6u.common.helper import get_mac
-    from tplinkrouterc6u.common.exception import ClientException
-
-    if not hasattr(TplinkRouter, "delete_ipv4_reservation"):
-        def _delete_ipv4_reservation(self, macaddr: str) -> None:
-            raw = self.request(self._url_ipv4_reservations, "operation=load")
-            items = self._as_list(raw, "list", "IPv4 reservation")
-            normalized_mac = str(get_mac(macaddr))
-            target_idx = next(
-                (i for i, item in enumerate(items) if str(get_mac(item.get("mac", ""))) == normalized_mac),
-                None,
-            )
-            if target_idx is None:
-                raise ClientException(f"Reservation not found for MAC: {macaddr}")
-
-            path = self._url_ipv4_reservations.split("&operation=")[0]
-            self.request(path, urlencode({"operation": "remove", "key": normalized_mac, "index": target_idx}))
-
-        TplinkRouter.delete_ipv4_reservation = _delete_ipv4_reservation
-except Exception:
-    pass
-
 
 def collect_status(
         router: AbstractRouter,
@@ -64,6 +39,7 @@ def collect_status(
         vpn_server_status: VPNStatus | None,
         vpn_client_status: VpnClientStatus | None,
         port_status: list[PortStatus] | None,
+        reservations: list[IPv4Reservation] | None,
         logger: Logger,
 ) -> tuple[Status, LTEStatus | None, list[ServingCell] | None, VPNStatus | None,
            VpnClientStatus | None, list[PortStatus] | None, list[SMS] | None, list[IPv4Reservation] | None]:
@@ -82,8 +58,7 @@ def collect_status(
         port_status = router.get_port_status()
     if hasattr(router, "get_sms") and lte_status is not None:
         sms_list = safe_call(router.get_sms, logger, "fetch SMS")
-    reservations = None
-    if hasattr(router, "get_ipv4_reservations"):
+    if reservations is not None:
         reservations = safe_call(router.get_ipv4_reservations, logger, "fetch IPv4 reservations")
     return (
         status,
@@ -117,6 +92,7 @@ class TPLinkRouterCoordinator(DataUpdateCoordinator):
             scan_pause_minutes: int = DEFAULT_SCAN_PAUSE,
             offline_timeout_seconds: int = DEFAULT_OFFLINE_TIMEOUT,
             reservations: list[IPv4Reservation] | None = None,
+            support_dhcp_reservations: bool = True,
     ) -> None:
         self.router = router
         self.unique_id = unique_id
@@ -143,6 +119,7 @@ class TPLinkRouterCoordinator(DataUpdateCoordinator):
         self.vpn_server_status = vpn_server_status
         self.vpn_client_status = vpn_client_status
         self.reservations: list[IPv4Reservation] | None = reservations
+        self.support_dhcp_reservations = support_dhcp_reservations
 
         self.scan_stopped_at: datetime | None = None
         self._last_update_time: datetime | None = None
@@ -186,10 +163,7 @@ class TPLinkRouterCoordinator(DataUpdateCoordinator):
             )
 
     async def reboot(self) -> None:
-        def callback():
-            self.router.reboot()
-
-        await self._run_router_request(callback)
+        await self._run_router_request(self.router.reboot)
 
     async def set_wifi(self, wifi: Connection, enable: bool) -> None:
         def callback():
@@ -264,6 +238,7 @@ class TPLinkRouterCoordinator(DataUpdateCoordinator):
                     self.vpn_server_status,
                     self.vpn_client_status,
                     self.port_status,
+                    self.reservations,
                     self.logger,
                 ),
             )

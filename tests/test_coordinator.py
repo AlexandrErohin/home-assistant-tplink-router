@@ -59,6 +59,8 @@ def _bare_coordinator(**overrides):
     coord.vpn_server_status = None
     coord.vpn_client_status = None
     coord.port_status = None
+    coord.reservations = None
+    coord.support_dhcp_reservations = True
     coord.logger = logging.getLogger("test")
     for key, value in overrides.items():
         setattr(coord, key, value)
@@ -68,7 +70,7 @@ def _bare_coordinator(**overrides):
 def test_collect_status_ignores_sms_failure():
     router = FakeRouter()
     result = collect_status(
-        router, object(), None, None, None, None, logging.getLogger("test")
+        router, object(), None, None, None, None, None, logging.getLogger("test")
     )
     assert result[0] == "STATUS_OK"
     assert result[5] is None
@@ -78,7 +80,7 @@ def test_collect_status_ignores_sms_failure():
 def test_collect_status_does_not_call_get_sms_without_lte():
     router = FakeRouter()
     result = collect_status(
-        router, None, None, None, None, None, logging.getLogger("test")
+        router, None, None, None, None, None, None, logging.getLogger("test")
     )
     assert result[0] == "STATUS_OK"
     assert result[1] is None
@@ -88,7 +90,7 @@ def test_collect_status_does_not_call_get_sms_without_lte():
 def test_collect_status_refreshes_port_status_when_enabled():
     router = FakeRouter()
     result = collect_status(
-        router, None, None, None, None, [], logging.getLogger("test")
+        router, None, None, None, None, [], None, logging.getLogger("test")
     )
     assert result[5] == ["PORT_OK"]
     assert router.port_calls == 1
@@ -97,7 +99,7 @@ def test_collect_status_refreshes_port_status_when_enabled():
 def test_collect_status_skips_port_status_when_disabled():
     router = FakeRouter()
     result = collect_status(
-        router, None, None, None, None, None, logging.getLogger("test")
+        router, None, None, None, None, None, None, logging.getLogger("test")
     )
     assert result[5] is None
     assert router.port_calls == 0
@@ -141,31 +143,44 @@ def test_collect_status_reads_reservations():
     router = FakeRouter()
     router.get_ipv4_reservations = Mock(return_value=["RESV"])
     result = collect_status(
-        router, None, None, None, None, None, logging.getLogger("test")
+        router, None, None, None, None, None, [], logging.getLogger("test")
     )
     assert result[7] == ["RESV"]
 
 
-@pytest.mark.asyncio
-async def test_coordinator_add_and_delete_reservation():
+def test_collect_status_skips_reservations_when_disabled():
+    router = FakeRouter()
+    router.get_ipv4_reservations = Mock(return_value=["RESV"])
+    result = collect_status(
+        router, None, None, None, None, None, None, logging.getLogger("test")
+    )
+    assert result[7] is None
+    router.get_ipv4_reservations.assert_not_called()
+
+
+def test_coordinator_add_and_delete_reservation():
     coord, router = _bare_coordinator()
     router.add_ipv4_reservation = Mock()
     router.delete_ipv4_reservation = Mock()
 
     async def fake_run(cb):
         cb()
+
     coord._run_router_request = fake_run
 
     async def fake_refresh():
         pass
+
     coord.async_request_refresh = fake_refresh
 
-    await coord.add_ipv4_reservation("02:00:00:00:00:16", "192.168.1.100", "test", True)
+    async def run():
+        await coord.add_ipv4_reservation("02:00:00:00:00:16", "192.168.1.100", "test", True)
+        await coord.delete_ipv4_reservation("02:00:00:00:00:16")
+
+    asyncio.run(run())
     router.add_ipv4_reservation.assert_called_once_with(
         "02:00:00:00:00:16", "192.168.1.100", "test", True
     )
-
-    await coord.delete_ipv4_reservation("02:00:00:00:00:16")
     router.delete_ipv4_reservation.assert_called_once_with("02:00:00:00:00:16")
 
 

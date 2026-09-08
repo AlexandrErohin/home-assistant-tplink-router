@@ -90,3 +90,24 @@ def prefer(current: Any, last_known: Any, fallback: Any = "") -> Any:
     if last_known:
         return last_known
     return fallback
+
+
+_MAC_HEX_RE = re.compile(r"^[0-9A-Fa-f]{12}$")
+
+
+def validate_mac_address(value: str) -> str:
+    """Validate a MAC address in common colon/dash/plain formats."""
+    cleaned = value.strip().replace("-", "").replace(":", "").replace(".", "")
+    if not _MAC_HEX_RE.fullmatch(cleaned):
+        raise ValueError(f"Invalid MAC address: {value}")
+    return value.strip()
+
+
+def validate_ipv4_address(value: str) -> str:
+    """Validate an IPv4 address string."""
+    import ipaddress
+
+    try:
+        return str(ipaddress.IPv4Address(value.strip()))
+    except ipaddress.AddressValueError as err:
+        raise ValueError(f"Invalid IPv4 address: {value}") from err

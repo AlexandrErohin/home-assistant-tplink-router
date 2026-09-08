@@ -54,6 +54,7 @@ If you forget to enable it back - it would be automatically enable after the con
  - Connection Type
  - WAN IPv4 Address
  - LAN IPv4 Address
+ - DHCP Reservations (count; full lease list in attributes — on routers with `get_ipv4_reservations`, when enabled in options)
 
 For LTE Routers
 - LTE Enabled
@@ -93,7 +94,10 @@ It will also fire Home Assistant event when a device connects to router
 
 ### Services
  - Send SMS message - Available only for MR LTE routers
+ - Add DHCP Reservation (`tplink_router.add_reservation`) — available on c6u-family routers that implement `add_ipv4_reservation` (when enabled in options)
+ - Delete DHCP Reservation (`tplink_router.delete_reservation`) — same routers with `delete_ipv4_reservation`
 
+Many router models expose a read-only DHCP reservations sensor via `get_ipv4_reservations` even when add/delete actions are not supported. Disable "Include DHCP reservations..." in the integration options to skip polling and hide the sensor/services.
 ### Notification
 #### Device events
 To receive notifications of appearing a new device in your network, or becoming device online\offline add following lines to your `configuration.yaml` file:
@@ -240,6 +244,7 @@ You may edit configuration data like:
 9. Include support for VPN server/client (enable/disable VPN status polling and related VPN entities)
 10. Include device trackers (disable for non-AP routers to avoid duplicate entries)
 11. Give each tracked client its own device entry (off by default; disabling later does not remove already-created device cards)
+12. Include DHCP reservations sensor and add/delete services (default on)
 
 Transient poll failures (timeouts, dropped connections, session expiry) are retried automatically. Authorization failures (wrong password / HTTP 401) are not retried. A failing SMS mailbox fetch does not fail the whole update.
 An unreachable router during setup fails only that config entry (`Failed to set up`) and does not block other TP-Link Router entries.
