@@ -199,14 +199,15 @@ class TPLinkTracker(CoordinatorEntity, RestoreEntity, ScannerEntity):
         Opt-in via CONF_TRACKER_AS_DEVICE: on networks with many transient
         clients this can add a lot of device-registry entries, so it
         defaults to off and the entity stays deviceless (current
-        behaviour) unless explicitly enabled.
+        behavior) unless explicitly enabled. via_device must match the
+        router's DeviceInfo identifiers (DOMAIN, lan MAC), not entry_id.
         """
         if not self._as_device:
             return None
         return DeviceInfo(
             connections={(CONNECTION_NETWORK_MAC, self._mac)},
             name=self.hostname or self._mac,
-            via_device=(DOMAIN, self.coordinator.unique_id),
+            via_device=(DOMAIN, self.coordinator.status.lan_macaddr),
         )
 
     @property
