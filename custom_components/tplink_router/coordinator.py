@@ -192,6 +192,12 @@ class TPLinkRouterCoordinator(DataUpdateCoordinator):
 
         await self._run_router_request(callback)
 
+    async def set_ewan_connect(self, enable: bool) -> None:
+        def callback():
+            self.router.set_ewan_connect(enable)
+
+        await self._run_router_request(callback)
+    
     async def send_sms(self, number: str, text: str) -> None:
         def callback():
             self.router.send_sms(number, text)
