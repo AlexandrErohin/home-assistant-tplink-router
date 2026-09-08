@@ -201,6 +201,12 @@ class TPLinkRouterCoordinator(DataUpdateCoordinator):
 
         await self._run_router_request(callback)
 
+    async def set_ewan_connect(self, enable: bool) -> None:
+        def callback():
+            self.router.set_ewan_connect(enable)
+
+        await self._run_router_request(callback)
+    
     async def add_ipv4_reservation(
         self, mac: str, ip: str, comment: str = "", enable: bool = True
     ) -> None:
