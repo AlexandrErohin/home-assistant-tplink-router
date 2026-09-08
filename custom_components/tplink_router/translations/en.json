@@ -64,6 +64,46 @@
           "description": "Select the TP-Link router to send sms"
         }
       }
+    },
+    "add_reservation": {
+      "name": "Add DHCP Reservation",
+      "description": "Reserve a static IPv4 address for a device on the router.",
+      "fields": {
+        "device": {
+          "name": "Router",
+          "description": "Select the TP-Link router"
+        },
+        "mac": {
+          "name": "MAC Address",
+          "description": "MAC address of the device"
+        },
+        "ip": {
+          "name": "IP Address",
+          "description": "Static IP address to assign"
+        },
+        "comment": {
+          "name": "Description",
+          "description": "Optional device name or comment"
+        },
+        "enable": {
+          "name": "Enabled",
+          "description": "Enable or disable this reservation"
+        }
+      }
+    },
+    "delete_reservation": {
+      "name": "Delete DHCP Reservation",
+      "description": "Remove a static IPv4 address reservation from the router.",
+      "fields": {
+        "device": {
+          "name": "Router",
+          "description": "Select the TP-Link router"
+        },
+        "mac": {
+          "name": "MAC Address",
+          "description": "MAC address of the reservation to delete"
+        }
+      }
     }
   }
 }

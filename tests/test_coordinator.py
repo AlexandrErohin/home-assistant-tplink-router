@@ -1,7 +1,7 @@
 import asyncio
 import logging
 from datetime import datetime, timedelta
-from unittest.mock import Mock
+from unittest.mock import Mock, patch
 
 import pytest
 
@@ -135,3 +135,60 @@ def test_scan_pause_expires_and_resumes_fetching():
         asyncio.run(coord._async_update_data())
     assert router.authorize.call_count == 1
     assert coord.scan_stopped_at is None
+
+
+def test_collect_status_reads_reservations():
+    router = FakeRouter()
+    router.get_ipv4_reservations = Mock(return_value=["RESV"])
+    result = collect_status(
+        router, None, None, None, None, None, logging.getLogger("test")
+    )
+    assert result[7] == ["RESV"]
+
+
+@pytest.mark.asyncio
+async def test_coordinator_add_and_delete_reservation():
+    coord, router = _bare_coordinator()
+    router.add_ipv4_reservation = Mock()
+    router.delete_ipv4_reservation = Mock()
+
+    async def fake_run(cb):
+        cb()
+    coord._run_router_request = fake_run
+
+    async def fake_refresh():
+        pass
+    coord.async_request_refresh = fake_refresh
+
+    await coord.add_ipv4_reservation("02:00:00:00:00:16", "192.168.1.100", "test", True)
+    router.add_ipv4_reservation.assert_called_once_with(
+        "02:00:00:00:00:16", "192.168.1.100", "test", True
+    )
+
+    await coord.delete_ipv4_reservation("02:00:00:00:00:16")
+    router.delete_ipv4_reservation.assert_called_once_with("02:00:00:00:00:16")
+
+
+def test_coordinator_init_stores_reservations():
+    hass = FakeHass()
+    router = Mock()
+    router.host = "http://192.168.1.1"
+    firmware = Mock()
+    firmware.model = "AXE95"
+    firmware.firmware_version = "1.0.0"
+    firmware.hardware_version = "1.0"
+    status = Mock()
+    status.lan_macaddr = "00:11:22:33:44:55"
+    with patch("homeassistant.helpers.update_coordinator.DataUpdateCoordinator.__init__", return_value=None):
+        coord = TPLinkRouterCoordinator(
+            hass=hass,
+            router=router,
+            update_interval=300,
+            firmware=firmware,
+            status=status,
+            lte_status=None,
+            logger=logging.getLogger("test"),
+            unique_id="test_id",
+            reservations=["RESV_1"],
+        )
+    assert coord.reservations == ["RESV_1"]
