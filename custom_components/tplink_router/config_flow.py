@@ -7,7 +7,8 @@ import homeassistant.helpers.config_validation as cv
 from homeassistant.data_entry_flow import AbortFlow, FlowResult
 from .const import (
     DOMAIN, DEFAULT_USER, DEFAULT_HOST, CONF_CLIENT_CLASS,
-    CONF_SUPPORT_VPN, CONF_SUPPORT_TRACKER, CONF_SCAN_RETRIES, CONF_SCAN_BACKOFF,
+    CONF_SUPPORT_VPN, CONF_SUPPORT_TRACKER, CONF_TRACKER_AS_DEVICE,
+    CONF_SCAN_RETRIES, CONF_SCAN_BACKOFF,
     CONF_SCAN_PAUSE, CONF_OFFLINE_TIMEOUT, DEFAULT_SCAN_RETRIES, DEFAULT_SCAN_BACKOFF,
     DEFAULT_SCAN_PAUSE, DEFAULT_OFFLINE_TIMEOUT, MAX_SCAN_RETRIES, MAX_SCAN_BACKOFF,
     MAX_SCAN_PAUSE, MAX_OFFLINE_TIMEOUT,
@@ -153,6 +154,10 @@ class ConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
                         CONF_SUPPORT_TRACKER,
                         default=self.data_initial.get(CONF_SUPPORT_TRACKER, True),
                     ): cv.boolean,
+                    vol.Required(
+                        CONF_TRACKER_AS_DEVICE,
+                        default=self.data_initial.get(CONF_TRACKER_AS_DEVICE, False),
+                    ): cv.boolean,
                 },
                 extra=vol.ALLOW_EXTRA,
             ),
@@ -217,6 +222,9 @@ class OptionsFlow(config_entries.OptionsFlowWithConfigEntry):
                 vol.Required(CONF_VERIFY_SSL, default=data.get(CONF_VERIFY_SSL)): cv.boolean,
                 vol.Required(CONF_SUPPORT_VPN, default=data.get(CONF_SUPPORT_VPN, True)): cv.boolean,
                 vol.Required(CONF_SUPPORT_TRACKER, default=data.get(CONF_SUPPORT_TRACKER, True)): cv.boolean,
+                vol.Required(
+                    CONF_TRACKER_AS_DEVICE, default=data.get(CONF_TRACKER_AS_DEVICE, False)
+                ): cv.boolean,
             },
             extra=vol.ALLOW_EXTRA
         )

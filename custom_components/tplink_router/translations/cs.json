@@ -19,7 +19,8 @@
         "description": "Funkční přizpůsobení",
         "data": {
           "support_vpn": "Zahrnout podporu pro VPN server a klienta",
-          "support_tracker": "Zahrnout sledování zařízení (vypněte u routerů, které nejsou přístupové body, aby se předešlo duplicitám)"
+          "support_tracker": "Zahrnout sledování zařízení (vypněte u routerů, které nejsou přístupové body, aby se předešlo duplicitám)",
+          "tracker_as_device": "Vytvořit vlastní zařízení pro každého sledovaného klienta (ve výchozím stavu vypnuto; na rušných sítích může přidat mnoho zařízení)"
         }
       }
     }
@@ -39,7 +40,8 @@
           "scan_retries": "Počet pokusů pro každou aktualizaci dat",
           "scan_backoff": "Sekundy mezi pokusy",
           "scan_pause": "Minuty před automatickým opětovným zapnutím načítání dat (0 = nikdy)",
-          "offline_timeout": "Sekundy, po které chybějící zařízení zůstane „doma“ před offline (0 = ihned)"
+          "offline_timeout": "Sekundy, po které chybějící zařízení zůstane „doma“ před offline (0 = ihned)",
+          "tracker_as_device": "Vytvořit vlastní zařízení pro každého sledovaného klienta (ve výchozím stavu vypnuto; na rušných sítích může přidat mnoho zařízení)"
         }
       }
     }

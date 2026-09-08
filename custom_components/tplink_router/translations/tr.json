@@ -19,7 +19,8 @@
         "description": "İşlevsel özelleştirme",
         "data": {
           "support_vpn": "VPN sunucu ve istemci desteğini ekle",
-          "support_tracker": "Cihaz izleyicilerini ekle (yinelenmeleri önlemek için erişim noktası olmayan routerlarda devre dışı bırak)"
+          "support_tracker": "Cihaz izleyicilerini ekle (yinelenmeleri önlemek için erişim noktası olmayan routerlarda devre dışı bırak)",
+          "tracker_as_device": "Her izlenen istemciye kendi cihaz kaydını ver (varsayılan kapalı; yoğun ağlarda çok sayıda cihaz ekleyebilir)"
         }
       }
     }
@@ -39,7 +40,8 @@
           "scan_retries": "Her veri güncellemesi için deneme sayısı",
           "scan_backoff": "Denemeler arasındaki saniye",
           "scan_pause": "Veri alımının otomatik yeniden açılmasına kadar geçen dakika (0 = asla)",
-          "offline_timeout": "Listeden kaybolan cihazın offline olmadan önce 'home' kalacağı saniye (0 = hemen)"
+          "offline_timeout": "Listeden kaybolan cihazın offline olmadan önce 'home' kalacağı saniye (0 = hemen)",
+          "tracker_as_device": "Her izlenen istemciye kendi cihaz kaydını ver (varsayılan kapalı; yoğun ağlarda çok sayıda cihaz ekleyebilir)"
         }
       }
     }

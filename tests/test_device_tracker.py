@@ -47,9 +47,12 @@ class FakeCoordinator:
 
     def __init__(self):
         self.logger = logging.getLogger("test")
+        self.status = FakeStatus()
 
-    def async_add_listener(self, callback):
-        pass
+
+class FakeStatus:
+    lan_macaddr = "11:22:33:44:55:66"
+    devices = []
 
 
 def build_tracker():
@@ -59,10 +62,32 @@ def build_tracker():
     tracker.device = None
     tracker._mac = "AA:BB:CC:DD:EE:FF"
     tracker.active = False
+    tracker._as_device = False
     tracker._restored_attributes = {}
     tracker._last_hostname = ""
     tracker._last_ip_address = ""
     return tracker
+
+
+def test_device_info_none_when_as_device_disabled():
+    tracker = build_tracker()
+    tracker._as_device = False
+    tracker._last_hostname = "phone"
+    assert tracker.device_info is None
+
+
+def test_device_info_uses_router_lan_mac_for_via_device():
+    from homeassistant.helpers.device_registry import CONNECTION_NETWORK_MAC
+    from custom_components.tplink_router.const import DOMAIN
+
+    tracker = build_tracker()
+    tracker._as_device = True
+    tracker._last_hostname = "phone"
+    info = tracker.device_info
+    assert info is not None
+    assert info["connections"] == {(CONNECTION_NETWORK_MAC, "AA:BB:CC:DD:EE:FF")}
+    assert info["name"] == "phone"
+    assert info["via_device"] == (DOMAIN, "11:22:33:44:55:66")
 
 
 def test_remember_keeps_last_meaningful_hostname_and_ip():
@@ -182,3 +207,24 @@ def test_update_items_defers_offline_marking_until_timeout():
         if c.args[0] == "tplink_router_device_offline"
     ]
     assert len(offline_events) == 1
+
+
+def test_update_items_passes_as_device_flag():
+    device = FakeDevice(macaddr="AA:BB:CC:DD:EE:FF", hostname="phone", ip="192.168.1.10", active=True)
+
+    class LocalStatus:
+        devices = [device]
+
+    class LocalHass:
+        def __init__(self):
+            self.bus = Mock()
+
+    class LocalCoord:
+        def __init__(self):
+            self.status = LocalStatus()
+            self.offline_timeout_seconds = 0
+            self.hass = LocalHass()
+
+    tracked = {}
+    update_items(LocalCoord(), Mock(), tracked, as_device=True)
+    assert tracked["AA:BB:CC:DD:EE:FF"]._as_device is True
