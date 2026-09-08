@@ -19,6 +19,7 @@ from tplinkrouterc6u import (
     VpnClientStatus,
     VPNStatus,
     PortStatus,
+    IPv4Reservation,
 )
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers.device_registry import CONNECTION_NETWORK_MAC, DeviceInfo
@@ -38,9 +39,10 @@ def collect_status(
         vpn_server_status: VPNStatus | None,
         vpn_client_status: VpnClientStatus | None,
         port_status: list[PortStatus] | None,
+        reservations: list[IPv4Reservation] | None,
         logger: Logger,
 ) -> tuple[Status, LTEStatus | None, list[ServingCell] | None, VPNStatus | None,
-           VpnClientStatus | None, list[PortStatus] | None, list[SMS] | None]:
+           VpnClientStatus | None, list[PortStatus] | None, list[SMS] | None, list[IPv4Reservation] | None]:
     """Gather all status data from the router; a failing SMS fetch must not break the update."""
     status = router.get_status()
     sms_list = None
@@ -56,6 +58,8 @@ def collect_status(
         port_status = router.get_port_status()
     if hasattr(router, "get_sms") and lte_status is not None:
         sms_list = safe_call(router.get_sms, logger, "fetch SMS")
+    if reservations is not None:
+        reservations = safe_call(router.get_ipv4_reservations, logger, "fetch IPv4 reservations")
     return (
         status,
         lte_status,
@@ -64,6 +68,7 @@ def collect_status(
         vpn_client_status,
         port_status,
         sms_list,
+        reservations,
     )
 
 
@@ -86,6 +91,8 @@ class TPLinkRouterCoordinator(DataUpdateCoordinator):
             backoff_seconds: float = 1.0,
             scan_pause_minutes: int = DEFAULT_SCAN_PAUSE,
             offline_timeout_seconds: int = DEFAULT_OFFLINE_TIMEOUT,
+            reservations: list[IPv4Reservation] | None = None,
+            support_dhcp_reservations: bool = True,
     ) -> None:
         self.router = router
         self.unique_id = unique_id
@@ -111,6 +118,8 @@ class TPLinkRouterCoordinator(DataUpdateCoordinator):
 
         self.vpn_server_status = vpn_server_status
         self.vpn_client_status = vpn_client_status
+        self.reservations: list[IPv4Reservation] | None = reservations
+        self.support_dhcp_reservations = support_dhcp_reservations
 
         self.scan_stopped_at: datetime | None = None
         self._last_update_time: datetime | None = None
@@ -198,6 +207,22 @@ class TPLinkRouterCoordinator(DataUpdateCoordinator):
 
         await self._run_router_request(callback)
     
+    async def add_ipv4_reservation(
+        self, mac: str, ip: str, comment: str = "", enable: bool = True
+    ) -> None:
+        def callback():
+            self.router.add_ipv4_reservation(mac, ip, comment, enable)
+
+        await self._run_router_request(callback)
+        await self.async_request_refresh()
+
+    async def delete_ipv4_reservation(self, mac: str) -> None:
+        def callback():
+            self.router.delete_ipv4_reservation(mac)
+
+        await self._run_router_request(callback)
+        await self.async_request_refresh()
+
     async def send_sms(self, number: str, text: str) -> None:
         def callback():
             self.router.send_sms(number, text)
@@ -219,6 +244,7 @@ class TPLinkRouterCoordinator(DataUpdateCoordinator):
                     self.vpn_server_status,
                     self.vpn_client_status,
                     self.port_status,
+                    self.reservations,
                     self.logger,
                 ),
             )
@@ -249,6 +275,7 @@ class TPLinkRouterCoordinator(DataUpdateCoordinator):
                         self.vpn_client_status,
                         self.port_status,
                         sms_list,
+                        self.reservations,
                     ) = await self.hass.async_add_executor_job(update_once)
 
                 if sms_list is not None:

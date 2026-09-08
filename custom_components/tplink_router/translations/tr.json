@@ -19,7 +19,9 @@
         "description": "İşlevsel özelleştirme",
         "data": {
           "support_vpn": "VPN sunucu ve istemci desteğini ekle",
-          "support_tracker": "Cihaz izleyicilerini ekle (yinelenmeleri önlemek için erişim noktası olmayan routerlarda devre dışı bırak)"
+          "support_tracker": "Cihaz izleyicilerini ekle (yinelenmeleri önlemek için erişim noktası olmayan routerlarda devre dışı bırak)",
+          "tracker_as_device": "Her izlenen istemciye kendi cihaz kaydını ver (varsayılan kapalı; yoğun ağlarda çok sayıda cihaz ekleyebilir)",
+          "support_dhcp_reservations": "DHCP rezervasyon sensörünü ve ekleme/silme servislerini dahil et"
         }
       }
     }
@@ -39,7 +41,9 @@
           "scan_retries": "Her veri güncellemesi için deneme sayısı",
           "scan_backoff": "Denemeler arasındaki saniye",
           "scan_pause": "Veri alımının otomatik yeniden açılmasına kadar geçen dakika (0 = asla)",
-          "offline_timeout": "Listeden kaybolan cihazın offline olmadan önce 'home' kalacağı saniye (0 = hemen)"
+          "offline_timeout": "Listeden kaybolan cihazın offline olmadan önce 'home' kalacağı saniye (0 = hemen)",
+          "tracker_as_device": "Her izlenen istemciye kendi cihaz kaydını ver (varsayılan kapalı; yoğun ağlarda çok sayıda cihaz ekleyebilir)",
+          "support_dhcp_reservations": "DHCP rezervasyon sensörünü ve ekleme/silme servislerini dahil et"
         }
       }
     }
@@ -60,6 +64,46 @@
         "device": {
           "name": "Router",
           "description": "SMS göndermek için TP-Link Router seçin"
+        }
+      }
+    },
+    "add_reservation": {
+      "name": "DHCP rezervasyonu ekle",
+      "description": "Router üzerinde bir cihaz için statik IPv4 adresi ayır.",
+      "fields": {
+        "device": {
+          "name": "Router",
+          "description": "TP-Link router'ı seçin"
+        },
+        "mac": {
+          "name": "MAC adresi",
+          "description": "Cihazın MAC adresi"
+        },
+        "ip": {
+          "name": "IP adresi",
+          "description": "Atanacak statik IPv4 adresi"
+        },
+        "comment": {
+          "name": "Açıklama",
+          "description": "İsteğe bağlı ad veya yorum"
+        },
+        "enable": {
+          "name": "Etkin",
+          "description": "Bu rezervasyonu etkinleştir veya devre dışı bırak"
+        }
+      }
+    },
+    "delete_reservation": {
+      "name": "DHCP rezervasyonunu sil",
+      "description": "Router'dan statik bir IPv4 rezervasyonunu kaldır.",
+      "fields": {
+        "device": {
+          "name": "Router",
+          "description": "TP-Link router'ı seçin"
+        },
+        "mac": {
+          "name": "MAC adresi",
+          "description": "Silinecek rezervasyonun MAC adresi"
         }
       }
     }

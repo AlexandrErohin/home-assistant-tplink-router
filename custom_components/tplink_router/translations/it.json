@@ -19,7 +19,9 @@
         "description": "Personalizzazione funzionale",
         "data": {
           "support_vpn": "Includi supporto per server e client VPN",
-          "support_tracker": "Includi tracker di dispositivi (disabilita su router che non sono access point per evitare duplicati)"
+          "support_tracker": "Includi tracker di dispositivi (disabilita su router che non sono access point per evitare duplicati)",
+          "tracker_as_device": "Assegna a ogni client tracciato una propria voce dispositivo (disattivato di default; su reti affollate può aggiungere molti dispositivi)",
+          "support_dhcp_reservations": "Includi sensore prenotazioni DHCP e servizi aggiungi/elimina"
         }
       }
     }
@@ -39,7 +41,9 @@
           "scan_retries": "Numero di tentativi per ogni aggiornamento dati",
           "scan_backoff": "Secondi tra i tentativi",
           "scan_pause": "Minuti prima della riattivazione automatica del recupero dati (0 = mai)",
-          "offline_timeout": "Secondi in cui un dispositivo assente resta 'home' prima di andare offline (0 = immediato)"
+          "offline_timeout": "Secondi in cui un dispositivo assente resta 'home' prima di andare offline (0 = immediato)",
+          "tracker_as_device": "Assegna a ogni client tracciato una propria voce dispositivo (disattivato di default; su reti affollate può aggiungere molti dispositivi)",
+          "support_dhcp_reservations": "Includi sensore prenotazioni DHCP e servizi aggiungi/elimina"
         }
       }
     }
@@ -60,6 +64,46 @@
         "device": {
           "name": "Router",
           "description": "Select the TP-Link router to send sms"
+        }
+      }
+    },
+    "add_reservation": {
+      "name": "Aggiungi prenotazione DHCP",
+      "description": "Prenota un indirizzo IPv4 statico per un dispositivo sul router.",
+      "fields": {
+        "device": {
+          "name": "Router",
+          "description": "Seleziona il router TP-Link"
+        },
+        "mac": {
+          "name": "Indirizzo MAC",
+          "description": "Indirizzo MAC del dispositivo"
+        },
+        "ip": {
+          "name": "Indirizzo IP",
+          "description": "Indirizzo IPv4 statico da assegnare"
+        },
+        "comment": {
+          "name": "Descrizione",
+          "description": "Nome o commento opzionale"
+        },
+        "enable": {
+          "name": "Abilitata",
+          "description": "Abilita o disabilita questa prenotazione"
+        }
+      }
+    },
+    "delete_reservation": {
+      "name": "Elimina prenotazione DHCP",
+      "description": "Rimuovi una prenotazione IPv4 statica dal router.",
+      "fields": {
+        "device": {
+          "name": "Router",
+          "description": "Seleziona il router TP-Link"
+        },
+        "mac": {
+          "name": "Indirizzo MAC",
+          "description": "MAC della prenotazione da eliminare"
         }
       }
     }

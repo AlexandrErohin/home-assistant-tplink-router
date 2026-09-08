@@ -590,6 +590,9 @@ async def async_setup_entry(
         for sensor in VPN_SERVER_SENSOR_TYPES:
             sensors.append(TPLinkRouterSensor(coordinator, sensor))
 
+    if coordinator.reservations is not None:
+        sensors.append(TPLinkRouterReservationsSensor(coordinator))
+
     async_add_entities(sensors, False)
 
     tracked: set[int] = set()
@@ -692,3 +695,40 @@ class TPLinkRouterPortLinkSpeedSensor(CoordinatorEntity[TPLinkRouterCoordinator]
     def available(self) -> bool:
         """Return True if entity is available."""
         return super().available and self._current_port_status is not None
+
+
+class TPLinkRouterReservationsSensor(CoordinatorEntity[TPLinkRouterCoordinator], SensorEntity):
+    _attr_has_entity_name = True
+
+    def __init__(self, coordinator: TPLinkRouterCoordinator) -> None:
+        super().__init__(coordinator)
+        self._attr_device_info = coordinator.device_info
+        self._attr_unique_id = f"{coordinator.unique_id}_{DOMAIN}_dhcp_reservations"
+        self.entity_description = SensorEntityDescription(
+            key="dhcp_reservations",
+            name="DHCP Reservations",
+            icon="mdi:table-network",
+            entity_category=EntityCategory.DIAGNOSTIC,
+        )
+
+    @property
+    def native_value(self) -> int | None:
+        if self.coordinator.reservations is None:
+            return None
+        return len(self.coordinator.reservations)
+
+    @property
+    def extra_state_attributes(self) -> dict[str, Any]:
+        if not self.coordinator.reservations:
+            return {"reservations": []}
+        return {
+            "reservations": [
+                {
+                    "mac": r.macaddr,
+                    "ip": r.ipaddr,
+                    "hostname": r.hostname or "",
+                    "enabled": r.enabled,
+                }
+                for r in self.coordinator.reservations
+            ]
+        }

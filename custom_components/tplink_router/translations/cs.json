@@ -19,7 +19,9 @@
         "description": "Funkční přizpůsobení",
         "data": {
           "support_vpn": "Zahrnout podporu pro VPN server a klienta",
-          "support_tracker": "Zahrnout sledování zařízení (vypněte u routerů, které nejsou přístupové body, aby se předešlo duplicitám)"
+          "support_tracker": "Zahrnout sledování zařízení (vypněte u routerů, které nejsou přístupové body, aby se předešlo duplicitám)",
+          "tracker_as_device": "Vytvořit vlastní zařízení pro každého sledovaného klienta (ve výchozím stavu vypnuto; na rušných sítích může přidat mnoho zařízení)",
+          "support_dhcp_reservations": "Zahrnout senzor DHCP rezervací a služby přidání/smazání"
         }
       }
     }
@@ -39,7 +41,9 @@
           "scan_retries": "Počet pokusů pro každou aktualizaci dat",
           "scan_backoff": "Sekundy mezi pokusy",
           "scan_pause": "Minuty před automatickým opětovným zapnutím načítání dat (0 = nikdy)",
-          "offline_timeout": "Sekundy, po které chybějící zařízení zůstane „doma“ před offline (0 = ihned)"
+          "offline_timeout": "Sekundy, po které chybějící zařízení zůstane „doma“ před offline (0 = ihned)",
+          "tracker_as_device": "Vytvořit vlastní zařízení pro každého sledovaného klienta (ve výchozím stavu vypnuto; na rušných sítích může přidat mnoho zařízení)",
+          "support_dhcp_reservations": "Zahrnout senzor DHCP rezervací a služby přidání/smazání"
         }
       }
     }
@@ -60,6 +64,46 @@
         "device": {
           "name": "Router",
           "description": "Select the TP-Link router to send sms"
+        }
+      }
+    },
+    "add_reservation": {
+      "name": "Přidat DHCP rezervaci",
+      "description": "Rezervovat statickou IPv4 adresu pro zařízení na routeru.",
+      "fields": {
+        "device": {
+          "name": "Router",
+          "description": "Vyberte TP-Link router"
+        },
+        "mac": {
+          "name": "MAC adresa",
+          "description": "MAC adresa zařízení"
+        },
+        "ip": {
+          "name": "IP adresa",
+          "description": "Statická IPv4 adresa"
+        },
+        "comment": {
+          "name": "Popis",
+          "description": "Volitelný název nebo komentář"
+        },
+        "enable": {
+          "name": "Povoleno",
+          "description": "Povolit nebo zakázat tuto rezervaci"
+        }
+      }
+    },
+    "delete_reservation": {
+      "name": "Smazat DHCP rezervaci",
+      "description": "Odstranit statickou IPv4 rezervaci z routeru.",
+      "fields": {
+        "device": {
+          "name": "Router",
+          "description": "Vyberte TP-Link router"
+        },
+        "mac": {
+          "name": "MAC adresa",
+          "description": "MAC adresa rezervace ke smazání"
         }
       }
     }
