@@ -213,19 +213,25 @@ class FakeMeshNode:
         return self.role == "main_router"
 
 
-def build_mesh_tracker(node):
+def build_mesh_tracker(node, coordinator=None):
     tracker = TPLinkMeshTracker.__new__(TPLinkMeshTracker)
-    tracker.coordinator = FakeCoordinator()
+    tracker.coordinator = coordinator or FakeCoordinator()
     tracker.node = node
     tracker._mac = node.macaddr
-    tracker._name = node.name or node.model or node.macaddr
-    tracker._last_ip_address = node.ipaddr or ""
+    tracker._name = node.macaddr
+    tracker._is_main_router = False
+    tracker._model = None
+    tracker._vendor = None
+    tracker._parent_macaddr = None
+    tracker._last_ip_address = ""
+    tracker._remember(node)
     return tracker
 
 
 class FakeMeshCoordinator:
     hass = FakeHass()
     unique_id = "entry-1"
+    device_info = {"identifiers": {("tplink_router", "24-00-00-00-00-01")}, "name": "TP-Link Router"}
 
     def __init__(self, nodes):
         self.mesh_nodes = nodes
@@ -347,4 +353,50 @@ def test_mesh_tracker_keeps_last_known_ip_when_the_node_drops_out():
     tracker.node = None
 
     assert tracker.ip_address == "10.1.1.63"
+    assert tracker.is_connected is False
+
+
+def test_mesh_tracker_main_router_joins_the_existing_router_device():
+    """The router already has a device keyed by the same MAC; do not add a second one."""
+    coord = FakeMeshCoordinator([])
+    node = FakeMeshNode("24-00-00-00-00-01", name="Main", role="main_router",
+                        device_type="WirelessRouter")
+
+    assert build_mesh_tracker(node, coord).device_info is coord.device_info
+
+
+def test_mesh_tracker_satellite_gets_its_own_device_linked_to_its_parent():
+    node = FakeMeshNode("24-00-00-00-00-02", name="Satellite AX55", model="Archer AX55",
+                        parent_mac="24-00-00-00-00-01", device_type="WirelessRouter")
+    info = build_mesh_tracker(node).device_info
+
+    assert info["identifiers"] == {("tplink_router", "24-00-00-00-00-02")}
+    assert info["connections"] == {("mac", "24:00:00:00:00:02")}
+    assert info["name"] == "Satellite AX55"
+    assert info["model"] == "Archer AX55"
+    assert info["manufacturer"] == "TP-Link"
+    assert info["via_device"] == ("tplink_router", "24-00-00-00-00-01")
+
+
+def test_mesh_tracker_multi_hop_parent_is_the_uplink_node_not_the_router():
+    """A satellite behind another satellite nests under it, not under the main router."""
+    node = FakeMeshNode("24-00-00-00-00-03", name="Satellite RE330",
+                        parent_mac="24-00-00-00-00-02")
+
+    assert build_mesh_tracker(node).device_info["via_device"] == (
+        "tplink_router", "24-00-00-00-00-02")
+
+
+def test_mesh_tracker_device_survives_the_node_dropping_out():
+    """Offline is not gone: the device keeps its name, model and parent."""
+    node = FakeMeshNode("24-00-00-00-00-02", name="Satellite AX55", model="Archer AX55",
+                        parent_mac="24-00-00-00-00-01")
+    tracker = build_mesh_tracker(node)
+
+    tracker.node = None
+
+    info = tracker.device_info
+    assert info["name"] == "Satellite AX55"
+    assert info["model"] == "Archer AX55"
+    assert info["via_device"] == ("tplink_router", "24-00-00-00-00-01")
     assert tracker.is_connected is False

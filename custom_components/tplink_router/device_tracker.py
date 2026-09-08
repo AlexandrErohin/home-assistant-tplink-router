@@ -7,6 +7,7 @@ from homeassistant.components.device_tracker.const import SourceType
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import HomeAssistant, callback
 from homeassistant.helpers import entity_registry
+from homeassistant.helpers.device_registry import CONNECTION_NETWORK_MAC, DeviceInfo, format_mac
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 from homeassistant.helpers.restore_state import RestoreEntity
 from homeassistant.helpers.update_coordinator import CoordinatorEntity
@@ -131,6 +132,7 @@ def update_mesh_items(
             new_tracked.append(tracked[mac])
         else:
             tracked[mac].node = node
+            tracked[mac]._remember(node)
 
     if new_tracked:
         async_add_entities(new_tracked)
@@ -149,9 +151,62 @@ class TPLinkMeshTracker(CoordinatorEntity, ScannerEntity):
         """Initialize from a tplinkrouterc6u MeshNode."""
         self.node = node
         self._mac = node.macaddr
-        self._name = node.name or node.model or node.macaddr
-        self._last_ip_address = node.ipaddr or ""
+        self._name = node.macaddr
+        self._is_main_router = False
+        self._model = None
+        self._vendor = None
+        self._parent_macaddr = None
+        self._last_ip_address = ""
+        self._remember(node)
         super().__init__(coordinator)
+
+    def _remember(self, node) -> None:
+        """Keep the node identity so the device survives a node dropping out.
+
+        A node that disappears from the list is offline, not gone: its entity and its
+        device must keep their name, model and parent rather than reverting to a bare
+        MAC address.
+        """
+        self._is_main_router = node.is_main_router
+        if node.name or node.model:
+            self._name = node.name or node.model
+        if node.model:
+            self._model = node.model
+        if node.vendor:
+            self._vendor = node.vendor
+        if node.parent_macaddr:
+            self._parent_macaddr = node.parent_macaddr
+        if node.ipaddr:
+            self._last_ip_address = node.ipaddr
+
+    @property
+    def device_info(self) -> DeviceInfo:
+        """One Home Assistant device per mesh node, satellites linked to their parent.
+
+        The main router already has a device, created by the coordinator and keyed by
+        the LAN MAC that the mesh list reports for it, so its tracker joins that device
+        instead of adding a second one for the same hardware.
+
+        Satellites get their own device and hang off the node they uplink through via
+        via_device, which is what makes a multi hop mesh readable in the device page:
+        a satellite whose parent is another satellite is nested under it, not under the
+        main router.
+        """
+        if self._is_main_router:
+            return self.coordinator.device_info
+
+        info = DeviceInfo(
+            identifiers={(DOMAIN, self._mac)},
+            connections={(CONNECTION_NETWORK_MAC, format_mac(self._mac))},
+            name=self._name,
+        )
+        if self._model:
+            info["model"] = self._model
+        if self._vendor:
+            info["manufacturer"] = self._vendor
+        if self._parent_macaddr:
+            info["via_device"] = (DOMAIN, self._parent_macaddr)
+        return info
 
     @property
     def is_connected(self) -> bool:
