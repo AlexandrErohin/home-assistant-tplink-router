@@ -9,12 +9,19 @@
           "password": "Palavra-passe",
           "scan_interval": "Intervalo de verificação para atualizações em segundos",
           "verify_ssl": "Verificar SSL para a conexão https",
-          "support_vpn": "Incluir suporte para servidor e cliente VPN",
-          "support_tracker": "Incluir rastreadores de dispositivos (desative em routers que não são pontos de acesso para evitar duplicados)",
           "scan_retries": "Número de tentativas para cada atualização de dados",
           "scan_backoff": "Segundos entre tentativas",
           "scan_pause": "Minutos antes da recolha de dados ser reativada automaticamente (0 = nunca)",
           "offline_timeout": "Segundos em que um dispositivo em falta permanece 'home' antes de offline (0 = imediato)"
+        }
+      },
+      "custom": {
+        "description": "Personalização funcional",
+        "data": {
+          "support_vpn": "Incluir suporte para servidor e cliente VPN",
+          "support_tracker": "Incluir rastreadores de dispositivos (desative em routers que não são pontos de acesso para evitar duplicados)",
+          "tracker_as_device": "Dar a cada cliente monitorizado a sua própria entrada de dispositivo (desativado por predefinição; em redes ocupadas pode adicionar muitos dispositivos)",
+          "support_dhcp_reservations": "Incluir sensor de reservas DHCP e serviços de adicionar/eliminar"
         }
       }
     }
@@ -34,7 +41,9 @@
           "scan_retries": "Número de tentativas para cada atualização de dados",
           "scan_backoff": "Segundos entre tentativas",
           "scan_pause": "Minutos antes da recolha de dados ser reativada automaticamente (0 = nunca)",
-          "offline_timeout": "Segundos em que um dispositivo em falta permanece 'home' antes de offline (0 = imediato)"
+          "offline_timeout": "Segundos em que um dispositivo em falta permanece 'home' antes de offline (0 = imediato)",
+          "tracker_as_device": "Dar a cada cliente monitorizado a sua própria entrada de dispositivo (desativado por predefinição; em redes ocupadas pode adicionar muitos dispositivos)",
+          "support_dhcp_reservations": "Incluir sensor de reservas DHCP e serviços de adicionar/eliminar"
         }
       }
     }
@@ -55,6 +64,46 @@
         "device": {
           "name": "Router",
           "description": "Select the TP-Link router to send sms"
+        }
+      }
+    },
+    "add_reservation": {
+      "name": "Adicionar reserva DHCP",
+      "description": "Reservar um endereço IPv4 estático para um dispositivo no router.",
+      "fields": {
+        "device": {
+          "name": "Router",
+          "description": "Selecionar o router TP-Link"
+        },
+        "mac": {
+          "name": "Endereço MAC",
+          "description": "Endereço MAC do dispositivo"
+        },
+        "ip": {
+          "name": "Endereço IP",
+          "description": "Endereço IPv4 estático a atribuir"
+        },
+        "comment": {
+          "name": "Descrição",
+          "description": "Nome ou comentário opcional"
+        },
+        "enable": {
+          "name": "Ativada",
+          "description": "Ativar ou desativar esta reserva"
+        }
+      }
+    },
+    "delete_reservation": {
+      "name": "Eliminar reserva DHCP",
+      "description": "Remover uma reserva IPv4 estática do router.",
+      "fields": {
+        "device": {
+          "name": "Router",
+          "description": "Selecionar o router TP-Link"
+        },
+        "mac": {
+          "name": "Endereço MAC",
+          "description": "MAC da reserva a eliminar"
         }
       }
     }

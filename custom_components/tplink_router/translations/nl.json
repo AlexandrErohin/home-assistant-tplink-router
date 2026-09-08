@@ -9,12 +9,19 @@
           "password": "Wachtwoord",
           "scan_interval": "Scaninterval voor updates in seconden",
           "verify_ssl": "Verifieer SSL voor https-verbinding",
-          "support_vpn": "VPN-server- en VPN-clientondersteuning opnemen",
-          "support_tracker": "Apparaattrackers opnemen (uitschakelen voor routers die geen access points zijn om duplicaten te voorkomen)",
           "scan_retries": "Aantal pogingen per data-update",
           "scan_backoff": "Seconden tussen pogingen",
           "scan_pause": "Minuten voordat data-ophalen automatisch weer wordt ingeschakeld (0 = nooit)",
           "offline_timeout": "Seconden dat een ontbrekend apparaat 'home' blijft vóór offline (0 = direct)"
+        }
+      },
+      "custom": {
+        "description": "Functionele aanpassingen",
+        "data": {
+          "support_vpn": "VPN-server- en VPN-clientondersteuning opnemen",
+          "support_tracker": "Apparaattrackers opnemen (uitschakelen voor routers die geen access points zijn om duplicaten te voorkomen)",
+          "tracker_as_device": "Geef elke gevolgde client een eigen apparaatvermelding (standaard uit; kan op drukke netwerken veel apparaten toevoegen)",
+          "support_dhcp_reservations": "DHCP-reserveringssensor en toevoeg-/verwijderservices opnemen"
         }
       }
     }
@@ -34,7 +41,9 @@
           "scan_retries": "Aantal pogingen per data-update",
           "scan_backoff": "Seconden tussen pogingen",
           "scan_pause": "Minuten voordat data-ophalen automatisch weer wordt ingeschakeld (0 = nooit)",
-          "offline_timeout": "Seconden dat een ontbrekend apparaat 'home' blijft vóór offline (0 = direct)"
+          "offline_timeout": "Seconden dat een ontbrekend apparaat 'home' blijft vóór offline (0 = direct)",
+          "tracker_as_device": "Geef elke gevolgde client een eigen apparaatvermelding (standaard uit; kan op drukke netwerken veel apparaten toevoegen)",
+          "support_dhcp_reservations": "DHCP-reserveringssensor en toevoeg-/verwijderservices opnemen"
         }
       }
     }
@@ -55,6 +64,46 @@
         "device": {
           "name": "Router",
           "description": "Selecteer de TP-Link-router om een sms te verzenden"
+        }
+      }
+    },
+    "add_reservation": {
+      "name": "DHCP-reservering toevoegen",
+      "description": "Reserveer een vast IPv4-adres voor een apparaat op de router.",
+      "fields": {
+        "device": {
+          "name": "Router",
+          "description": "Selecteer de TP-Link-router"
+        },
+        "mac": {
+          "name": "MAC-adres",
+          "description": "MAC-adres van het apparaat"
+        },
+        "ip": {
+          "name": "IP-adres",
+          "description": "Vast IPv4-adres om toe te wijzen"
+        },
+        "comment": {
+          "name": "Beschrijving",
+          "description": "Optionele naam of opmerking"
+        },
+        "enable": {
+          "name": "Ingeschakeld",
+          "description": "Deze reservering in- of uitschakelen"
+        }
+      }
+    },
+    "delete_reservation": {
+      "name": "DHCP-reservering verwijderen",
+      "description": "Verwijder een vaste IPv4-reservering van de router.",
+      "fields": {
+        "device": {
+          "name": "Router",
+          "description": "Selecteer de TP-Link-router"
+        },
+        "mac": {
+          "name": "MAC-adres",
+          "description": "MAC van de te verwijderen reservering"
         }
       }
     }

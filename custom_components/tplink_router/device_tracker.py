@@ -16,6 +16,7 @@ from .utils import prefer
 from .const import (
     DOMAIN,
     CONF_SUPPORT_TRACKER,
+    CONF_TRACKER_AS_DEVICE,
     EVENT_NEW_DEVICE,
     EVENT_ONLINE,
     EVENT_OFFLINE,
@@ -44,6 +45,7 @@ async def async_setup_entry(
     if not entry.data.get(CONF_SUPPORT_TRACKER, True):
         return
     coordinator = hass.data[DOMAIN][entry.entry_id]
+    as_device = entry.data.get(CONF_TRACKER_AS_DEVICE, False)
     registry = entity_registry.async_get(hass)
     tracked: dict[MAC_ADDR, TPLinkTracker] = {}
     tracked_nodes: dict[MAC_ADDR, TPLinkMeshTracker] = {}
@@ -54,7 +56,7 @@ async def async_setup_entry(
     @callback
     def coordinator_updated():
         """Update the status of the device."""
-        update_items(coordinator, async_add_entities, tracked)
+        update_items(coordinator, async_add_entities, tracked, as_device)
         update_mesh_items(coordinator, async_add_entities, tracked_nodes)
 
     entry.async_on_unload(coordinator.async_add_listener(coordinator_updated))
@@ -69,7 +71,7 @@ async def async_setup_entry(
         mac = reg_entry.unique_id[len(unique_id_prefix):]
         if mac in tracked:
             continue
-        tracked[mac] = TPLinkTracker(coordinator, None, mac=mac)
+        tracked[mac] = TPLinkTracker(coordinator, None, mac=mac, as_device=as_device)
         to_restore.append(tracked[mac])
     if to_restore:
         async_add_entities(to_restore)
@@ -80,6 +82,7 @@ def update_items(
         coordinator: TPLinkRouterCoordinator,
         async_add_entities: AddEntitiesCallback,
         tracked: dict[MAC_ADDR, TPLinkTracker],
+        as_device: bool = False,
 ) -> None:
     """Update tracked device state from the hub."""
     new_tracked: list[TPLinkTracker] = []
@@ -90,7 +93,7 @@ def update_items(
     for device in coordinator.status.devices:
         active.append(device.macaddr)
         if device.macaddr not in tracked:
-            tracked[device.macaddr] = TPLinkTracker(coordinator, device)
+            tracked[device.macaddr] = TPLinkTracker(coordinator, device, as_device=as_device)
             new_tracked.append(tracked[device.macaddr])
             if fire_event:
                 coordinator.hass.bus.fire(EVENT_NEW_DEVICE, tracked[device.macaddr].data)
@@ -292,11 +295,13 @@ class TPLinkTracker(CoordinatorEntity, RestoreEntity, ScannerEntity):
             coordinator: TPLinkRouterCoordinator,
             data: Device | None,
             mac: MAC_ADDR | None = None,
+            as_device: bool = False,
     ) -> None:
         """Initialize the device (tracked by the router or restored from Home Assistant)."""
         self.device = data
         self._mac = mac or (data.macaddr if data else None)
         self.active = data.active if data else False
+        self._as_device = as_device
         self._restored_attributes: dict[str, str] = {}
         self._last_hostname = ""
         self._last_ip_address = ""
@@ -367,6 +372,24 @@ class TPLinkTracker(CoordinatorEntity, RestoreEntity, ScannerEntity):
     def unique_id(self) -> str:
         """Return an unique identifier for this device."""
         return f"{self.coordinator.unique_id}_{DOMAIN}_{self.mac_address}"
+
+    @property
+    def device_info(self) -> DeviceInfo | None:
+        """Return a device entry for this client, grouped under the router.
+
+        Opt-in via CONF_TRACKER_AS_DEVICE: on networks with many transient
+        clients this can add a lot of device-registry entries, so it
+        defaults to off and the entity stays deviceless (current
+        behavior) unless explicitly enabled. via_device must match the
+        router's DeviceInfo identifiers (DOMAIN, lan MAC), not entry_id.
+        """
+        if not self._as_device:
+            return None
+        return DeviceInfo(
+            connections={(CONNECTION_NETWORK_MAC, self._mac)},
+            name=self.hostname or self._mac,
+            via_device=(DOMAIN, self.coordinator.status.lan_macaddr),
+        )
 
     @property
     def icon(self) -> str:

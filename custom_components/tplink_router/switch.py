@@ -190,6 +190,19 @@ DHCP_SERVER_SWITCH_TYPES = (
     ),
 )
 
+WAN_SWITCH_TYPES = (
+    TPLinkRouterStatusSwitchConfig(
+        property='ewan_connected',
+        method=lambda coordinator, value: coordinator.set_ewan_connect(value),
+        description=SwitchEntityDescription(
+            key="ewan_connect",
+            name="E-WAN connect",
+            icon="mdi:ethernet",
+            entity_category=EntityCategory.CONFIG,
+        ),
+    ),
+)
+
 
 async def async_setup_entry(
         hass: HomeAssistant,
@@ -218,6 +231,13 @@ async def async_setup_entry(
 
     if hasattr(coordinator.router, "set_ipv4_dhcps"):
         for switch in DHCP_SERVER_SWITCH_TYPES:
+            switches.append(TPLinkRouterSwitch(coordinator, switch))
+
+    if (
+        hasattr(coordinator.router, "set_ewan_connect")
+        and coordinator.status.ewan_connected is not None
+    ):
+        for switch in WAN_SWITCH_TYPES:
             switches.append(TPLinkRouterSwitch(coordinator, switch))
 
     async_add_entities(switches, False)

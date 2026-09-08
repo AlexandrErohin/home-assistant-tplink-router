@@ -1,5 +1,13 @@
 # Changelog
 
+## [2.39.0] - 2026-09-08
+
+### Added
+- Two-step config flow: host/credentials first, then optional features (VPN, trackers, DHCP reservations, and related settings) on a second step; credentials are validated before the custom step ([#404](https://github.com/AlexandrErohin/home-assistant-tplink-router/pull/404))
+- Option to give each tracked client its own device entry (`tracker_as_device`, off by default) - tracked clients currently only get a device card if another integration already registered a device sharing their MAC, otherwise they're bare entities easy to overlook. Disabling the option later does not delete existing device-registry entries ([#397](https://github.com/AlexandrErohin/home-assistant-tplink-router/pull/397))
+- DHCP reservations diagnostic sensor and `add_reservation` / `delete_reservation` services for supported c6u-family routers, with opt-in `support_dhcp_reservations` (default on) ([#405](https://github.com/AlexandrErohin/home-assistant-tplink-router/pull/405))
+- E-WAN connect switch (DHCP Renew/Release) for MR/EX-family routers that report Ethernet WAN status ([#407](https://github.com/AlexandrErohin/home-assistant-tplink-router/pull/407))
+
 ## [2.38.0] - 2026-09-02
 
 ### Added

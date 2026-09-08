@@ -39,6 +39,7 @@ If you forget to enable it back - it would be automatically enable after the con
  - VPN Client (for some routers)
  - Control VPN Server List (for some routers)
  - LAN IPv4 DHCP Server Enable/Disable (for some routers)
+ - E-WAN connect (for MR/EX-family routers with Ethernet WAN) — on = DHCP Renew, off = DHCP Release; useful to reset a stuck WAN link after reboot
 
 > [!WARNING]
 > Disabling the LAN IPv4 DHCP server can leave clients without an IP address (including the Home Assistant host, if it uses DHCP). Prefer static addresses or another DHCP server before turning this switch off.
@@ -54,6 +55,7 @@ If you forget to enable it back - it would be automatically enable after the con
  - Connection Type
  - WAN IPv4 Address
  - LAN IPv4 Address
+ - DHCP Reservations (count; full lease list in attributes — on routers with `get_ipv4_reservations`, when enabled in options)
 
 For LTE Routers
 - LTE Enabled
@@ -90,11 +92,16 @@ When using multiple routers (for example, a WAN router and a separate access poi
 
 To find your device - Go to `Developer tools` and search for your MAC address - you’ll find sensor like `device_tracker.YOUR_MAC` or `device_tracker.YOUR_PHONE_NAME`.
 
+By default tracked clients don't get their own entry in `Settings > Devices & Services > Devices` - they're plain entities, findable via the Entities list. Enable "Give each tracked client its own device entry" in the integration options if you'd rather see one device card per client; it's off by default since busy networks can end up with a lot of device entries. Turning the option off later does not delete those device-registry entries — remove them manually in Devices if you no longer want them.
+
 It will also fire Home Assistant event when a device connects to router
 
 ### Services
  - Send SMS message - Available only for MR LTE routers
+ - Add DHCP Reservation (`tplink_router.add_reservation`) — available on c6u-family routers that implement `add_ipv4_reservation` (when enabled in options)
+ - Delete DHCP Reservation (`tplink_router.delete_reservation`) — same routers with `delete_ipv4_reservation`
 
+Many router models expose a read-only DHCP reservations sensor via `get_ipv4_reservations` even when add/delete actions are not supported. Disable "Include DHCP reservations..." in the integration options to skip polling and hide the sensor/services.
 ### Notification
 #### Device events
 To receive notifications of appearing a new device in your network, or becoming device online\offline add following lines to your `configuration.yaml` file:
@@ -240,6 +247,8 @@ You may edit configuration data like:
 8. Verify https
 9. Include support for VPN server/client (enable/disable VPN status polling and related VPN entities)
 10. Include device trackers (disable for non-AP routers to avoid duplicate entries)
+11. Give each tracked client its own device entry (off by default; disabling later does not remove already-created device cards)
+12. Include DHCP reservations sensor and add/delete services (default on)
 
 Transient poll failures (timeouts, dropped connections, session expiry) are retried automatically. Authorization failures (wrong password / HTTP 401) are not retried. A failing SMS mailbox fetch does not fail the whole update.
 An unreachable router during setup fails only that config entry (`Failed to set up`) and does not block other TP-Link Router entries.
@@ -358,7 +367,7 @@ To do that:
 - TL-MR150 v2
 - TL-MR6400 (v5, v5.3, v7)
 - TL-MR6500v
-- TL-R470GP-AC 4.0
+- TL-R470GP-AC (4.0, 6.0)
 - TL-R488GPM-AC 2.0
 - TL-SG108E v6.0
 - TL-WA1201 3.0
@@ -369,6 +378,7 @@ To do that:
 - TL-WDR3600 V1
 - TL-XDR3010 V2
 - TL-XDR5410 1.0
+- TL-XDR6010
 - TL-XDR6088 v1.0.30
 - VX420-G2h v1.1
 - VX800v v1

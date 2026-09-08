@@ -9,12 +9,19 @@
           "password": "Heslo",
           "scan_interval": "Interval skenovania aktualizácií v sekundách",
           "verify_ssl": "Overte ssl pre pripojenie https",
-          "support_vpn": "Zahrnúť podporu pre VPN server a klienta",
-          "support_tracker": "Zahrnúť sledovanie zariadení (vypnite pre routery, ktoré nie sú prístupové body, aby sa predišlo duplicitám)",
           "scan_retries": "Počet pokusov pre každú aktualizáciu dát",
           "scan_backoff": "Sekundy medzi pokusmi",
           "scan_pause": "Minúty pred automatickým opätovným zapnutím načítania dát (0 = nikdy)",
           "offline_timeout": "Sekundy, počas ktorých chýbajúce zariadenie zostane „doma“ pred offline (0 = hneď)"
+        }
+      },
+      "custom": {
+        "description": "Funkčné prispôsobenie",
+        "data": {
+          "support_vpn": "Zahrnúť podporu pre VPN server a klienta",
+          "support_tracker": "Zahrnúť sledovanie zariadení (vypnite pre routery, ktoré nie sú prístupové body, aby sa predišlo duplicitám)",
+          "tracker_as_device": "Vytvoriť vlastné zariadenie pre každého sledovaného klienta (predvolene vypnuté; na rušných sieťach môže pridať veľa zariadení)",
+          "support_dhcp_reservations": "Zahrnúť senzor DHCP rezervácií a služby pridania/zmazania"
         }
       }
     }
@@ -34,7 +41,9 @@
           "scan_retries": "Počet pokusov pre každú aktualizáciu dát",
           "scan_backoff": "Sekundy medzi pokusmi",
           "scan_pause": "Minúty pred automatickým opätovným zapnutím načítania dát (0 = nikdy)",
-          "offline_timeout": "Sekundy, počas ktorých chýbajúce zariadenie zostane „doma“ pred offline (0 = hneď)"
+          "offline_timeout": "Sekundy, počas ktorých chýbajúce zariadenie zostane „doma“ pred offline (0 = hneď)",
+          "tracker_as_device": "Vytvoriť vlastné zariadenie pre každého sledovaného klienta (predvolene vypnuté; na rušných sieťach môže pridať veľa zariadení)",
+          "support_dhcp_reservations": "Zahrnúť senzor DHCP rezervácií a služby pridania/zmazania"
         }
       }
     }
@@ -55,6 +64,46 @@
         "device": {
           "name": "Smerovač",
           "description": "Vyberte smerovač TP-Link na odosielanie SMS"
+        }
+      }
+    },
+    "add_reservation": {
+      "name": "Pridať DHCP rezerváciu",
+      "description": "Rezervovať statickú IPv4 adresu pre zariadenie na routeri.",
+      "fields": {
+        "device": {
+          "name": "Router",
+          "description": "Vyberte TP-Link router"
+        },
+        "mac": {
+          "name": "MAC adresa",
+          "description": "MAC adresa zariadenia"
+        },
+        "ip": {
+          "name": "IP adresa",
+          "description": "Statická IPv4 adresa"
+        },
+        "comment": {
+          "name": "Popis",
+          "description": "Voliteľný názov alebo komentár"
+        },
+        "enable": {
+          "name": "Povolené",
+          "description": "Povoliť alebo zakázať túto rezerváciu"
+        }
+      }
+    },
+    "delete_reservation": {
+      "name": "Zmazať DHCP rezerváciu",
+      "description": "Odstrániť statickú IPv4 rezerváciu z routera.",
+      "fields": {
+        "device": {
+          "name": "Router",
+          "description": "Vyberte TP-Link router"
+        },
+        "mac": {
+          "name": "MAC adresa",
+          "description": "MAC adresa rezervácie na zmazanie"
         }
       }
     }
