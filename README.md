@@ -390,6 +390,7 @@ To do that:
 - ME30 1.0
 - MR47BE v1.0
 - MR50G 1.0
+- MR60X 2.0
 - MR80X v2.0
 
 Please let me know if you have tested integration with any other model. Open an issue with info about router's model, hardware and firmware versions.

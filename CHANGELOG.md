@@ -1,5 +1,20 @@
 # Changelog
 
+## [2.40.0] - 2026-09-16
+
+### Added
+
+- **EX:** IoT / 6G / MLO support — `CLIENT_TYPES` for `X_TP_LanConnType` 5–6/8–10, `Status` band enables (`iot_*`, `wifi_6g_*`, `wifi_mlo_*`), `Connection.HOST_MLO*`, and `set_wifi` via `ioTssidEnable` / `mloEnable`; unknown conn types map to `Connection.UNKNOWN` and still count ([#226](https://github.com/AlexandrErohin/TP-Link-Archer-C6U/pull/226), [HA #362](https://github.com/AlexandrErohin/home-assistant-tplink-router/issues/362)).
+- **C6U / LuCI:** `set_ewan_connect(enable)` renews/releases the Ethernet WAN DHCP lease via `wan_ipv4_dynamic` (`operation=renew` / `release`); `Status.ewan_connected` from `conn_status` when `wan_ipv4_conntype` is `dhcp` ([#230](https://github.com/AlexandrErohin/TP-Link-Archer-C6U/pull/230)).
+- **C80:** `set_ewan_connect(enable)` brings Ethernet WAN up/down via `wan -linkUp` / `wan -linkDown` (`code=0`); `Status.ewan_connected` from WAN block `status` (`None` if the field is absent) ([#227](https://github.com/AlexandrErohin/TP-Link-Archer-C6U/pull/227)).
+- Added MR60X 2.0 to supported list
+
+### Fixed
+
+- **MR / VR:** `_merge_response` keeps values that contain `=` (e.g. SMS `content` with a URL query) by splitting each line on the first `=` only ([#231](https://github.com/AlexandrErohin/TP-Link-Archer-C6U/pull/231)).
+- **TL-SG108E:** `get_status()` fills `lan_ipv4_addr` from IP settings (`ipStr` / `ip`); lookup is best-effort so a failed IP page does not break port aggregates ([#229](https://github.com/AlexandrErohin/TP-Link-Archer-C6U/pull/229)).
+- **RE330 / C80:** when a router rejects an encrypted data body with `00006` (TL-WR844N and similar), retry the same request as plaintext and keep using plaintext for later calls; RE330 also falls back to DHCP-based status when device block `13` is absent ([#59](https://github.com/AlexandrErohin/TP-Link-Archer-C6U/issues/59)).
+
 ## [2.39.0] - 2026-09-08
 
 ### Added
