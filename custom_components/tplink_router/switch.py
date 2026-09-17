@@ -100,6 +100,36 @@ STATUS_SWITCH_TYPES = (
         ),
     ),
     TPLinkRouterStatusSwitchConfig(
+        property='wifi_mlo_2g_enable',
+        method=lambda coordinator, value: coordinator.set_wifi(Connection.HOST_MLO_2G, value),
+        description=SwitchEntityDescription(
+            key="wifi_mlo_24g",
+            name="WIFI MLO 2.4G",
+            icon="mdi:wifi",
+            entity_category=EntityCategory.CONFIG,
+        ),
+    ),
+    TPLinkRouterStatusSwitchConfig(
+        property='wifi_mlo_5g_enable',
+        method=lambda coordinator, value: coordinator.set_wifi(Connection.HOST_MLO_5G, value),
+        description=SwitchEntityDescription(
+            key="wifi_mlo_5g",
+            name="WIFI MLO 5G",
+            icon="mdi:wifi",
+            entity_category=EntityCategory.CONFIG,
+        ),
+    ),
+    TPLinkRouterStatusSwitchConfig(
+        property='wifi_mlo_6g_enable',
+        method=lambda coordinator, value: coordinator.set_wifi(Connection.HOST_MLO_6G, value),
+        description=SwitchEntityDescription(
+            key="wifi_mlo_6g",
+            name="WIFI MLO 6G",
+            icon="mdi:wifi",
+            entity_category=EntityCategory.CONFIG,
+        ),
+    ),
+    TPLinkRouterStatusSwitchConfig(
         property='iot_2g_enable',
         method=lambda coordinator, value: coordinator.set_wifi(Connection.IOT_2G, value),
         description=SwitchEntityDescription(

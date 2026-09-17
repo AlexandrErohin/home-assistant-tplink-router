@@ -30,6 +30,9 @@ If you forget to enable it back - it would be automatically enable after the con
  - 2.4Ghz host wifi Enable/Disable
  - 5Ghz host wifi Enable/Disable
  - 6Ghz host wifi Enable/Disable
+ - 2.4Ghz host MLO wifi Enable/Disable
+ - 5Ghz host MLO wifi Enable/Disable
+ - 6Ghz host MLO wifi Enable/Disable
  - 2.4Ghz guest wifi Enable/Disable
  - 5Ghz guest wifi Enable/Disable
  - 6Ghz guest wifi Enable/Disable
