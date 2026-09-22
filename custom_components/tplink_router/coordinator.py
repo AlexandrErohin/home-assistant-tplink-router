@@ -32,6 +32,27 @@ from .const import (
 from .utils import safe_call, is_retryable_error
 
 
+def collect_mesh_nodes(router: AbstractRouter, logger: Logger) -> list | None:
+    """Return the EasyMesh node list, or None when this client can never provide one.
+
+    None is the "stop asking" signal, matching how the other optional payloads in
+    collect_status are gated. It covers both an older tplinkrouterc6u without the
+    method and a client that implements the abstract default, so neither case logs
+    a warning on every poll. A transient failure returns an empty list instead, so
+    polling resumes on the next cycle.
+    """
+    getter = getattr(router, "get_mesh_nodes", None)
+    if getter is None:
+        return None
+    try:
+        return getter()
+    except NotImplementedError:
+        return None
+    except Exception:
+        logger.warning("TPLink Router failed to fetch mesh nodes", exc_info=True)
+        return []
+
+
 def collect_status(
         router: AbstractRouter,
         lte_status: LTEStatus | None,
@@ -41,8 +62,10 @@ def collect_status(
         port_status: list[PortStatus] | None,
         reservations: list[IPv4Reservation] | None,
         logger: Logger,
+        mesh_nodes: list | None = None,
 ) -> tuple[Status, LTEStatus | None, list[ServingCell] | None, VPNStatus | None,
-           VpnClientStatus | None, list[PortStatus] | None, list[SMS] | None, list[IPv4Reservation] | None]:
+           VpnClientStatus | None, list[PortStatus] | None, list[SMS] | None,
+           list[IPv4Reservation] | None, list | None]:
     """Gather all status data from the router; a failing SMS fetch must not break the update."""
     status = router.get_status()
     sms_list = None
@@ -56,6 +79,8 @@ def collect_status(
         vpn_client_status = router.get_vpn_client_status()
     if port_status is not None:
         port_status = router.get_port_status()
+    if mesh_nodes is not None:
+        mesh_nodes = collect_mesh_nodes(router, logger)
     if hasattr(router, "get_sms") and lte_status is not None:
         sms_list = safe_call(router.get_sms, logger, "fetch SMS")
     if reservations is not None:
@@ -69,6 +94,7 @@ def collect_status(
         port_status,
         sms_list,
         reservations,
+        mesh_nodes,
     )
 
 
@@ -105,6 +131,8 @@ class TPLinkRouterCoordinator(DataUpdateCoordinator):
         self.backoff_seconds = backoff_seconds
         self.scan_pause_minutes = scan_pause_minutes
         self.offline_timeout_seconds = offline_timeout_seconds
+        # [] means "ask each poll"; None means the client cannot provide a node list.
+        self.mesh_nodes: list = []
         self.device_info = DeviceInfo(
             configuration_url=router.host,
             connections={(CONNECTION_NETWORK_MAC, self.status.lan_macaddr)},
@@ -246,6 +274,7 @@ class TPLinkRouterCoordinator(DataUpdateCoordinator):
                     self.port_status,
                     self.reservations,
                     self.logger,
+                    self.mesh_nodes,
                 ),
             )
 
@@ -276,6 +305,7 @@ class TPLinkRouterCoordinator(DataUpdateCoordinator):
                         self.port_status,
                         sms_list,
                         self.reservations,
+                        self.mesh_nodes,
                     ) = await self.hass.async_add_executor_job(update_once)
 
                 if sms_list is not None:
