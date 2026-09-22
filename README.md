@@ -30,9 +30,7 @@ If you forget to enable it back - it would be automatically enable after the con
  - 2.4Ghz host wifi Enable/Disable
  - 5Ghz host wifi Enable/Disable
  - 6Ghz host wifi Enable/Disable
- - 2.4Ghz host MLO wifi Enable/Disable
- - 5Ghz host MLO wifi Enable/Disable
- - 6Ghz host MLO wifi Enable/Disable
+ - 2.4Ghz / 5Ghz / 6Ghz host MLO wifi Enable/Disable (EX-family with `mloEnable`; 5G/6G entities are created only when `get_status` reports `wifi_mlo_5g_enable` and `wifi_mlo_6g_enable`)
  - 2.4Ghz guest wifi Enable/Disable
  - 5Ghz guest wifi Enable/Disable
  - 6Ghz guest wifi Enable/Disable

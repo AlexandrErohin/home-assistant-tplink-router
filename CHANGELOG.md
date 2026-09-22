@@ -5,6 +5,7 @@
 ### Added
 
 - EasyMesh: one `device_tracker` per mesh node (main router included), with a Home Assistant device per satellite linked through `via_device` / `parent_mac`; deco-compatible attributes (`device_type`, `device_model`, `connection_type`) and `signal_level` (bar level, not dBm `signal`) ([#402](https://github.com/AlexandrErohin/home-assistant-tplink-router/pull/402), [#212](https://github.com/AlexandrErohin/home-assistant-tplink-router/issues/212))
+- Per-band host MLO wifi switches (2.4G / 5G / 6G) via `Status.wifi_mlo_*_enable` and `Connection.HOST_MLO_*` — for EX-family routers that expose `mloEnable` ([#412](https://github.com/AlexandrErohin/home-assistant-tplink-router/pull/412), [TP-Link-Archer-C6U#226](https://github.com/AlexandrErohin/TP-Link-Archer-C6U/pull/226))
 - Added Archer GE800 v1.0, Archer VR1600v v1, and EX920 v1.0 to supported list
 
 ### Fixed

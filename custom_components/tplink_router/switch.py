@@ -110,26 +110,6 @@ STATUS_SWITCH_TYPES = (
         ),
     ),
     TPLinkRouterStatusSwitchConfig(
-        property='wifi_mlo_5g_enable',
-        method=lambda coordinator, value: coordinator.set_wifi(Connection.HOST_MLO_5G, value),
-        description=SwitchEntityDescription(
-            key="wifi_mlo_5g",
-            name="WIFI MLO 5G",
-            icon="mdi:wifi",
-            entity_category=EntityCategory.CONFIG,
-        ),
-    ),
-    TPLinkRouterStatusSwitchConfig(
-        property='wifi_mlo_6g_enable',
-        method=lambda coordinator, value: coordinator.set_wifi(Connection.HOST_MLO_6G, value),
-        description=SwitchEntityDescription(
-            key="wifi_mlo_6g",
-            name="WIFI MLO 6G",
-            icon="mdi:wifi",
-            entity_category=EntityCategory.CONFIG,
-        ),
-    ),
-    TPLinkRouterStatusSwitchConfig(
         property='iot_2g_enable',
         method=lambda coordinator, value: coordinator.set_wifi(Connection.IOT_2G, value),
         description=SwitchEntityDescription(
@@ -155,6 +135,30 @@ STATUS_SWITCH_TYPES = (
         description=SwitchEntityDescription(
             key="iot_6g",
             name="IoT WIFI 6G",
+            icon="mdi:wifi",
+            entity_category=EntityCategory.CONFIG,
+        ),
+    ),
+)
+
+# 5G/6G MLO — only created when get_status reported both fields (multi-band EX).
+MLO_SWITCH_TYPES = (
+    TPLinkRouterStatusSwitchConfig(
+        property='wifi_mlo_5g_enable',
+        method=lambda coordinator, value: coordinator.set_wifi(Connection.HOST_MLO_5G, value),
+        description=SwitchEntityDescription(
+            key="wifi_mlo_5g",
+            name="WIFI MLO 5G",
+            icon="mdi:wifi",
+            entity_category=EntityCategory.CONFIG,
+        ),
+    ),
+    TPLinkRouterStatusSwitchConfig(
+        property='wifi_mlo_6g_enable',
+        method=lambda coordinator, value: coordinator.set_wifi(Connection.HOST_MLO_6G, value),
+        description=SwitchEntityDescription(
+            key="wifi_mlo_6g",
+            name="WIFI MLO 6G",
             icon="mdi:wifi",
             entity_category=EntityCategory.CONFIG,
         ),
@@ -245,6 +249,13 @@ async def async_setup_entry(
 
     for switch in STATUS_SWITCH_TYPES:
         switches.append(TPLinkRouterSwitch(coordinator, switch))
+
+    if (
+        coordinator.status.wifi_mlo_5g_enable is not None
+        and coordinator.status.wifi_mlo_6g_enable is not None
+    ):
+        for switch in MLO_SWITCH_TYPES:
+            switches.append(TPLinkRouterSwitch(coordinator, switch))
 
     # Scan entity has has different turn_on/off logic from the rest of the switches
     switches.append(TPLinkRouterScanEntity(coordinator))
