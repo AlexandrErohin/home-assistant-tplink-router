@@ -309,6 +309,7 @@ To do that:
 - Archer C6U v1.0
 - Archer C7 (v4.0, v5.0)
 - Archer C80 (1.0, 2.20)
+- Archer GE800 v1.0
 - Archer GX90 v1.0
 - Archer MR200 (v2, v5, v5.3, v6.0)
 - Archer MR400 V.4.3
@@ -316,6 +317,7 @@ To do that:
 - Archer MR600 (v1, v2, v3)
 - Archer NX200 (v1.0, v2.0)
 - Archer VR1200v (v1, v2)
+- Archer VR1600v v1
 - Archer VR2100v v1
 - Archer VR2800 v1
 - Archer VR400 (v2, v3)
@@ -344,6 +346,7 @@ To do that:
 - Deco XE75PRO (v3.0)
 - EAP115 v2.0
 - EX511 v2.0
+- EX920 v1.0
 - HB810 v2.6
 - HX510 v1.0
 - M8550 v1

@@ -1,5 +1,12 @@
 # Changelog
 
+## [2.41.0] - 2026-09-22
+
+### Added
+
+- Added Archer GE800 v1.0, Archer VR1600v v1, and EX920 v1.0 to supported list
+- Bumped `tplinkrouterc6u` to 5.35.0
+
 ## [2.40.0] - 2026-09-16
 
 ### Added
