@@ -24,7 +24,7 @@ from homeassistant.helpers.update_coordinator import CoordinatorEntity
 from .coordinator import TPLinkRouterCoordinator
 from .port import find_port_status, update_port_items
 from .mesh import find_mesh_node, mesh_device_info, update_mesh_sensor_items
-from tplinkrouterc6u import Status, LTEStatus, VPNStatus, ServingCell
+from tplinkrouterc6u import Status, LTEStatus, VPNStatus, ServingCell, TPLinkSG108EClient
 try:
     from tplinkrouterc6u import MeshNode
 except ImportError:  # pragma: no cover - older tplinkrouterc6u without mesh
@@ -660,6 +660,44 @@ MESH_NODE_SENSOR_TYPES = (
     ),
 )
 
+_SG108E_SENSOR_TYPES = (
+    TPLinkRouterSensorConfig(
+        value=lambda status: status.wired_total,
+        description=SensorEntityDescription(
+            key="wired_clients_total",
+            name="Total ports",
+            icon="mdi:ethernet",
+            state_class=SensorStateClass.TOTAL,
+            entity_category=EntityCategory.DIAGNOSTIC,
+        ),
+    ),
+    TPLinkRouterSensorConfig(
+        value=lambda status: status.clients_total,
+        description=SensorEntityDescription(
+            key="clients_total",
+            name="Connected ports",
+            icon="mdi:ethernet",
+            state_class=SensorStateClass.TOTAL,
+            entity_category=EntityCategory.DIAGNOSTIC,
+        ),
+    ),
+    TPLinkRouterSensorConfig(
+        value=lambda status: status.lan_ipv4_addr,
+        description=SensorEntityDescription(
+            key="lan_ipv4_addr",
+            name="Management IPv4 Address",
+            icon="mdi:lan",
+            entity_category=EntityCategory.DIAGNOSTIC,
+        ),
+    ),
+)
+
+
+def _status_sensor_types(router) -> tuple[TPLinkRouterSensorConfig, ...]:
+    if isinstance(router, TPLinkSG108EClient):
+        return _SG108E_SENSOR_TYPES
+    return SENSOR_TYPES
+
 
 async def async_setup_entry(
     hass: HomeAssistant, entry: ConfigEntry, async_add_entities: AddEntitiesCallback
@@ -668,7 +706,7 @@ async def async_setup_entry(
 
     sensors = []
 
-    for sensor in SENSOR_TYPES:
+    for sensor in _status_sensor_types(coordinator.router):
         sensors.append(TPLinkRouterSensor(coordinator, sensor))
 
     if coordinator.lte_status is not None:
