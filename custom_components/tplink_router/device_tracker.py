@@ -7,7 +7,7 @@ from homeassistant.components.device_tracker.const import SourceType
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import HomeAssistant, callback
 from homeassistant.helpers import entity_registry
-from homeassistant.helpers.device_registry import CONNECTION_NETWORK_MAC, DeviceInfo, format_mac
+from homeassistant.helpers.device_registry import CONNECTION_NETWORK_MAC, DeviceInfo
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 from homeassistant.helpers.restore_state import RestoreEntity
 from homeassistant.helpers.update_coordinator import CoordinatorEntity
@@ -22,6 +22,11 @@ from .const import (
     EVENT_OFFLINE,
 )
 from tplinkrouterc6u import Device
+
+try:
+    from tplinkrouterc6u import MeshNode
+except ImportError:  # pragma: no cover - older tplinkrouterc6u without mesh
+    MeshNode = object  # type: ignore[misc, assignment]
 
 MAC_ADDR: TypeAlias = str
 
@@ -49,7 +54,7 @@ async def async_setup_entry(
     registry = entity_registry.async_get(hass)
     tracked: dict[MAC_ADDR, TPLinkTracker] = {}
     tracked_nodes: dict[MAC_ADDR, TPLinkMeshTracker] = {}
-    to_restore: list[TPLinkTracker] = []
+    to_restore: list[TPLinkTracker | TPLinkMeshTracker] = []
     unique_id_prefix = f"{coordinator.unique_id}_{DOMAIN}_"
     mesh_unique_id_prefix = f"{coordinator.unique_id}_{DOMAIN}_{MESH_ID_MARKER}"
 
@@ -64,9 +69,14 @@ async def async_setup_entry(
     for reg_entry in entity_registry.async_entries_for_config_entry(registry, entry.entry_id):
         if reg_entry.domain != "device_tracker":
             continue
-        # Mesh nodes share the client prefix; without this a node entity would be
-        # restored as a client tracker whose MAC is the marker plus the address.
+        # Mesh unique_ids share the client prefix; restore them as mesh trackers,
+        # not as clients whose MAC would be the marker plus the address.
         if reg_entry.unique_id.startswith(mesh_unique_id_prefix):
+            mac = reg_entry.unique_id[len(mesh_unique_id_prefix):]
+            if mac in tracked_nodes:
+                continue
+            tracked_nodes[mac] = TPLinkMeshTracker(coordinator, None, mac=mac)
+            to_restore.append(tracked_nodes[mac])
             continue
         mac = reg_entry.unique_id[len(unique_id_prefix):]
         if mac in tracked:
@@ -145,30 +155,41 @@ def update_mesh_items(
     for mac, tracker in tracked.items():
         if mac not in seen:
             tracker.node = None
+            if tracker._restored_attributes:
+                remembered = dict(tracker._restored_attributes)
+                remembered["status"] = "disconnected"
+                tracker._restored_attributes = remembered
 
 
-class TPLinkMeshTracker(CoordinatorEntity, ScannerEntity):
+class TPLinkMeshTracker(CoordinatorEntity, RestoreEntity, ScannerEntity):
     """Representation of an EasyMesh node, the main router included."""
 
-    def __init__(self, coordinator: TPLinkRouterCoordinator, node) -> None:
-        """Initialize from a tplinkrouterc6u MeshNode."""
+    def __init__(
+            self,
+            coordinator: TPLinkRouterCoordinator,
+            node: MeshNode | None,
+            mac: MAC_ADDR | None = None,
+    ) -> None:
+        """Initialize from a live MeshNode, or restore later from the last HA state."""
         self.node = node
-        self._mac = node.macaddr
-        self._name = node.macaddr
+        self._mac = mac or (node.macaddr if node else None)
+        self._name = self._mac
         self._is_main_router = False
         self._model = None
         self._vendor = None
         self._parent_macaddr = None
         self._last_ip_address = ""
-        self._remember(node)
+        self._restored_attributes: dict = {}
+        if node:
+            self._remember(node)
         super().__init__(coordinator)
 
-    def _remember(self, node) -> None:
+    def _remember(self, node: MeshNode) -> None:
         """Keep the node identity so the device survives a node dropping out.
 
         A node that disappears from the list is offline, not gone: its entity and its
-        device must keep their name, model and parent rather than reverting to a bare
-        MAC address.
+        device must keep their name, model, parent and attributes rather than
+        reverting to a bare MAC address.
         """
         self._is_main_router = node.is_main_router
         if node.name or node.model:
@@ -179,8 +200,40 @@ class TPLinkMeshTracker(CoordinatorEntity, ScannerEntity):
             self._vendor = node.vendor
         if node.parent_macaddr:
             self._parent_macaddr = node.parent_macaddr
-        if node.ipaddr:
-            self._last_ip_address = node.ipaddr
+        self._last_ip_address = prefer(node.ipaddr, self._last_ip_address, "")
+        self._restored_attributes = self._attrs_from_node(node)
+
+    @staticmethod
+    def _attrs_from_node(node: MeshNode) -> dict:
+        """Build the attribute dict shared by live and offline (remembered) states."""
+        attributes = {
+            # device_type/device_model/connection_type follow the attribute names
+            # ha-tplink-deco already uses, so dashboards written for one work for both.
+            "device_type": node.device_type,
+            "device_model": node.model,
+            "connection_type": node.connect_type,
+            "status": node.status,
+            "role": node.role,
+            "is_main_router": node.is_main_router,
+        }
+        if node.parent_macaddr is not None:
+            attributes["parent_mac"] = node.parent_macaddr
+        if node.client_num is not None:
+            attributes["client_num"] = node.client_num
+        if node.signal_level is not None:
+            # Deliberately not exposed as 'signal': clients report dBm there, while a
+            # node reports a 1 to 3 bar level. Sharing the key would put values with
+            # different units in the same column.
+            attributes["signal_level"] = node.signal_level
+        if node.support_reboot is not None:
+            attributes["support_reboot"] = node.support_reboot
+        if node.location is not None:
+            attributes["location"] = node.location
+        if node.mesh_type is not None:
+            attributes["mesh_type"] = node.mesh_type
+        if node.vendor is not None:
+            attributes["vendor"] = node.vendor
+        return attributes
 
     @property
     def device_info(self) -> DeviceInfo:
@@ -200,7 +253,9 @@ class TPLinkMeshTracker(CoordinatorEntity, ScannerEntity):
 
         info = DeviceInfo(
             identifiers={(DOMAIN, self._mac)},
-            connections={(CONNECTION_NETWORK_MAC, format_mac(self._mac))},
+            # Match coordinator / client trackers: use the library MAC string as-is
+            # (EUI48 hyphen form), not format_mac().
+            connections={(CONNECTION_NETWORK_MAC, self._mac)},
             name=self._name,
         )
         if self._model:
@@ -235,8 +290,8 @@ class TPLinkMeshTracker(CoordinatorEntity, ScannerEntity):
     @property
     def ip_address(self) -> str:
         if self.node is not None:
-            self._last_ip_address = prefer(self.node.ipaddr, self._last_ip_address, "")
-        return self._last_ip_address
+            return prefer(self.node.ipaddr, self._last_ip_address, "")
+        return self._last_ip_address or ""
 
     @property
     def unique_id(self) -> str:
@@ -249,42 +304,38 @@ class TPLinkMeshTracker(CoordinatorEntity, ScannerEntity):
         return "mdi:router-wireless" if self.node.is_main_router else "mdi:access-point-network"
 
     @property
-    def extra_state_attributes(self) -> dict[str, str]:
-        if self.node is None:
-            return {}
-        node = self.node
-        attributes = {
-            # device_type/device_model/connection_type follow the attribute names
-            # ha-tplink-deco already uses, so dashboards written for one work for both.
-            'device_type': node.device_type,
-            'device_model': node.model,
-            'connection_type': node.connect_type,
-            'status': node.status,
-            'role': node.role,
-            'is_main_router': node.is_main_router,
-        }
-        if node.parent_macaddr is not None:
-            attributes['parent_mac'] = node.parent_macaddr
-        if node.client_num is not None:
-            attributes['client_num'] = node.client_num
-        if node.signal_level is not None:
-            # Deliberately not exposed as 'signal': clients report dBm there, while a
-            # node reports a 1 to 3 bar level. Sharing the key would put values with
-            # different units in the same column.
-            attributes['signal_level'] = node.signal_level
-        if node.support_reboot is not None:
-            attributes['support_reboot'] = node.support_reboot
-        if node.location is not None:
-            attributes['location'] = node.location
-        if node.mesh_type is not None:
-            attributes['mesh_type'] = node.mesh_type
-        if node.vendor is not None:
-            attributes['vendor'] = node.vendor
-        return attributes
+    def extra_state_attributes(self) -> dict:
+        if self.node is not None:
+            return self._attrs_from_node(self.node)
+        return dict(self._restored_attributes)
 
     @property
     def entity_registry_enabled_default(self) -> bool:
         return True
+
+    async def async_added_to_hass(self) -> None:
+        """Restore name/model/parent/attrs when the entity was revived from the registry."""
+        await super().async_added_to_hass()
+        if self.node is not None:
+            return
+        last_state = await self.async_get_last_state()
+        if last_state is None:
+            return
+        attrs = dict(last_state.attributes)
+        self._restored_attributes = attrs
+        if last_state.name:
+            self._name = last_state.name
+        if attrs.get("device_model"):
+            self._model = attrs["device_model"]
+        if attrs.get("vendor"):
+            self._vendor = attrs["vendor"]
+        if attrs.get("parent_mac"):
+            self._parent_macaddr = attrs["parent_mac"]
+        if "is_main_router" in attrs:
+            self._is_main_router = bool(attrs["is_main_router"])
+        ip_address = attrs.get("ip") or attrs.get("ip_address")
+        if ip_address and str(ip_address) != "0.0.0.0":
+            self._last_ip_address = str(ip_address)
 
 
 class TPLinkTracker(CoordinatorEntity, RestoreEntity, ScannerEntity):

@@ -1,11 +1,18 @@
 # Changelog
 
-## [2.41.0] - 2026-09-22
+## [2.42.0] - 2026-09-22
 
 ### Added
 
+- EasyMesh: one `device_tracker` per mesh node (main router included), with a Home Assistant device per satellite linked through `via_device` / `parent_mac`; deco-compatible attributes (`device_type`, `device_model`, `connection_type`) and `signal_level` (bar level, not dBm `signal`) ([#402](https://github.com/AlexandrErohin/home-assistant-tplink-router/pull/402), [#212](https://github.com/AlexandrErohin/home-assistant-tplink-router/issues/212))
 - Added Archer GE800 v1.0, Archer VR1600v v1, and EX920 v1.0 to supported list
-- Bumped `tplinkrouterc6u` to 5.35.0
+
+### Fixed
+
+- Probe `get_mesh_nodes` during setup so mesh trackers appear immediately, not after the first poll interval
+- Restore mesh trackers from the entity registry after a Home Assistant restart
+- Keep last-known mesh attributes (and mark `status` disconnected) when a node drops out of the list
+- Align satellite `connections` MAC format with the coordinator; stop mutating state inside `ip_address`
 
 ## [2.40.0] - 2026-09-16
 

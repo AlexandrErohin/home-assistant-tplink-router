@@ -270,6 +270,7 @@ def build_mesh_tracker(node, coordinator=None):
     tracker._vendor = None
     tracker._parent_macaddr = None
     tracker._last_ip_address = ""
+    tracker._restored_attributes = {}
     tracker._remember(node)
     return tracker
 
@@ -313,7 +314,10 @@ def test_update_mesh_items_reuses_existing_trackers():
 
 
 def test_update_mesh_items_marks_missing_node_disconnected_without_removing_it():
-    coord = FakeMeshCoordinator([FakeMeshNode("24-00-00-00-00-02", name="Satellite")])
+    coord = FakeMeshCoordinator([FakeMeshNode(
+        "24-00-00-00-00-02", name="Satellite", model="Archer AX55",
+        device_type="WirelessRouter", parent_mac="24-00-00-00-00-01", client_num=3,
+    )])
     tracked = {}
     update_mesh_items(coord, Mock(), tracked)
     assert tracked["24-00-00-00-00-02"].is_connected is True
@@ -323,7 +327,12 @@ def test_update_mesh_items_marks_missing_node_disconnected_without_removing_it()
 
     assert "24-00-00-00-00-02" in tracked
     assert tracked["24-00-00-00-00-02"].is_connected is False
-    assert tracked["24-00-00-00-00-02"].extra_state_attributes == {}
+    attrs = tracked["24-00-00-00-00-02"].extra_state_attributes
+    assert attrs["device_type"] == "WirelessRouter"
+    assert attrs["device_model"] == "Archer AX55"
+    assert attrs["parent_mac"] == "24-00-00-00-00-01"
+    assert attrs["client_num"] == 3
+    assert attrs["status"] == "disconnected"
 
 
 def test_update_mesh_items_skips_nodes_without_mac():
@@ -402,6 +411,16 @@ def test_mesh_tracker_keeps_last_known_ip_when_the_node_drops_out():
     assert tracker.is_connected is False
 
 
+def test_mesh_tracker_ip_address_property_does_not_mutate_state():
+    node = FakeMeshNode("24-00-00-00-00-02", ip="10.1.1.63")
+    tracker = build_mesh_tracker(node)
+    tracker._last_ip_address = "10.1.1.1"
+    node.ipaddr = ""
+
+    assert tracker.ip_address == "10.1.1.1"
+    assert tracker._last_ip_address == "10.1.1.1"
+
+
 def test_mesh_tracker_main_router_joins_the_existing_router_device():
     """The router already has a device keyed by the same MAC; do not add a second one."""
     coord = FakeMeshCoordinator([])
@@ -417,7 +436,7 @@ def test_mesh_tracker_satellite_gets_its_own_device_linked_to_its_parent():
     info = build_mesh_tracker(node).device_info
 
     assert info["identifiers"] == {("tplink_router", "24-00-00-00-00-02")}
-    assert info["connections"] == {("mac", "24:00:00:00:00:02")}
+    assert info["connections"] == {("mac", "24-00-00-00-00-02")}
     assert info["name"] == "Satellite AX55"
     assert info["model"] == "Archer AX55"
     assert info["manufacturer"] == "TP-Link"
@@ -446,3 +465,21 @@ def test_mesh_tracker_device_survives_the_node_dropping_out():
     assert info["model"] == "Archer AX55"
     assert info["via_device"] == ("tplink_router", "24-00-00-00-00-01")
     assert tracker.is_connected is False
+
+
+def test_mesh_tracker_can_be_constructed_for_restore_without_a_live_node():
+    tracker = TPLinkMeshTracker.__new__(TPLinkMeshTracker)
+    tracker.coordinator = FakeCoordinator()
+    tracker.node = None
+    tracker._mac = "24-00-00-00-00-02"
+    tracker._name = "24-00-00-00-00-02"
+    tracker._is_main_router = False
+    tracker._model = None
+    tracker._vendor = None
+    tracker._parent_macaddr = None
+    tracker._last_ip_address = ""
+    tracker._restored_attributes = {}
+
+    assert tracker.unique_id == "entry-1_tplink_router_mesh_24-00-00-00-00-02"
+    assert tracker.is_connected is False
+    assert tracker.extra_state_attributes == {}

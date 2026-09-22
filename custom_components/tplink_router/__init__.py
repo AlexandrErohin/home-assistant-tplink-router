@@ -29,7 +29,7 @@ from .const import (
     DEFAULT_OFFLINE_TIMEOUT,
 )
 import logging
-from .coordinator import TPLinkRouterCoordinator
+from .coordinator import TPLinkRouterCoordinator, collect_mesh_nodes
 from .utils import validate_ipv4_address, validate_mac_address
 from homeassistant.helpers import device_registry
 
@@ -189,6 +189,9 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
                         client.__class__.__name__,
                         err,
                     )
+            # Probe EasyMesh once so node trackers exist before the first poll.
+            # None = unsupported (stop asking); a list (even empty) keeps polling.
+            mesh_nodes = collect_mesh_nodes(client, _LOGGER)
             return (
                 firm,
                 stat,
@@ -199,6 +202,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
                 port_status,
                 sms_list,
                 reservations,
+                mesh_nodes,
             )
 
         (
@@ -211,6 +215,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
             port_status,
             sms_list,
             reservations,
+            mesh_nodes,
         ) = await hass.async_add_executor_job(
             TPLinkRouterCoordinator.request, client, callback
         )
@@ -232,7 +237,8 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
                                           offline_timeout_seconds=entry.data.get(
                                               CONF_OFFLINE_TIMEOUT, DEFAULT_OFFLINE_TIMEOUT),
                                           reservations=reservations,
-                                          support_dhcp_reservations=support_dhcp_reservations)
+                                          support_dhcp_reservations=support_dhcp_reservations,
+                                          mesh_nodes=mesh_nodes)
 
     if sms_list is not None:
         coordinator._process_sms_list(sms_list)

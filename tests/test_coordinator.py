@@ -61,6 +61,7 @@ def _bare_coordinator(**overrides):
     coord.vpn_client_status = None
     coord.port_status = None
     coord.reservations = None
+    coord.mesh_nodes = None
     coord.support_dhcp_reservations = True
     coord.logger = logging.getLogger("test")
     for key, value in overrides.items():
@@ -206,8 +207,35 @@ def test_coordinator_init_stores_reservations():
             logger=logging.getLogger("test"),
             unique_id="test_id",
             reservations=["RESV_1"],
+            mesh_nodes=["NODE_1"],
         )
     assert coord.reservations == ["RESV_1"]
+    assert coord.mesh_nodes == ["NODE_1"]
+
+
+def test_coordinator_init_defaults_mesh_nodes_to_none():
+    """Without a setup probe, mesh polling stays off until mesh_nodes is a list."""
+    hass = FakeHass()
+    router = Mock()
+    router.host = "http://192.168.1.1"
+    firmware = Mock()
+    firmware.model = "AXE95"
+    firmware.firmware_version = "1.0.0"
+    firmware.hardware_version = "1.0"
+    status = Mock()
+    status.lan_macaddr = "00:11:22:33:44:55"
+    with patch("homeassistant.helpers.update_coordinator.DataUpdateCoordinator.__init__", return_value=None):
+        coord = TPLinkRouterCoordinator(
+            hass=hass,
+            router=router,
+            update_interval=300,
+            firmware=firmware,
+            status=status,
+            lte_status=None,
+            logger=logging.getLogger("test"),
+            unique_id="test_id",
+        )
+    assert coord.mesh_nodes is None
 
 
 def test_collect_mesh_nodes_returns_none_when_the_client_lacks_the_method():
