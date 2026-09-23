@@ -11,7 +11,7 @@ from homeassistant.helpers.entity_platform import AddEntitiesCallback
 from .const import DOMAIN
 from homeassistant.helpers.update_coordinator import CoordinatorEntity
 from .coordinator import TPLinkRouterCoordinator
-from tplinkrouterc6u import VPN, Connection
+from tplinkrouterc6u import VPN, Connection, TPLinkSG108EClient
 from . import vpn_client
 
 
@@ -238,6 +238,20 @@ WAN_SWITCH_TYPES = (
 )
 
 
+def _status_switch_types(router) -> tuple[TPLinkRouterStatusSwitchConfig, ...]:
+    if isinstance(router, TPLinkSG108EClient):
+        return ()
+    return STATUS_SWITCH_TYPES
+
+
+def _mlo_switch_types(router, status) -> tuple[TPLinkRouterStatusSwitchConfig, ...]:
+    if isinstance(router, TPLinkSG108EClient):
+        return ()
+    if status.wifi_mlo_5g_enable is None or status.wifi_mlo_6g_enable is None:
+        return ()
+    return MLO_SWITCH_TYPES
+
+
 async def async_setup_entry(
         hass: HomeAssistant,
         entry: ConfigEntry,
@@ -247,15 +261,11 @@ async def async_setup_entry(
 
     switches = []
 
-    for switch in STATUS_SWITCH_TYPES:
+    for switch in _status_switch_types(coordinator.router):
         switches.append(TPLinkRouterSwitch(coordinator, switch))
 
-    if (
-        coordinator.status.wifi_mlo_5g_enable is not None
-        and coordinator.status.wifi_mlo_6g_enable is not None
-    ):
-        for switch in MLO_SWITCH_TYPES:
-            switches.append(TPLinkRouterSwitch(coordinator, switch))
+    for switch in _mlo_switch_types(coordinator.router, coordinator.status):
+        switches.append(TPLinkRouterSwitch(coordinator, switch))
 
     # Scan entity has has different turn_on/off logic from the rest of the switches
     switches.append(TPLinkRouterScanEntity(coordinator))

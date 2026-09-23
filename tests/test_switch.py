@@ -1,10 +1,14 @@
-from tplinkrouterc6u import Connection
+from types import SimpleNamespace
+
+from tplinkrouterc6u import Connection, TPLinkSG108EClient, TplinkRouter
 
 from custom_components.tplink_router.switch import (
     DHCP_SERVER_SWITCH_TYPES,
     MLO_SWITCH_TYPES,
     STATUS_SWITCH_TYPES,
     WAN_SWITCH_TYPES,
+    _mlo_switch_types,
+    _status_switch_types,
 )
 
 
@@ -51,3 +55,33 @@ def test_mlo_5g_6g_switch_config():
         assert switch.description.name == name
         assert conn.is_mlo_switch()
         assert not conn.is_host_wifi()
+
+
+def test_sg108e_selects_no_status_switches():
+    router = TPLinkSG108EClient.__new__(TPLinkSG108EClient)
+    assert _status_switch_types(router) == ()
+
+
+def test_non_sg_selects_all_status_switches():
+    router = TplinkRouter.__new__(TplinkRouter)
+    assert _status_switch_types(router) is STATUS_SWITCH_TYPES
+
+
+def test_sg108e_selects_no_mlo_switches():
+    router = TPLinkSG108EClient.__new__(TPLinkSG108EClient)
+    status = SimpleNamespace(wifi_mlo_5g_enable=True, wifi_mlo_6g_enable=True)
+    assert _mlo_switch_types(router, status) == ()
+
+
+def test_non_sg_selects_mlo_switches_when_both_fields_present():
+    router = TplinkRouter.__new__(TplinkRouter)
+    status = SimpleNamespace(wifi_mlo_5g_enable=True, wifi_mlo_6g_enable=False)
+    assert _mlo_switch_types(router, status) is MLO_SWITCH_TYPES
+
+
+def test_non_sg_selects_no_mlo_switches_when_either_field_is_none():
+    router = TplinkRouter.__new__(TplinkRouter)
+    missing_5g = SimpleNamespace(wifi_mlo_5g_enable=None, wifi_mlo_6g_enable=True)
+    missing_6g = SimpleNamespace(wifi_mlo_5g_enable=True, wifi_mlo_6g_enable=None)
+    assert _mlo_switch_types(router, missing_5g) == ()
+    assert _mlo_switch_types(router, missing_6g) == ()
