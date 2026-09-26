@@ -1,0 +1,50 @@
+{
+  "config": {
+    "step": {
+      "user": {
+        "description": "Налаштування інтеграції",
+        "data": {
+          "host": "Хост",
+          "username": "Логін",
+          "password": "Пароль",
+          "scan_interval": "Інтервал оновлення (у секундах)",
+          "verify_ssl": "Перевіряти SSL-сертифікат для HTTPS-з’єднання"
+        }
+      }
+    }
+  },
+  "options": {
+    "step": {
+      "init": {
+        "description": "Редагування параметрів маршрутизатора.",
+        "data": {
+          "host": "Хост",
+          "username": "Логін",
+          "password": "Пароль",
+          "scan_interval": "Інтервал оновлення (у секундах)",
+          "verify_ssl": "Перевіряти SSL-сертифікат для HTTPS-з’єднання"
+        }
+      }
+    }
+  },
+  "services": {
+    "send_sms": {
+      "name": "Надіслати SMS",
+      "description": "Надсилає SMS-повідомлення",
+      "fields": {
+        "number": {
+          "name": "Телефон",
+          "description": "Номер телефону"
+        },
+        "text": {
+          "name": "Повідомлення",
+          "description": "Текст повідомлення"
+        },
+        "device": {
+          "name": "Маршрутизатор",
+          "description": "Виберіть TP-Link маршрутизатор для надсилання SMS"
+        }
+      }
+    }
+  }
+}
