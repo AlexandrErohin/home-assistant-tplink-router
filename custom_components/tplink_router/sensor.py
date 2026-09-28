@@ -18,12 +18,12 @@ from homeassistant.const import (
 )
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import HomeAssistant, callback
-from .const import DOMAIN
+from .const import DOMAIN, CONF_SUPPORT_TRACKER
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 from homeassistant.helpers.update_coordinator import CoordinatorEntity
 from .coordinator import TPLinkRouterCoordinator
 from .port import find_port_status, update_port_items
-from .mesh import find_mesh_node, mesh_device_info, update_mesh_items
+from .mesh import find_mesh_node, mesh_device_info, update_mesh_sensor_items
 from tplinkrouterc6u import Status, LTEStatus, VPNStatus, ServingCell
 try:
     from tplinkrouterc6u import MeshNode
@@ -578,8 +578,10 @@ VPN_SERVER_SENSOR_TYPES = (
     ),
 )
 
-# Backhaul metrics describe a unit's uplink to the mesh, so they read None on
-# the master, which has none. Home Assistant renders that as "unknown".
+# Backhaul metrics describe a unit's uplink to the mesh, so they are None on the
+# master (no uplink). Entities are created only once a node reports a value, so
+# EasyMesh nodes and the main router get no always-unknown sensors. internet_status
+# can be present on the master as well and is created when reported.
 MESH_NODE_SENSOR_TYPES = (
     TPLinkRouterMeshNodeSensorConfig(
         value=lambda node: node.signal_2g,
@@ -599,6 +601,28 @@ MESH_NODE_SENSOR_TYPES = (
             name="Backhaul signal 5GHz",
             device_class=SensorDeviceClass.SIGNAL_STRENGTH,
             native_unit_of_measurement=SIGNAL_STRENGTH_DECIBELS_MILLIWATT,
+            state_class=SensorStateClass.MEASUREMENT,
+            entity_category=EntityCategory.DIAGNOSTIC,
+        ),
+    ),
+    TPLinkRouterMeshNodeSensorConfig(
+        value=lambda node: node.rx_rate_2g,
+        description=SensorEntityDescription(
+            key="mesh_rx_rate_2g",
+            name="Backhaul RX rate 2.4GHz",
+            device_class=SensorDeviceClass.DATA_RATE,
+            native_unit_of_measurement=UnitOfDataRate.MEGABITS_PER_SECOND,
+            state_class=SensorStateClass.MEASUREMENT,
+            entity_category=EntityCategory.DIAGNOSTIC,
+        ),
+    ),
+    TPLinkRouterMeshNodeSensorConfig(
+        value=lambda node: node.tx_rate_2g,
+        description=SensorEntityDescription(
+            key="mesh_tx_rate_2g",
+            name="Backhaul TX rate 2.4GHz",
+            device_class=SensorDeviceClass.DATA_RATE,
+            native_unit_of_measurement=UnitOfDataRate.MEGABITS_PER_SECOND,
             state_class=SensorStateClass.MEASUREMENT,
             entity_category=EntityCategory.DIAGNOSTIC,
         ),
@@ -666,6 +690,9 @@ async def async_setup_entry(
 
     tracked: set[int] = set()
     tracked_mesh: set[tuple[str, str]] = set()
+    # Mesh backhaul sensors attach to the node devices that the tracker platform
+    # owns; skip them when trackers are disabled to avoid sparse orphan devices.
+    support_mesh_sensors = entry.data.get(CONF_SUPPORT_TRACKER, True)
 
     @callback
     def coordinator_updated():
@@ -675,15 +702,16 @@ async def async_setup_entry(
             tracked,
             TPLinkRouterPortLinkSpeedSensor,
         )
-        for config in MESH_NODE_SENSOR_TYPES:
-            update_mesh_items(
-                coordinator,
-                async_add_entities,
-                tracked_mesh,
-                partial(TPLinkRouterMeshNodeSensor, config=config),
-                key=config.description.key,
-                value=config.value,
-            )
+        if support_mesh_sensors:
+            for config in MESH_NODE_SENSOR_TYPES:
+                update_mesh_sensor_items(
+                    coordinator,
+                    async_add_entities,
+                    tracked_mesh,
+                    partial(TPLinkRouterMeshNodeSensor, config=config),
+                    key=config.description.key,
+                    value=config.value,
+                )
 
     entry.async_on_unload(coordinator.async_add_listener(coordinator_updated))
     coordinator_updated()
@@ -830,7 +858,9 @@ class TPLinkRouterMeshNodeSensor(CoordinatorEntity[TPLinkRouterCoordinator], Sen
         self._config = config
         self.entity_description = config.description
         self._attr_device_info = mesh_device_info(coordinator, self._current_node)
-        self._attr_unique_id = f"{macaddr}_{DOMAIN}_{config.description.key}"
+        self._attr_unique_id = (
+            f"{coordinator.unique_id}_{DOMAIN}_{macaddr}_{config.description.key}"
+        )
 
     @property
     def _current_node(self) -> MeshNode | None:

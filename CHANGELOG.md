@@ -5,6 +5,7 @@
 ### Added
 
 - EasyMesh: one `device_tracker` per mesh node (main router included), with a Home Assistant device per satellite linked through `via_device` / `parent_mac`; deco-compatible attributes (`device_type`, `device_model`, `connection_type`) and `signal_level` (bar level, not dBm `signal`) ([#402](https://github.com/AlexandrErohin/home-assistant-tplink-router/pull/402), [#212](https://github.com/AlexandrErohin/home-assistant-tplink-router/issues/212))
+- Mesh node backhaul sensors (signal 2.4/5 GHz, RX/TX 2.4/5 GHz, internet status) on the #402 node devices; created only when a node reports that metric ([#403](https://github.com/AlexandrErohin/home-assistant-tplink-router/pull/403))
 - Per-band host MLO wifi switches (2.4G / 5G / 6G) via `Status.wifi_mlo_*_enable` and `Connection.HOST_MLO_*` — for EX-family routers that expose `mloEnable` ([#412](https://github.com/AlexandrErohin/home-assistant-tplink-router/pull/412), [TP-Link-Archer-C6U#226](https://github.com/AlexandrErohin/TP-Link-Archer-C6U/pull/226))
 - Added Archer GE800 v1.0, Archer VR1600v v1, and EX920 v1.0 to supported list
 
@@ -14,6 +15,7 @@
 - Restore mesh trackers from the entity registry after a Home Assistant restart
 - Keep last-known mesh attributes (and mark `status` disconnected) when a node drops out of the list
 - Align satellite `connections` MAC format with the coordinator; stop mutating state inside `ip_address`
+- Mesh backhaul sensor `unique_id` includes the config-entry unique id (safe with multiple routers); skip nodes without a MAC; skip backhaul sensors when device tracking is disabled
 
 ## [2.40.0] - 2026-09-16
 

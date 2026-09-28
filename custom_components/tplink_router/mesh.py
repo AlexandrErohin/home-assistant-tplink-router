@@ -34,7 +34,7 @@ def mesh_device_info(
 
 
 @callback
-def update_mesh_items(
+def update_mesh_sensor_items(
     coordinator: TPLinkRouterCoordinator,
     async_add_entities: AddEntitiesCallback,
     tracked: set[tuple[str, str]],
@@ -48,11 +48,14 @@ def update_mesh_items(
         return
     new_entities = []
     for node in coordinator.mesh_nodes:
+        mac = node.macaddr
+        if not mac:
+            continue
         # Keyed by (node, metric): one node yields several entities.
-        marker = (node.macaddr, key)
+        marker = (mac, key)
         if marker in tracked or value(node) is None:
             continue
         tracked.add(marker)
-        new_entities.append(factory(coordinator, node.macaddr))
+        new_entities.append(factory(coordinator, mac))
     if new_entities:
         async_add_entities(new_entities)

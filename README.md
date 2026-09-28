@@ -57,6 +57,7 @@ If you forget to enable it back - it would be automatically enable after the con
  - WAN IPv4 Address
  - LAN IPv4 Address
  - DHCP Reservations (count; full lease list in attributes — on routers with `get_ipv4_reservations`, when enabled in options)
+ - Mesh node backhaul (Deco / EasyMesh with backhaul metrics): signal 2.4/5 GHz, RX/TX rate 2.4/5 GHz, internet status — one diagnostic sensor per reported metric, on the mesh node device from the tracker platform (only when device tracking is enabled)
 
 For LTE Routers
 - LTE Enabled
@@ -85,7 +86,9 @@ For TL-SG108E (and switches with `get_port_status`):
  - Track connected to router devices by MAC address with connection information
  - On EasyMesh networks, one tracker per mesh node (the main router included), carrying the node's model, role, uplink type, client count and the MAC of the node it uplinks through
 
-Mesh node trackers appear only when the router reports an EasyMesh network and the installed `tplinkrouterc6u` exposes `get_mesh_nodes`; otherwise nothing is created and nothing is logged. Their attributes reuse the names `ha-tplink-deco` publishes (`device_type`, `device_model`, `connection_type`), so a dashboard or card written for one works for the other. The uplink quality is published as `signal_level`, a 1 to 3 bar level, rather than as `signal`, which for clients is a dBm value.
+Mesh node trackers appear only when the router reports an EasyMesh (or Deco mesh) network and the installed `tplinkrouterc6u` exposes `get_mesh_nodes`; otherwise nothing is created and nothing is logged. Their attributes reuse the names `ha-tplink-deco` publishes (`device_type`, `device_model`, `connection_type`), so a dashboard or card written for one works for the other. The uplink quality is published as `signal_level`, a 1 to 3 bar level, rather than as `signal`, which for clients is a dBm value.
+
+On Deco meshes that report per-band backhaul, diagnostic sensors are added to each satellite (and internet status to any node that reports it) for signal and RX/TX rates on 2.4/5 GHz. A sensor is created only after that node reports the metric, so EasyMesh nodes and the main router's empty backhaul fields do not produce always-`unknown` entities. These sensors share the mesh node devices created by the trackers and are skipped when device tracking is disabled in the integration options.
 
 When using multiple routers (for example, a WAN router and a separate access point), you can disable device trackers for the non-AP router in the integration options to avoid duplicate device entries.
 
