@@ -1,6 +1,6 @@
 from types import SimpleNamespace
 
-from custom_components.tplink_router.sensor import SENSOR_TYPES, _status_sensor_types
+from custom_components.tplink_router.sensor import _status_sensor_types
 
 
 def _status(**overrides):
