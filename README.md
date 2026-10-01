@@ -46,6 +46,7 @@ If you forget to enable it back - it would be automatically enable after the con
 > Disabling the LAN IPv4 DHCP server can leave clients without an IP address (including the Home Assistant host, if it uses DHCP). Prefer static addresses or another DHCP server before turning this switch off.
 
 ### Sensors
+For routers:
  - Total amount of wired clients
  - Total amount of IoT clients
  - Total amount of host wifi clients
@@ -58,6 +59,11 @@ If you forget to enable it back - it would be automatically enable after the con
  - LAN IPv4 Address
  - DHCP Reservations (count; full lease list in attributes — on routers with `get_ipv4_reservations`, when enabled in options)
  - Mesh node backhaul (Deco / EasyMesh with backhaul metrics): signal 2.4/5 GHz, RX/TX rate 2.4/5 GHz, internet status — one diagnostic sensor per reported metric, on the mesh node device from the tracker platform (only when device tracking is enabled)
+
+For TL-SG108E:
+ - Total ports
+ - Connected ports
+ - Management IPv4 Address
 
 For LTE Routers
 - LTE Enabled
