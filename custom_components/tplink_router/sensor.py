@@ -660,6 +660,7 @@ MESH_NODE_SENSOR_TYPES = (
     ),
 )
 
+
 def _status_sensor_types(status) -> tuple[TPLinkRouterSensorConfig, ...]:
     """Return status sensors whose value is reported (not None) for this device."""
     return tuple(sensor for sensor in SENSOR_TYPES if sensor.value(status) is not None)
