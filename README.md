@@ -42,11 +42,13 @@ If you forget to enable it back - it would be automatically enable after the con
  - LAN IPv4 DHCP Server Enable/Disable (for some routers)
  - E-WAN connect (for MR/EX-family routers with Ethernet WAN) — on = DHCP Renew, off = DHCP Release; useful to reset a stuck WAN link after reboot
 
+Wi‑Fi, VPN, DHCP, and E-WAN switches are created only when the device supports them (status field / API method present).
+
 > [!WARNING]
 > Disabling the LAN IPv4 DHCP server can leave clients without an IP address (including the Home Assistant host, if it uses DHCP). Prefer static addresses or another DHCP server before turning this switch off.
 
 ### Sensors
-For routers:
+Status sensors (client counts, CPU/memory, WAN/LAN addresses, …) are created only when the device reports a non-`None` value for that metric:
  - Total amount of wired clients
  - Total amount of IoT clients
  - Total amount of host wifi clients
@@ -59,11 +61,6 @@ For routers:
  - LAN IPv4 Address
  - DHCP Reservations (count; full lease list in attributes — on routers with `get_ipv4_reservations`, when enabled in options)
  - Mesh node backhaul (Deco / EasyMesh with backhaul metrics): signal 2.4/5 GHz, RX/TX rate 2.4/5 GHz, internet status — one diagnostic sensor per reported metric, on the mesh node device from the tracker platform (only when device tracking is enabled)
-
-For TL-SG108E:
- - Total ports
- - Connected ports
- - Management IPv4 Address
 
 For LTE Routers
 - LTE Enabled
@@ -81,11 +78,11 @@ For LTE Routers
 - LTE ISP Name
 
 ### Binary Sensors
-For TL-SG108E (and switches with `get_port_status`):
+For devices with `get_port_status` (e.g. TL-SG108E):
  - Per-port connectivity (link up/down)
 
 ### Port Sensors
-For TL-SG108E (and switches with `get_port_status`):
+For devices with `get_port_status` (e.g. TL-SG108E):
  - Per-port negotiated link speed (Mbps), with attributes for duplex, enabled, auto-negotiation, configured speed/duplex, flow control, LAG and TX/RX packet counters
 
 ### Device Tracker

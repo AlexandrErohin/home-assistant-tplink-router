@@ -1,5 +1,11 @@
 # Changelog
 
+## [Unreleased]
+
+### Changed
+
+- Create status sensors and Wi‑Fi/MLO switches only when the device reports a non-`None` value for that field (avoids forever-unavailable entities on devices that lack Wi‑Fi/WAN/CPU metrics)
+
 ## [2.41.0] - 2026-09-28
 
 ### Added

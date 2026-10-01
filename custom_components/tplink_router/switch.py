@@ -11,7 +11,7 @@ from homeassistant.helpers.entity_platform import AddEntitiesCallback
 from .const import DOMAIN
 from homeassistant.helpers.update_coordinator import CoordinatorEntity
 from .coordinator import TPLinkRouterCoordinator
-from tplinkrouterc6u import VPN, Connection, TPLinkSG108EClient
+from tplinkrouterc6u import VPN, Connection
 from . import vpn_client
 
 
@@ -238,18 +238,22 @@ WAN_SWITCH_TYPES = (
 )
 
 
-def _status_switch_types(router) -> tuple[TPLinkRouterStatusSwitchConfig, ...]:
-    if isinstance(router, TPLinkSG108EClient):
-        return ()
-    return STATUS_SWITCH_TYPES
+def _status_switch_types(status) -> tuple[TPLinkRouterStatusSwitchConfig, ...]:
+    """Return Wi‑Fi/IoT switches whose status property is reported (not None)."""
+    return tuple(
+        switch
+        for switch in STATUS_SWITCH_TYPES
+        if getattr(status, switch.property, None) is not None
+    )
 
 
-def _mlo_switch_types(router, status) -> tuple[TPLinkRouterStatusSwitchConfig, ...]:
-    if isinstance(router, TPLinkSG108EClient):
-        return ()
-    if status.wifi_mlo_5g_enable is None or status.wifi_mlo_6g_enable is None:
-        return ()
-    return MLO_SWITCH_TYPES
+def _mlo_switch_types(status) -> tuple[TPLinkRouterStatusSwitchConfig, ...]:
+    """Return MLO 5G/6G switches whose status property is reported (not None)."""
+    return tuple(
+        switch
+        for switch in MLO_SWITCH_TYPES
+        if getattr(status, switch.property, None) is not None
+    )
 
 
 async def async_setup_entry(
@@ -261,10 +265,10 @@ async def async_setup_entry(
 
     switches = []
 
-    for switch in _status_switch_types(coordinator.router):
+    for switch in _status_switch_types(coordinator.status):
         switches.append(TPLinkRouterSwitch(coordinator, switch))
 
-    for switch in _mlo_switch_types(coordinator.router, coordinator.status):
+    for switch in _mlo_switch_types(coordinator.status):
         switches.append(TPLinkRouterSwitch(coordinator, switch))
 
     # Scan entity has has different turn_on/off logic from the rest of the switches

@@ -1,6 +1,6 @@
 from types import SimpleNamespace
 
-from tplinkrouterc6u import Connection, TPLinkSG108EClient, TplinkRouter
+from tplinkrouterc6u import Connection
 
 from custom_components.tplink_router.switch import (
     DHCP_SERVER_SWITCH_TYPES,
@@ -57,31 +57,40 @@ def test_mlo_5g_6g_switch_config():
         assert not conn.is_host_wifi()
 
 
-def test_sg108e_selects_no_status_switches():
-    router = TPLinkSG108EClient.__new__(TPLinkSG108EClient)
-    assert _status_switch_types(router) == ()
+def test_status_switches_include_only_non_none_properties():
+    status = SimpleNamespace(
+        guest_2g_enable=True,
+        guest_5g_enable=None,
+        guest_6g_enable=None,
+        wifi_2g_enable=False,
+        wifi_5g_enable=None,
+        wifi_6g_enable=None,
+        wifi_mlo_2g_enable=None,
+        iot_2g_enable=None,
+        iot_5g_enable=None,
+        iot_6g_enable=None,
+    )
+    switches = _status_switch_types(status)
+    assert [s.description.key for s in switches] == ["wifi_guest_24g", "wifi_24g"]
 
 
-def test_non_sg_selects_all_status_switches():
-    router = TplinkRouter.__new__(TplinkRouter)
-    assert _status_switch_types(router) is STATUS_SWITCH_TYPES
+def test_status_switches_empty_when_all_none():
+    status = SimpleNamespace(
+        **{switch.property: None for switch in STATUS_SWITCH_TYPES}
+    )
+    assert _status_switch_types(status) == ()
 
 
-def test_sg108e_selects_no_mlo_switches():
-    router = TPLinkSG108EClient.__new__(TPLinkSG108EClient)
-    status = SimpleNamespace(wifi_mlo_5g_enable=True, wifi_mlo_6g_enable=True)
-    assert _mlo_switch_types(router, status) == ()
+def test_mlo_switches_include_each_non_none_band():
+    only_5g = SimpleNamespace(wifi_mlo_5g_enable=True, wifi_mlo_6g_enable=None)
+    only_6g = SimpleNamespace(wifi_mlo_5g_enable=None, wifi_mlo_6g_enable=False)
+    both = SimpleNamespace(wifi_mlo_5g_enable=True, wifi_mlo_6g_enable=False)
+    neither = SimpleNamespace(wifi_mlo_5g_enable=None, wifi_mlo_6g_enable=None)
 
-
-def test_non_sg_selects_mlo_switches_when_both_fields_present():
-    router = TplinkRouter.__new__(TplinkRouter)
-    status = SimpleNamespace(wifi_mlo_5g_enable=True, wifi_mlo_6g_enable=False)
-    assert _mlo_switch_types(router, status) is MLO_SWITCH_TYPES
-
-
-def test_non_sg_selects_no_mlo_switches_when_either_field_is_none():
-    router = TplinkRouter.__new__(TplinkRouter)
-    missing_5g = SimpleNamespace(wifi_mlo_5g_enable=None, wifi_mlo_6g_enable=True)
-    missing_6g = SimpleNamespace(wifi_mlo_5g_enable=True, wifi_mlo_6g_enable=None)
-    assert _mlo_switch_types(router, missing_5g) == ()
-    assert _mlo_switch_types(router, missing_6g) == ()
+    assert [s.description.key for s in _mlo_switch_types(only_5g)] == ["wifi_mlo_5g"]
+    assert [s.description.key for s in _mlo_switch_types(only_6g)] == ["wifi_mlo_6g"]
+    assert [s.description.key for s in _mlo_switch_types(both)] == [
+        "wifi_mlo_5g",
+        "wifi_mlo_6g",
+    ]
+    assert _mlo_switch_types(neither) == ()

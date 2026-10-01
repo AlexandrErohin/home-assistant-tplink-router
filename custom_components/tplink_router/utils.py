@@ -10,6 +10,7 @@ from tplinkrouterc6u import AuthorizeError
 
 T = TypeVar("T")
 
+
 _AUTH_FAILURE_RE = re.compile(
     r"(?i)(?:cannot\s+authorize|\b401\b(?:\s+client\s+error)?|unauthorized|login\s+failed)"
 )
