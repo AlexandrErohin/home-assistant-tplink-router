@@ -367,6 +367,8 @@ To do that:
 - RE305 4.0
 - RE315 1.0
 - RE330 v1
+- RE700X
+- RE813XE v1.6
 - TD-W9960 (v1, V1.20)
 - TL-7DR6430 1.0
 - TL-7DR7270 1.0 (firmware 1.0.18+, new auth)

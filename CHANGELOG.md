@@ -2,6 +2,10 @@
 
 ## [Unreleased]
 
+### Added
+
+- Supports for extenders RE700X and RE813XE v1.6
+
 ### Changed
 
 - Create status sensors and Wi‑Fi/MLO switches only when the device reports a non-`None` value for that field (avoids forever-unavailable entities on devices that lack Wi‑Fi/WAN/CPU metrics)
