@@ -149,7 +149,12 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
                         )
             # Check if router is serving_cells compatible
             serving_cells = None
-            if hasattr(client, "get_lte_serving_cells"):
+            model = "".join(
+                char for char in str(getattr(firm, "model", "")).casefold() if char.isalnum()
+            )
+            # EX220-G2u crashes its management server when this broad optional
+            # LTE query is sent. Keep LTE status polling, which uses a smaller query.
+            if hasattr(client, "get_lte_serving_cells") and not model.startswith("ex220g2u"):
                 try:
                     serving_cells = client.get_lte_serving_cells()
                 except Exception as err:
