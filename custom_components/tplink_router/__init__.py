@@ -32,6 +32,7 @@ import logging
 from .coordinator import TPLinkRouterCoordinator, collect_mesh_nodes
 from .utils import validate_ipv4_address, validate_mac_address
 from homeassistant.helpers import device_registry
+from tplinkrouterc6u import TPLinkSG108EClient
 
 
 def _vol_mac(value: str) -> str:
@@ -192,6 +193,17 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
             # Probe EasyMesh once so node trackers exist before the first poll.
             # None = unsupported (stop asking); a list (even empty) keeps polling.
             mesh_nodes = collect_mesh_nodes(client, _LOGGER)
+            # SG108E LED: probe once; failure must not fail setup.
+            led_status = None
+            if isinstance(client, TPLinkSG108EClient):
+                try:
+                    led_status = client.led_status()
+                except Exception as err:
+                    _LOGGER.debug(
+                        "TP-Link router %s: led_status failed: %s",
+                        client.__class__.__name__,
+                        err,
+                    )
             return (
                 firm,
                 stat,
@@ -203,6 +215,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
                 sms_list,
                 reservations,
                 mesh_nodes,
+                led_status,
             )
 
         (
@@ -216,6 +229,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
             sms_list,
             reservations,
             mesh_nodes,
+            led_status,
         ) = await hass.async_add_executor_job(
             TPLinkRouterCoordinator.request, client, callback
         )
@@ -238,7 +252,8 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
                                               CONF_OFFLINE_TIMEOUT, DEFAULT_OFFLINE_TIMEOUT),
                                           reservations=reservations,
                                           support_dhcp_reservations=support_dhcp_reservations,
-                                          mesh_nodes=mesh_nodes)
+                                          mesh_nodes=mesh_nodes,
+                                          led_status=led_status)
 
     if sms_list is not None:
         coordinator._process_sms_list(sms_list)

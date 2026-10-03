@@ -20,7 +20,9 @@ from tplinkrouterc6u import (
     VPNStatus,
     PortStatus,
     IPv4Reservation,
+    TPLinkSG108EClient,
 )
+from homeassistant.exceptions import HomeAssistantError
 
 try:
     from tplinkrouterc6u import MeshNode
@@ -70,10 +72,11 @@ def collect_status(
         mesh_nodes: list[MeshNode] | None = None,
 ) -> tuple[Status, LTEStatus | None, list[ServingCell] | None, VPNStatus | None,
            VpnClientStatus | None, list[PortStatus] | None, list[SMS] | None,
-           list[IPv4Reservation] | None, list[MeshNode] | None]:
+           list[IPv4Reservation] | None, list[MeshNode] | None, bool | None]:
     """Gather all status data from the router; a failing SMS fetch must not break the update."""
     status = router.get_status()
     sms_list = None
+    led_status = None
     if lte_status is not None:
         lte_status = router.get_lte_status()
     if serving_cells is not None:
@@ -90,6 +93,9 @@ def collect_status(
         sms_list = safe_call(router.get_sms, logger, "fetch SMS")
     if reservations is not None:
         reservations = safe_call(router.get_ipv4_reservations, logger, "fetch IPv4 reservations")
+    # SG108E LED is always polled for that client; failure must not break status.
+    if isinstance(router, TPLinkSG108EClient):
+        led_status = safe_call(router.led_status, logger, "fetch LED status")
     return (
         status,
         lte_status,
@@ -100,6 +106,7 @@ def collect_status(
         sms_list,
         reservations,
         mesh_nodes,
+        led_status,
     )
 
 
@@ -125,6 +132,7 @@ class TPLinkRouterCoordinator(DataUpdateCoordinator):
             reservations: list[IPv4Reservation] | None = None,
             support_dhcp_reservations: bool = True,
             mesh_nodes: list[MeshNode] | None = None,
+            led_status: bool | None = None,
     ) -> None:
         self.router = router
         self.unique_id = unique_id
@@ -140,6 +148,8 @@ class TPLinkRouterCoordinator(DataUpdateCoordinator):
         # list (incl. []) means "ask each poll"; None means the client cannot provide
         # a node list. Setup probes once so entities exist before the first interval.
         self.mesh_nodes: list[MeshNode] | None = mesh_nodes
+        # True/False = known LED state; None = unknown/unavailable (SG108E only).
+        self.led_status: bool | None = led_status
         self.device_info = DeviceInfo(
             configuration_url=router.host,
             connections={(CONNECTION_NETWORK_MAC, self.status.lan_macaddr)},
@@ -242,6 +252,27 @@ class TPLinkRouterCoordinator(DataUpdateCoordinator):
 
         await self._run_router_request(callback)
 
+    async def set_led(self, enable: bool) -> None:
+        """Set SG108E LED state; authoritative state comes from a fresh led_status()."""
+
+        def callback():
+            self.router.set_led(enable)
+            return self.router.led_status()
+
+        try:
+            actual = await self._run_router_request(callback)
+        except Exception as err:
+            self.led_status = None
+            self.async_update_listeners()
+            raise HomeAssistantError("TPLink Router failed to set LED") from err
+
+        self.led_status = actual
+        self.async_update_listeners()
+        if actual != enable:
+            raise HomeAssistantError(
+                f"TPLink Router LED state mismatch: requested {enable}, actual {actual}"
+            )
+
     async def add_ipv4_reservation(
         self, mac: str, ip: str, comment: str = "", enable: bool = True
     ) -> None:
@@ -313,6 +344,7 @@ class TPLinkRouterCoordinator(DataUpdateCoordinator):
                         sms_list,
                         self.reservations,
                         self.mesh_nodes,
+                        self.led_status,
                     ) = await self.hass.async_add_executor_job(update_once)
 
                 if sms_list is not None:
