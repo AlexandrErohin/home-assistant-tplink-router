@@ -132,7 +132,7 @@ class ConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
             step_id="user",
             data_schema=_user_schema(
                 user_input,
-                include_username=user_input is not None,
+                include_username=True,
             ),
             errors=errors,
         )
