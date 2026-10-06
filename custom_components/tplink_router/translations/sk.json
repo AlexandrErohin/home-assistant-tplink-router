@@ -21,7 +21,8 @@
           "support_vpn": "Zahrnúť podporu pre VPN server a klienta",
           "support_tracker": "Zahrnúť sledovanie zariadení (vypnite pre routery, ktoré nie sú prístupové body, aby sa predišlo duplicitám)",
           "tracker_as_device": "Vytvoriť vlastné zariadenie pre každého sledovaného klienta (predvolene vypnuté; na rušných sieťach môže pridať veľa zariadení)",
-          "support_dhcp_reservations": "Zahrnúť senzor DHCP rezervácií a služby pridania/zmazania"
+          "support_dhcp_reservations": "Zahrnúť senzor DHCP rezervácií a služby pridania/zmazania",
+          "support_serving_cells": "Zahrnúť senzory LTE serving cells"
         }
       }
     }
@@ -43,7 +44,8 @@
           "scan_pause": "Minúty pred automatickým opätovným zapnutím načítania dát (0 = nikdy)",
           "offline_timeout": "Sekundy, počas ktorých chýbajúce zariadenie zostane „doma“ pred offline (0 = hneď)",
           "tracker_as_device": "Vytvoriť vlastné zariadenie pre každého sledovaného klienta (predvolene vypnuté; na rušných sieťach môže pridať veľa zariadení)",
-          "support_dhcp_reservations": "Zahrnúť senzor DHCP rezervácií a služby pridania/zmazania"
+          "support_dhcp_reservations": "Zahrnúť senzor DHCP rezervácií a služby pridania/zmazania",
+          "support_serving_cells": "Zahrnúť senzory LTE serving cells"
         }
       }
     }

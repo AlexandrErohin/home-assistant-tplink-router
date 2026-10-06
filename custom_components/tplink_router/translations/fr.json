@@ -21,7 +21,8 @@
           "support_vpn": "Inclure la prise en charge du serveur et du client VPN",
           "support_tracker": "Inclure les traceurs d'appareils (désactiver pour les routeurs qui ne sont pas des points d'accès afin d'éviter les doublons)",
           "tracker_as_device": "Donner à chaque client suivi sa propre entrée d'appareil (désactivé par défaut ; peut ajouter beaucoup d'appareils sur les réseaux chargés)",
-          "support_dhcp_reservations": "Inclure le capteur de réservations DHCP et les services d'ajout/suppression"
+          "support_dhcp_reservations": "Inclure le capteur de réservations DHCP et les services d'ajout/suppression",
+          "support_serving_cells": "Inclure les capteurs LTE serving cells"
         }
       }
     }
@@ -43,7 +44,8 @@
           "scan_pause": "Minutes avant la réactivation automatique de la collecte de données (0 = jamais)",
           "offline_timeout": "Secondes pendant lesquelles un appareil manquant reste « home » avant offline (0 = immédiat)",
           "tracker_as_device": "Donner à chaque client suivi sa propre entrée d'appareil (désactivé par défaut ; peut ajouter beaucoup d'appareils sur les réseaux chargés)",
-          "support_dhcp_reservations": "Inclure le capteur de réservations DHCP et les services d'ajout/suppression"
+          "support_dhcp_reservations": "Inclure le capteur de réservations DHCP et les services d'ajout/suppression",
+          "support_serving_cells": "Inclure les capteurs LTE serving cells"
         }
       }
     }

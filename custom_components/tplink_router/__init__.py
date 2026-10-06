@@ -19,6 +19,7 @@ from .const import (
     CONF_SUPPORT_VPN,
     CONF_SUPPORT_TRACKER,
     CONF_SUPPORT_DHCP_RESERVATIONS,
+    CONF_SUPPORT_SERVING_CELLS,
     CONF_SCAN_RETRIES,
     CONF_SCAN_BACKOFF,
     CONF_SCAN_PAUSE,
@@ -82,6 +83,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     verify_ssl = entry.data[CONF_VERIFY_SSL] if CONF_VERIFY_SSL in entry.data else False
     support_vpn = entry.data.get(CONF_SUPPORT_VPN, True)
     support_dhcp_reservations = entry.data.get(CONF_SUPPORT_DHCP_RESERVATIONS, True)
+    support_serving_cells = entry.data.get(CONF_SUPPORT_SERVING_CELLS, True)
 
     try:
         client_class = entry.data.get(CONF_CLIENT_CLASS)
@@ -147,17 +149,19 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
                             client.__class__.__name__,
                             err,
                         )
-            # Check if router is serving_cells compatible
+            # Check router serving_cells compatibility, if needed
             serving_cells = None
-            if hasattr(client, "get_lte_serving_cells"):
-                try:
-                    serving_cells = client.get_lte_serving_cells()
-                except Exception as err:
-                    _LOGGER.debug(
-                        "TP-Link router %s: get_lte_serving_cells failed: %s",
-                        client.__class__.__name__,
-                        err,
-                    )
+            if support_serving_cells:
+                # Check if router is serving_cells compatible
+                if hasattr(client, "get_lte_serving_cells"):
+                    try:
+                        serving_cells = client.get_lte_serving_cells()
+                    except Exception as err:
+                        _LOGGER.debug(
+                            "TP-Link router %s: get_lte_serving_cells failed: %s",
+                            client.__class__.__name__,
+                            err,
+                        )
             # Check if router is port_status compatible
             port_status = None
             if hasattr(client, "get_port_status"):

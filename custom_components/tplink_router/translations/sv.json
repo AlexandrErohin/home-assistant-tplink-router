@@ -21,7 +21,8 @@
           "support_vpn": "Inkludera stöd för VPN-server och VPN-klient",
           "support_tracker": "Inkludera enhetsspårare (inaktivera för routrar som inte är accesspunkter för att undvika dubbletter)",
           "tracker_as_device": "Ge varje spårad klient en egen enhetspost (av som standard; kan lägga till många enheter på upptagna nätverk)",
-          "support_dhcp_reservations": "Inkludera DHCP-reservationssensor och lägg till/ta bort-tjänster"
+          "support_dhcp_reservations": "Inkludera DHCP-reservationssensor och lägg till/ta bort-tjänster",
+          "support_serving_cells": "Inkludera LTE serving cells-sensorer"
         }
       }
     }
@@ -43,7 +44,8 @@
           "scan_pause": "Minuter innan datahämtning aktiveras automatiskt igen (0 = aldrig)",
           "offline_timeout": "Sekunder som en saknad enhet förblir 'home' innan offline (0 = omedelbart)",
           "tracker_as_device": "Ge varje spårad klient en egen enhetspost (av som standard; kan lägga till många enheter på upptagna nätverk)",
-          "support_dhcp_reservations": "Inkludera DHCP-reservationssensor och lägg till/ta bort-tjänster"
+          "support_dhcp_reservations": "Inkludera DHCP-reservationssensor och lägg till/ta bort-tjänster",
+          "support_serving_cells": "Inkludera LTE serving cells-sensorer"
         }
       }
     }

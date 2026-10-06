@@ -21,7 +21,8 @@
           "support_vpn": "Incluir suporte para servidor e cliente VPN",
           "support_tracker": "Incluir rastreadores de dispositivos (desative em routers que não são pontos de acesso para evitar duplicados)",
           "tracker_as_device": "Dar a cada cliente monitorizado a sua própria entrada de dispositivo (desativado por predefinição; em redes ocupadas pode adicionar muitos dispositivos)",
-          "support_dhcp_reservations": "Incluir sensor de reservas DHCP e serviços de adicionar/eliminar"
+          "support_dhcp_reservations": "Incluir sensor de reservas DHCP e serviços de adicionar/eliminar",
+          "support_serving_cells": "Incluir sensores LTE serving cells"
         }
       }
     }
@@ -43,7 +44,8 @@
           "scan_pause": "Minutos antes da recolha de dados ser reativada automaticamente (0 = nunca)",
           "offline_timeout": "Segundos em que um dispositivo em falta permanece 'home' antes de offline (0 = imediato)",
           "tracker_as_device": "Dar a cada cliente monitorizado a sua própria entrada de dispositivo (desativado por predefinição; em redes ocupadas pode adicionar muitos dispositivos)",
-          "support_dhcp_reservations": "Incluir sensor de reservas DHCP e serviços de adicionar/eliminar"
+          "support_dhcp_reservations": "Incluir sensor de reservas DHCP e serviços de adicionar/eliminar",
+          "support_serving_cells": "Incluir sensores LTE serving cells"
         }
       }
     }

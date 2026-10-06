@@ -257,6 +257,7 @@ You may edit configuration data like:
 10. Include device trackers (disable for non-AP routers to avoid duplicate entries)
 11. Give each tracked client its own device entry (off by default; disabling later does not remove already-created device cards)
 12. Include DHCP reservations sensor and add/delete services (default on)
+13. Include LTE serving cells sensors (default on; disable to skip probing/polling on routers without this feature)
 
 Transient poll failures (timeouts, dropped connections, session expiry) are retried automatically. Authorization failures (wrong password / HTTP 401) are not retried. A failing SMS mailbox fetch does not fail the whole update.
 An unreachable router during setup fails only that config entry (`Failed to set up`) and does not block other TP-Link Router entries.
@@ -357,6 +358,7 @@ To do that:
 - Deco XE75 (v1.0, v2.0)
 - Deco XE75PRO (v3.0)
 - EAP115 v2.0
+- EX220-G2u v1
 - EX511 v2.0
 - EX920 v1.0
 - HB810 v2.6

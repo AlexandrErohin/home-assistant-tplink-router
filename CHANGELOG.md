@@ -6,6 +6,8 @@
 
 - LED Enable/Disable switch for TL-SG family ([#419](https://github.com/AlexandrErohin/home-assistant-tplink-router/pull/419))
 - Added Mercusys MB118-4G v1.0 and TP-LINK Archer BE450 v1.0 to supported list
+- Added TP-LINK EX220-G2u v1 to supported list
+- Option `support_serving_cells` (default on) to enable/disable LTE serving cells probing, like `support_vpn`
 
 ### Fixed
 
