@@ -11,7 +11,7 @@ from homeassistant.helpers.entity_platform import AddEntitiesCallback
 from .const import DOMAIN
 from homeassistant.helpers.update_coordinator import CoordinatorEntity
 from .coordinator import TPLinkRouterCoordinator
-from tplinkrouterc6u import VPN, Connection, TPLinkSG108EClient
+from tplinkrouterc6u import VPN, Connection
 from . import vpn_client
 
 
@@ -36,6 +36,14 @@ class TPLinkRouterVPNServerSwitchConfig(TPLinkRouterSwitchConfigBase):
 @dataclass
 class TPLinkRouterVPNClientSwitchConfig(TPLinkRouterSwitchConfigBase):
     coordinator_key: str = 'vpn_client_status'
+
+
+@dataclass
+class TPLinkRouterLedSwitchConfig(TPLinkRouterSwitchConfigBase):
+    """LED is a scalar bool on the coordinator (like port_status), not a nested object."""
+
+    coordinator_key: str = 'led_status'
+    property: str = ''
 
 
 STATUS_SWITCH_TYPES = (
@@ -237,6 +245,18 @@ WAN_SWITCH_TYPES = (
     ),
 )
 
+LED_SWITCH_TYPES = (
+    TPLinkRouterLedSwitchConfig(
+        method=lambda coordinator, value: coordinator.set_led(value),
+        description=SwitchEntityDescription(
+            key="led",
+            name="LED",
+            icon="mdi:led-on",
+            entity_category=EntityCategory.CONFIG,
+        ),
+    ),
+)
+
 
 def _status_switch_types(status) -> tuple[TPLinkRouterStatusSwitchConfig, ...]:
     """Return Wi‑Fi/IoT switches whose status property is reported (not None)."""
@@ -295,8 +315,9 @@ async def async_setup_entry(
         for switch in WAN_SWITCH_TYPES:
             switches.append(TPLinkRouterSwitch(coordinator, switch))
 
-    if isinstance(coordinator.router, TPLinkSG108EClient):
-        switches.append(TPLinkSG108ELedSwitch(coordinator))
+    if coordinator.led_status is not None:
+        for switch in LED_SWITCH_TYPES:
+            switches.append(TPLinkRouterSwitch(coordinator, switch))
 
     async_add_entities(switches, False)
 
@@ -324,25 +345,38 @@ class TPLinkRouterSwitch(
         return getattr(self.coordinator, self.switch.coordinator_key)
 
     @property
+    def _value(self):
+        """Nested field, or the coordinator_key value itself when property is empty (scalar)."""
+        if self.switch.property:
+            return getattr(self.coordinator_attr, self.switch.property)
+        return self.coordinator_attr
+
+    @property
     def is_on(self) -> bool:
         """Return true if switch is on."""
-        return getattr(self.coordinator_attr, self.switch.property)
+        return self._value
 
     @property
     def available(self) -> bool:
         """Return True if entity is available."""
-        return getattr(self.coordinator_attr, self.switch.property) is not None
+        return self._value is not None
 
     async def async_turn_on(self, **kwargs: Any) -> None:
         """Turn the entity on."""
         await self.switch.method(self.coordinator, True)
-        setattr(self.coordinator_attr, self.switch.property, True)
+        if self.switch.property:
+            setattr(self.coordinator_attr, self.switch.property, True)
+        else:
+            setattr(self.coordinator, self.switch.coordinator_key, True)
         self.async_write_ha_state()
 
     async def async_turn_off(self, **kwargs: Any) -> None:
         """Turn the entity off."""
         await self.switch.method(self.coordinator, False)
-        setattr(self.coordinator_attr, self.switch.property, False)
+        if self.switch.property:
+            setattr(self.coordinator_attr, self.switch.property, False)
+        else:
+            setattr(self.coordinator, self.switch.coordinator_key, False)
         self.async_write_ha_state()
 
 
@@ -377,44 +411,4 @@ class TPLinkRouterScanEntity(
     async def async_turn_off(self, **kwargs: Any) -> None:
         """Turn the entity off."""
         self.coordinator.scan_stopped_at = datetime.now()
-        self.async_write_ha_state()
-
-
-class TPLinkSG108ELedSwitch(
-    CoordinatorEntity[TPLinkRouterCoordinator], SwitchEntity
-):
-    """LED control for TL-SG108E switches."""
-
-    _attr_has_entity_name = True
-
-    def __init__(self, coordinator: TPLinkRouterCoordinator) -> None:
-        super().__init__(coordinator)
-
-        self._attr_device_info = coordinator.device_info
-        self.entity_description = SwitchEntityDescription(
-            key="led",
-            name="LED",
-            icon="mdi:led-on",
-            entity_category=EntityCategory.CONFIG,
-        )
-        self._attr_unique_id = f"{coordinator.unique_id}_{DOMAIN}_{self.entity_description.key}"
-
-    @property
-    def is_on(self) -> bool | None:
-        """Return true if the LED is on."""
-        return self.coordinator.led_status
-
-    @property
-    def available(self) -> bool:
-        """Return True if entity is available."""
-        return super().available and self.coordinator.led_status is not None
-
-    async def async_turn_on(self, **kwargs: Any) -> None:
-        """Turn the LED on."""
-        await self.coordinator.set_led(True)
-        self.async_write_ha_state()
-
-    async def async_turn_off(self, **kwargs: Any) -> None:
-        """Turn the LED off."""
-        await self.coordinator.set_led(False)
         self.async_write_ha_state()

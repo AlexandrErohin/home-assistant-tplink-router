@@ -4,7 +4,6 @@ from datetime import datetime, timedelta
 from unittest.mock import Mock, patch
 
 import pytest
-from homeassistant.exceptions import HomeAssistantError
 from tplinkrouterc6u import TPLinkSG108EClient
 
 from custom_components.tplink_router.const import DEFAULT_SCAN_PAUSE
@@ -338,21 +337,27 @@ def test_collect_status_fetches_mesh_when_enabled():
 def test_collect_status_reads_sg108e_led_true_and_false():
     router = FakeSG108ERouter()
     router.led = True
-    assert collect_status(
-        router, None, None, None, None, None, None, logging.getLogger("test")
-    )[9] is True
+    result = collect_status(
+        router, None, None, None, None, None, None, logging.getLogger("test"),
+        led_status=False,
+    )
+    assert result[9] is True
     assert router.led_calls == 1
 
     router.led = False
-    assert collect_status(
-        router, None, None, None, None, None, None, logging.getLogger("test")
-    )[9] is False
+    result = collect_status(
+        router, None, None, None, None, None, None, logging.getLogger("test"),
+        led_status=True,
+    )
+    assert result[9] is False
     assert router.led_calls == 2
 
 
-def test_collect_status_skips_led_for_non_sg_clients():
+def test_collect_status_skips_led_when_disabled():
+    """None led_status means unsupported — do not call the router LED API."""
     router = FakeRouter()
     router.led_status = Mock(return_value=True)
+    router.set_led = Mock()
     result = collect_status(
         router, None, None, None, None, None, None, logging.getLogger("test")
     )
@@ -360,22 +365,50 @@ def test_collect_status_skips_led_for_non_sg_clients():
     router.led_status.assert_not_called()
 
 
+def test_collect_status_reads_led_when_enabled():
+    router = FakeRouter()
+    router.led_status = Mock(return_value=False)
+    router.set_led = Mock()
+    result = collect_status(
+        router, None, None, None, None, None, None, logging.getLogger("test"),
+        led_status=True,
+    )
+    assert result[9] is False
+    router.led_status.assert_called_once()
+
+
+def test_collect_status_led_failure_logs_at_debug(caplog):
+    router = FakeSG108ERouter()
+    router.led = RuntimeError("led page down")
+    with caplog.at_level(logging.DEBUG):
+        result = collect_status(
+            router, None, None, None, None, None, None, logging.getLogger("test"),
+            led_status=True,
+        )
+    assert result[0] == "STATUS_OK"
+    assert result[9] is None
+    assert "fetch LED status" in caplog.text
+    assert not any(r.levelno >= logging.WARNING for r in caplog.records)
+
+
 def test_collect_status_led_failure_does_not_fail_status():
     router = FakeSG108ERouter()
     router.led = RuntimeError("led page down")
     result = collect_status(
-        router, None, None, None, None, None, None, logging.getLogger("test")
+        router, None, None, None, None, None, None, logging.getLogger("test"),
+        led_status=True,
     )
     assert result[0] == "STATUS_OK"
     assert result[9] is None
 
 
-def test_coordinator_poll_recovers_led_after_failure():
+def test_coordinator_poll_led_failure_stops_further_led_polls():
+    """Like reservations: safe_call None disables the optional payload."""
     router = FakeSG108ERouter()
     router.authorize = Mock()
     router.logout = Mock()
     router.led = RuntimeError("temporary")
-    coord, _ = _bare_coordinator(router=router, led_status=None, port_status=None)
+    coord, _ = _bare_coordinator(router=router, led_status=True, port_status=None)
 
     asyncio.run(coord._async_update_data())
     assert coord.status == "STATUS_OK"
@@ -383,111 +416,25 @@ def test_coordinator_poll_recovers_led_after_failure():
 
     router.led = False
     asyncio.run(coord._async_update_data())
-    assert coord.led_status is False
-    assert router.led_calls == 2
-
-
-def test_coordinator_set_led_on_then_reads_fresh_status():
-    router = FakeSG108ERouter()
-    router.led = False
-    coord, _ = _bare_coordinator(router=router, led_status=False)
-
-    async def fake_run(cb):
-        return cb()
-
-    coord._run_router_request = fake_run
-    asyncio.run(coord.set_led(True))
-    assert router.set_led_calls == [True]
-    assert router.led_calls == 1
-    assert coord.led_status is True
-    coord.async_update_listeners.assert_called()
-
-
-def test_coordinator_set_led_off_then_reads_fresh_status():
-    router = FakeSG108ERouter()
-    router.led = True
-    coord, _ = _bare_coordinator(router=router, led_status=True)
-
-    async def fake_run(cb):
-        return cb()
-
-    coord._run_router_request = fake_run
-    asyncio.run(coord.set_led(False))
-    assert router.set_led_calls == [False]
-    assert router.led_calls == 1
-    assert coord.led_status is False
-
-
-def test_coordinator_set_led_readback_failure_clears_state():
-    router = FakeSG108ERouter()
-    router.led = True
-    coord, _ = _bare_coordinator(router=router, led_status=True)
-
-    def set_ok(enable: bool):
-        router.set_led_calls.append(enable)
-
-    def read_fail():
-        router.led_calls += 1
-        raise RuntimeError("readback failed")
-
-    router.set_led = set_ok
-    router.led_status = read_fail
-
-    async def fake_run(cb):
-        return cb()
-
-    coord._run_router_request = fake_run
-    with pytest.raises(HomeAssistantError, match="failed to set LED"):
-        asyncio.run(coord.set_led(False))
-    assert router.set_led_calls == [False]
-    assert router.led_calls == 1
     assert coord.led_status is None
-    coord.async_update_listeners.assert_called()
-
-
-def test_coordinator_set_led_mismatched_readback_retains_actual():
-    """set_led + led_status must run in one real authorize/request/logout cycle."""
-    router = FakeSG108ERouter()
-    router.led = False
-    router.authorize = Mock()
-    router.logout = Mock()
-
-    def sticky_set_led(enable: bool):
-        router.set_led_calls.append(enable)
-        # Device ignores the write; LED stays off.
-        return enable
-
-    router.set_led = sticky_set_led
-    coord, _ = _bare_coordinator(router=router, led_status=False)
-
-    with pytest.raises(HomeAssistantError, match="LED state mismatch"):
-        asyncio.run(coord.set_led(True))
-
-    assert router.set_led_calls == [True]
     assert router.led_calls == 1
-    assert coord.led_status is False
-    coord.async_update_listeners.assert_called()
-    assert router.authorize.call_count == 1
-    assert router.logout.call_count == 1
 
 
-def test_coordinator_set_led_does_not_use_set_led_return_as_state():
-    """Authoritative state must come from led_status(), not set_led()'s return."""
+def test_coordinator_set_led_calls_api_without_updating_local_state():
+    """Like set_vpn_client: write API only; led_status changes on the next poll."""
     router = FakeSG108ERouter()
     router.led = False
     coord, _ = _bare_coordinator(router=router, led_status=False)
-
-    original_set_led = router.set_led
-
-    def lying_set_led(enable: bool):
-        original_set_led(enable)
-        return not enable  # lie about the applied state
-
-    router.set_led = lying_set_led
 
     async def fake_run(cb):
         return cb()
 
     coord._run_router_request = fake_run
     asyncio.run(coord.set_led(True))
-    assert coord.led_status is True
+    assert router.set_led_calls == [True]
+    assert router.led_calls == 0
+    assert coord.led_status is False
+
+    asyncio.run(coord.set_led(False))
+    assert router.set_led_calls == [True, False]
+    assert coord.led_status is False

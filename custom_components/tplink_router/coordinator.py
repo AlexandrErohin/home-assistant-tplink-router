@@ -1,6 +1,7 @@
 from __future__ import annotations
 import hashlib
 import asyncio
+import logging
 from datetime import timedelta, datetime
 from logging import Logger
 from collections.abc import Callable
@@ -20,9 +21,7 @@ from tplinkrouterc6u import (
     VPNStatus,
     PortStatus,
     IPv4Reservation,
-    TPLinkSG108EClient,
 )
-from homeassistant.exceptions import HomeAssistantError
 
 try:
     from tplinkrouterc6u import MeshNode
@@ -37,6 +36,11 @@ from .const import (
     DEFAULT_OFFLINE_TIMEOUT,
 )
 from .utils import safe_call, is_retryable_error
+
+
+def supports_led_control(router: AbstractRouter) -> bool:
+    """Return True when the client exposes LED get/set methods (e.g. TL-SG108E)."""
+    return hasattr(router, "led_status") and hasattr(router, "set_led")
 
 
 def collect_mesh_nodes(router: AbstractRouter, logger: Logger) -> list[MeshNode] | None:
@@ -70,13 +74,13 @@ def collect_status(
         reservations: list[IPv4Reservation] | None,
         logger: Logger,
         mesh_nodes: list[MeshNode] | None = None,
+        led_status: bool | None = None,
 ) -> tuple[Status, LTEStatus | None, list[ServingCell] | None, VPNStatus | None,
            VpnClientStatus | None, list[PortStatus] | None, list[SMS] | None,
            list[IPv4Reservation] | None, list[MeshNode] | None, bool | None]:
     """Gather all status data from the router; a failing SMS fetch must not break the update."""
     status = router.get_status()
     sms_list = None
-    led_status = None
     if lte_status is not None:
         lte_status = router.get_lte_status()
     if serving_cells is not None:
@@ -93,9 +97,10 @@ def collect_status(
         sms_list = safe_call(router.get_sms, logger, "fetch SMS")
     if reservations is not None:
         reservations = safe_call(router.get_ipv4_reservations, logger, "fetch IPv4 reservations")
-    # SG108E LED is always polled for that client; failure must not break status.
-    if isinstance(router, TPLinkSG108EClient):
-        led_status = safe_call(router.led_status, logger, "fetch LED status")
+    if led_status is not None:
+        led_status = safe_call(
+            router.led_status, logger, "fetch LED status", level=logging.DEBUG
+        )
     return (
         status,
         lte_status,
@@ -148,7 +153,6 @@ class TPLinkRouterCoordinator(DataUpdateCoordinator):
         # list (incl. []) means "ask each poll"; None means the client cannot provide
         # a node list. Setup probes once so entities exist before the first interval.
         self.mesh_nodes: list[MeshNode] | None = mesh_nodes
-        # True/False = known LED state; None = unknown/unavailable (SG108E only).
         self.led_status: bool | None = led_status
         self.device_info = DeviceInfo(
             configuration_url=router.host,
@@ -253,25 +257,10 @@ class TPLinkRouterCoordinator(DataUpdateCoordinator):
         await self._run_router_request(callback)
 
     async def set_led(self, enable: bool) -> None:
-        """Set SG108E LED state; authoritative state comes from a fresh led_status()."""
-
         def callback():
             self.router.set_led(enable)
-            return self.router.led_status()
 
-        try:
-            actual = await self._run_router_request(callback)
-        except Exception as err:
-            self.led_status = None
-            self.async_update_listeners()
-            raise HomeAssistantError("TPLink Router failed to set LED") from err
-
-        self.led_status = actual
-        self.async_update_listeners()
-        if actual != enable:
-            raise HomeAssistantError(
-                f"TPLink Router LED state mismatch: requested {enable}, actual {actual}"
-            )
+        await self._run_router_request(callback)
 
     async def add_ipv4_reservation(
         self, mac: str, ip: str, comment: str = "", enable: bool = True
@@ -313,6 +302,7 @@ class TPLinkRouterCoordinator(DataUpdateCoordinator):
                     self.reservations,
                     self.logger,
                     self.mesh_nodes,
+                    self.led_status,
                 ),
             )
 

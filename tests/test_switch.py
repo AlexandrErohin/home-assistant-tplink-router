@@ -2,18 +2,17 @@ import asyncio
 from types import SimpleNamespace
 from unittest.mock import AsyncMock, Mock
 
-import pytest
 from homeassistant.const import EntityCategory
-from homeassistant.exceptions import HomeAssistantError
-from tplinkrouterc6u import Connection, TPLinkSG108EClient
+from tplinkrouterc6u import Connection
 
 from custom_components.tplink_router.const import DOMAIN
 from custom_components.tplink_router.switch import (
     DHCP_SERVER_SWITCH_TYPES,
+    LED_SWITCH_TYPES,
     MLO_SWITCH_TYPES,
     STATUS_SWITCH_TYPES,
     WAN_SWITCH_TYPES,
-    TPLinkSG108ELedSwitch,
+    TPLinkRouterSwitch,
     _mlo_switch_types,
     _status_switch_types,
     async_setup_entry,
@@ -37,6 +36,16 @@ def test_ewan_connect_switch_config():
     assert switch.description.key == "ewan_connect"
     assert switch.description.name == "E-WAN connect"
     assert switch.description.icon == "mdi:ethernet"
+
+
+def test_led_switch_config():
+    assert len(LED_SWITCH_TYPES) == 1
+    switch = LED_SWITCH_TYPES[0]
+    assert switch.property == ""
+    assert switch.coordinator_key == "led_status"
+    assert switch.description.key == "led"
+    assert switch.description.name == "LED"
+    assert switch.description.entity_category == EntityCategory.CONFIG
 
 
 def test_mlo_2g_stays_in_status_switches():
@@ -104,17 +113,14 @@ def test_mlo_switches_include_each_non_none_band():
     assert _mlo_switch_types(neither) == ()
 
 
-def _led_coordinator(led_status=True, sg108e=True):
+def _led_coordinator(led_status=True):
     coordinator = Mock()
     coordinator.unique_id = "entry-1"
     coordinator.device_info = {"identifiers": {(DOMAIN, "aa:bb")}}
     coordinator.led_status = led_status
     coordinator.last_update_success = True
     coordinator.set_led = AsyncMock()
-    if sg108e:
-        coordinator.router = TPLinkSG108EClient.__new__(TPLinkSG108EClient)
-    else:
-        coordinator.router = object()
+    coordinator.router = object()
     coordinator.status = SimpleNamespace(
         **{switch.property: None for switch in STATUS_SWITCH_TYPES},
         ewan_connected=None,
@@ -124,9 +130,13 @@ def _led_coordinator(led_status=True, sg108e=True):
     return coordinator
 
 
-def test_sg108e_led_switch_key_name_category_availability_is_on():
-    coordinator = _led_coordinator(led_status=True)
-    entity = TPLinkSG108ELedSwitch(coordinator)
+def _led_entity(coordinator=None):
+    coordinator = coordinator or _led_coordinator()
+    return TPLinkRouterSwitch(coordinator, LED_SWITCH_TYPES[0]), coordinator
+
+
+def test_led_switch_key_name_category_availability_is_on():
+    entity, coordinator = _led_entity()
 
     assert entity.entity_description.key == "led"
     assert entity.entity_description.name == "LED"
@@ -144,21 +154,47 @@ def test_sg108e_led_switch_key_name_category_availability_is_on():
     assert entity.available is False
 
 
-def test_sg108e_led_switch_turn_on_off_call_coordinator_only():
-    coordinator = _led_coordinator(led_status=False)
-    entity = TPLinkSG108ELedSwitch(coordinator)
+def test_led_switch_turn_on_off_optimistic_local_update():
+    """Like VPN/Wi‑Fi: set_led only talks to the device; switch updates local state."""
+    entity, coordinator = _led_entity(_led_coordinator(led_status=False))
     entity.async_write_ha_state = Mock()
 
     asyncio.run(entity.async_turn_on())
     coordinator.set_led.assert_awaited_once_with(True)
+    assert coordinator.led_status is True
+    entity.async_write_ha_state.assert_called_once()
 
     coordinator.set_led.reset_mock()
+    entity.async_write_ha_state.reset_mock()
     asyncio.run(entity.async_turn_off())
     coordinator.set_led.assert_awaited_once_with(False)
+    assert coordinator.led_status is False
+    entity.async_write_ha_state.assert_called_once()
 
 
-def test_async_setup_entry_adds_led_for_sg108e_even_when_unknown():
-    coordinator = _led_coordinator(led_status=None, sg108e=True)
+def test_async_setup_entry_adds_led_when_true_or_false():
+    for value in (True, False):
+        coordinator = _led_coordinator(led_status=value)
+        hass = Mock()
+        hass.data = {DOMAIN: {"entry-1": coordinator}}
+        entry = Mock()
+        entry.entry_id = "entry-1"
+        added = []
+
+        asyncio.run(
+            async_setup_entry(hass, entry, lambda entities, update: added.extend(entities))
+        )
+
+        led_entities = [
+            e for e in added
+            if isinstance(e, TPLinkRouterSwitch) and e.entity_description.key == "led"
+        ]
+        assert len(led_entities) == 1
+        assert led_entities[0].is_on is value
+
+
+def test_async_setup_entry_skips_led_when_unsupported():
+    coordinator = _led_coordinator(led_status=None)
     hass = Mock()
     hass.data = {DOMAIN: {"entry-1": coordinator}}
     entry = Mock()
@@ -167,29 +203,24 @@ def test_async_setup_entry_adds_led_for_sg108e_even_when_unknown():
 
     asyncio.run(async_setup_entry(hass, entry, lambda entities, update: added.extend(entities)))
 
-    led_entities = [e for e in added if isinstance(e, TPLinkSG108ELedSwitch)]
-    assert len(led_entities) == 1
-    assert led_entities[0].available is False
+    assert not any(
+        isinstance(e, TPLinkRouterSwitch) and e.entity_description.key == "led"
+        for e in added
+    )
 
 
-def test_async_setup_entry_skips_led_for_non_sg_clients():
-    coordinator = _led_coordinator(led_status=None, sg108e=False)
-    hass = Mock()
-    hass.data = {DOMAIN: {"entry-1": coordinator}}
-    entry = Mock()
-    entry.entry_id = "entry-1"
-    added = []
+def test_optimistic_switch_updates_local_state():
+    coordinator = Mock()
+    coordinator.unique_id = "entry-1"
+    coordinator.device_info = {"identifiers": {(DOMAIN, "aa:bb")}}
+    coordinator.last_update_success = True
+    coordinator.status = SimpleNamespace(wifi_2g_enable=False)
+    coordinator.set_wifi = AsyncMock()
 
-    asyncio.run(async_setup_entry(hass, entry, lambda entities, update: added.extend(entities)))
-
-    assert not any(isinstance(e, TPLinkSG108ELedSwitch) for e in added)
-
-
-def test_sg108e_led_switch_propagates_coordinator_failure():
-    coordinator = _led_coordinator(led_status=True)
-    coordinator.set_led = AsyncMock(side_effect=HomeAssistantError("failed to set LED"))
-    entity = TPLinkSG108ELedSwitch(coordinator)
+    switch = next(s for s in STATUS_SWITCH_TYPES if s.description.key == "wifi_24g")
+    entity = TPLinkRouterSwitch(coordinator, switch)
     entity.async_write_ha_state = Mock()
 
-    with pytest.raises(HomeAssistantError, match="failed to set LED"):
-        asyncio.run(entity.async_turn_off())
+    asyncio.run(entity.async_turn_on())
+    assert coordinator.status.wifi_2g_enable is True
+    entity.async_write_ha_state.assert_called_once()

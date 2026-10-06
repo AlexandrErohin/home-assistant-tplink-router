@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import logging
 import re
 import time
 from collections.abc import Callable
@@ -74,13 +75,19 @@ def is_retryable_error(error: Exception) -> bool:
     return True
 
 
-def safe_call(callback: Callable[[], T], logger: Logger | None, label: str, default: Any = None) -> Any:
+def safe_call(
+        callback: Callable[[], T],
+        logger: Logger | None,
+        label: str,
+        default: Any = None,
+        level: int = logging.WARNING,
+) -> Any:
     """Run a blocking callback, returning default instead of raising on failure."""
     try:
         return callback()
     except Exception:
         if logger is not None:
-            logger.warning("TPLink Router failed to %s", label, exc_info=True)
+            logger.log(level, "TPLink Router failed to %s", label, exc_info=True)
         return default
 
 

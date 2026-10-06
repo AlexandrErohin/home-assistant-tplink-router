@@ -49,7 +49,7 @@ def _firmware_status():
 
 
 class PlainClient:
-    """Non-SG client with only the methods setup always needs."""
+    """Client without LED set API (led_status alone must not enable LED)."""
 
     def __init__(self):
         firmware, status = _firmware_status()
@@ -68,6 +68,7 @@ def _sg108e_client(*, led_status):
     client.get_firmware = Mock(return_value=firmware)
     client.get_status = Mock(return_value=status)
     client.led_status = led_status
+    client.set_led = Mock()
     client.authorize = Mock()
     client.logout = Mock()
     return client
@@ -154,7 +155,7 @@ def test_async_setup_entry_led_failure_does_not_fail_setup(caplog):
     assert "led_status failed" in caplog.text
 
 
-def test_async_setup_entry_skips_led_for_non_sg_clients():
+def test_async_setup_entry_skips_led_without_set_led():
     hass = FakeHass()
     entry = _entry()
     client = PlainClient()

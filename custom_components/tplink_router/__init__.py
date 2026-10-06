@@ -29,10 +29,9 @@ from .const import (
     DEFAULT_OFFLINE_TIMEOUT,
 )
 import logging
-from .coordinator import TPLinkRouterCoordinator, collect_mesh_nodes
+from .coordinator import TPLinkRouterCoordinator, collect_mesh_nodes, supports_led_control
 from .utils import validate_ipv4_address, validate_mac_address
 from homeassistant.helpers import device_registry
-from tplinkrouterc6u import TPLinkSG108EClient
 
 
 def _vol_mac(value: str) -> str:
@@ -193,9 +192,8 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
             # Probe EasyMesh once so node trackers exist before the first poll.
             # None = unsupported (stop asking); a list (even empty) keeps polling.
             mesh_nodes = collect_mesh_nodes(client, _LOGGER)
-            # SG108E LED: probe once; failure must not fail setup.
             led_status = None
-            if isinstance(client, TPLinkSG108EClient):
+            if supports_led_control(client):
                 try:
                     led_status = client.led_status()
                 except Exception as err:

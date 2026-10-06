@@ -118,6 +118,20 @@ def test_safe_call_returns_default_on_error():
     assert safe_call(cb, Mock(), "fetch SMS") is None
 
 
+def test_safe_call_respects_log_level():
+    import logging
+
+    logger = Mock()
+
+    def cb():
+        raise RuntimeError("led page down")
+
+    assert safe_call(cb, logger, "fetch LED status", level=logging.DEBUG) is None
+    logger.log.assert_called_once()
+    assert logger.log.call_args.args[0] == logging.DEBUG
+    assert logger.log.call_args.args[2] == "fetch LED status"
+
+
 def test_prefer_current_when_meaningful():
     assert prefer("10.0.0.5", "192.168.1.1") == "10.0.0.5"
 

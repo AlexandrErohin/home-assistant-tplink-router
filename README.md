@@ -41,9 +41,9 @@ If you forget to enable it back - it would be automatically enable after the con
  - Control VPN Server List (for some routers)
  - LAN IPv4 DHCP Server Enable/Disable (for some routers)
  - E-WAN connect (for MR/EX-family routers with Ethernet WAN) — on = DHCP Renew, off = DHCP Release; useful to reset a stuck WAN link after reboot
- - LED Enable/Disable (for TL-SG108E)
+ - LED Enable/Disable (for TL-SG family)
 
-Wi‑Fi, VPN, DHCP, and E-WAN switches are created only when the device supports them (status field / API method present).
+Wi‑Fi, VPN, DHCP, E-WAN, and LED switches are created only when the device supports them (status field / API method present).
 
 > [!WARNING]
 > Disabling the LAN IPv4 DHCP server can leave clients without an IP address (including the Home Assistant host, if it uses DHCP). Prefer static addresses or another DHCP server before turning this switch off.
