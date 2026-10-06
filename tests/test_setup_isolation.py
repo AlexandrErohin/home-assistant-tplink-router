@@ -120,6 +120,9 @@ def test_async_setup_entry_reads_sg108e_led_successfully():
     ), patch(
         "homeassistant.helpers.update_coordinator.DataUpdateCoordinator.__init__",
         return_value=None,
+    ), patch(
+        "custom_components.tplink_router.device_registry.async_get",
+        return_value=Mock(),
     ):
         assert asyncio.run(async_setup_entry(hass, entry)) is True
 
@@ -146,6 +149,9 @@ def test_async_setup_entry_led_failure_does_not_fail_setup(caplog):
     ), patch(
         "homeassistant.helpers.update_coordinator.DataUpdateCoordinator.__init__",
         return_value=None,
+    ), patch(
+        "custom_components.tplink_router.device_registry.async_get",
+        return_value=Mock(),
     ), caplog.at_level(logging.DEBUG):
         assert asyncio.run(async_setup_entry(hass, entry)) is True
 
@@ -171,6 +177,9 @@ def test_async_setup_entry_skips_led_without_set_led():
     ), patch(
         "homeassistant.helpers.update_coordinator.DataUpdateCoordinator.__init__",
         return_value=None,
+    ), patch(
+        "custom_components.tplink_router.device_registry.async_get",
+        return_value=Mock(),
     ):
         assert asyncio.run(async_setup_entry(hass, entry)) is True
 

@@ -78,18 +78,65 @@ def test_device_info_none_when_as_device_disabled():
     assert tracker.device_info is None
 
 
-def test_device_info_uses_router_lan_mac_for_via_device():
+def test_device_info_uses_via_device_id_when_router_is_registered():
     from homeassistant.helpers.device_registry import CONNECTION_NETWORK_MAC
-    from custom_components.tplink_router.const import DOMAIN
+    from custom_components.tplink_router.device_tracker import resolve_via_device_id
 
     tracker = build_tracker()
     tracker._as_device = True
     tracker._last_hostname = "phone"
-    info = tracker.device_info
+    tracker.hass = tracker.coordinator.hass
+
+    parent = Mock(id="router-device-id")
+    registry = Mock()
+    registry.async_get_device = Mock(return_value=parent)
+
+    with patch(
+        "custom_components.tplink_router.device_tracker.dr.async_get",
+        return_value=registry,
+    ):
+        info = tracker.device_info
+        assert resolve_via_device_id(tracker.hass, "11:22:33:44:55:66") == "router-device-id"
+
     assert info is not None
     assert info["connections"] == {(CONNECTION_NETWORK_MAC, "AA:BB:CC:DD:EE:FF")}
     assert info["name"] == "phone"
-    assert info["via_device"] == (DOMAIN, "11:22:33:44:55:66")
+    assert info["via_device_id"] == "router-device-id"
+    assert "via_device" not in info
+
+
+def test_device_info_omits_via_when_parent_not_registered():
+    tracker = build_tracker()
+    tracker._as_device = True
+    tracker._last_hostname = "phone"
+    tracker.hass = tracker.coordinator.hass
+
+    registry = Mock()
+    registry.async_get_device = Mock(return_value=None)
+    with patch(
+        "custom_components.tplink_router.device_tracker.dr.async_get",
+        return_value=registry,
+    ):
+        info = tracker.device_info
+
+    assert info is not None
+    assert "via_device_id" not in info
+    assert "via_device" not in info
+
+
+def test_resolve_via_device_id_falls_back_to_connections():
+    from custom_components.tplink_router.device_tracker import resolve_via_device_id
+
+    parent = Mock(id="via-conn")
+    registry = Mock()
+    registry.async_get_device = Mock(side_effect=[None, parent])
+    hass = FakeHass()
+    with patch(
+        "custom_components.tplink_router.device_tracker.dr.async_get",
+        return_value=registry,
+    ):
+        assert resolve_via_device_id(hass, "11:22:33:44:55:66") == "via-conn"
+    assert registry.async_get_device.call_count == 2
 
 
 def test_remember_keeps_last_meaningful_hostname_and_ip():
@@ -433,23 +480,47 @@ def test_mesh_tracker_main_router_joins_the_existing_router_device():
 def test_mesh_tracker_satellite_gets_its_own_device_linked_to_its_parent():
     node = FakeMeshNode("24-00-00-00-00-02", name="Satellite AX55", model="Archer AX55",
                         parent_mac="24-00-00-00-00-01", device_type="WirelessRouter")
-    info = build_mesh_tracker(node).device_info
+    tracker = build_mesh_tracker(node)
+    tracker.hass = tracker.coordinator.hass
+    parent = Mock(id="parent-device-id")
+    registry = Mock()
+    registry.async_get_device = Mock(return_value=parent)
+
+    with patch(
+        "custom_components.tplink_router.device_tracker.dr.async_get",
+        return_value=registry,
+    ):
+        info = tracker.device_info
 
     assert info["identifiers"] == {("tplink_router", "24-00-00-00-00-02")}
     assert info["connections"] == {("mac", "24-00-00-00-00-02")}
     assert info["name"] == "Satellite AX55"
     assert info["model"] == "Archer AX55"
     assert info["manufacturer"] == "TP-Link"
-    assert info["via_device"] == ("tplink_router", "24-00-00-00-00-01")
+    assert info["via_device_id"] == "parent-device-id"
+    assert "via_device" not in info
 
 
 def test_mesh_tracker_multi_hop_parent_is_the_uplink_node_not_the_router():
     """A satellite behind another satellite nests under it, not under the main router."""
     node = FakeMeshNode("24-00-00-00-00-03", name="Satellite RE330",
                         parent_mac="24-00-00-00-00-02")
+    tracker = build_mesh_tracker(node)
+    tracker.hass = tracker.coordinator.hass
+    parent = Mock(id="uplink-sat-id")
+    registry = Mock()
+    registry.async_get_device = Mock(return_value=parent)
 
-    assert build_mesh_tracker(node).device_info["via_device"] == (
-        "tplink_router", "24-00-00-00-00-02")
+    with patch(
+        "custom_components.tplink_router.device_tracker.dr.async_get",
+        return_value=registry,
+    ):
+        info = tracker.device_info
+
+    assert info["via_device_id"] == "uplink-sat-id"
+    registry.async_get_device.assert_any_call(
+        identifiers={("tplink_router", "24-00-00-00-00-02")}
+    )
 
 
 def test_mesh_tracker_device_survives_the_node_dropping_out():
@@ -457,14 +528,38 @@ def test_mesh_tracker_device_survives_the_node_dropping_out():
     node = FakeMeshNode("24-00-00-00-00-02", name="Satellite AX55", model="Archer AX55",
                         parent_mac="24-00-00-00-00-01")
     tracker = build_mesh_tracker(node)
+    tracker.hass = tracker.coordinator.hass
+    parent = Mock(id="parent-device-id")
+    registry = Mock()
+    registry.async_get_device = Mock(return_value=parent)
 
     tracker.node = None
 
-    info = tracker.device_info
+    with patch(
+        "custom_components.tplink_router.device_tracker.dr.async_get",
+        return_value=registry,
+    ):
+        info = tracker.device_info
+
     assert info["name"] == "Satellite AX55"
     assert info["model"] == "Archer AX55"
-    assert info["via_device"] == ("tplink_router", "24-00-00-00-00-01")
+    assert info["via_device_id"] == "parent-device-id"
     assert tracker.is_connected is False
+
+
+def test_mesh_nodes_parent_first_orders_main_then_children():
+    from custom_components.tplink_router.device_tracker import _mesh_nodes_parent_first
+
+    child = FakeMeshNode("24-00-00-00-00-03", parent_mac="24-00-00-00-00-02")
+    mid = FakeMeshNode("24-00-00-00-00-02", parent_mac="24-00-00-00-00-01")
+    main = FakeMeshNode("24-00-00-00-00-01", role="main_router")
+
+    ordered = _mesh_nodes_parent_first([child, mid, main])
+    assert [n.macaddr for n in ordered] == [
+        "24-00-00-00-00-01",
+        "24-00-00-00-00-02",
+        "24-00-00-00-00-03",
+    ]
 
 
 def test_mesh_tracker_can_be_constructed_for_restore_without_a_live_node():

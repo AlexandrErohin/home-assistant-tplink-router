@@ -6,7 +6,7 @@ from homeassistant.components.device_tracker import ScannerEntity
 from homeassistant.components.device_tracker.const import SourceType
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import HomeAssistant, callback
-from homeassistant.helpers import entity_registry
+from homeassistant.helpers import device_registry as dr, entity_registry
 from homeassistant.helpers.device_registry import CONNECTION_NETWORK_MAC, DeviceInfo
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 from homeassistant.helpers.restore_state import RestoreEntity
@@ -32,6 +32,53 @@ MAC_ADDR: TypeAlias = str
 
 # Keeps mesh node unique_ids from colliding with client ones, which are the bare MAC.
 MESH_ID_MARKER = "mesh_"
+
+
+def resolve_via_device_id(hass: HomeAssistant | None, mac: str | None) -> str | None:
+    """Return the device-registry id for a tplink_router device keyed by MAC.
+
+    Home Assistant deprecated DeviceInfo.via_device=(domain, identifier) in favor of
+    via_device_id (the registry id string). Look up by identifiers first, then by
+    network MAC connection — the main router device uses both.
+    """
+    if hass is None or not mac:
+        return None
+    try:
+        registry = dr.async_get(hass)
+    except Exception:
+        return None
+    device = registry.async_get_device(identifiers={(DOMAIN, mac)})
+    if device is None:
+        device = registry.async_get_device(
+            connections={(CONNECTION_NETWORK_MAC, mac)}
+        )
+    return device.id if device else None
+
+
+def _mesh_nodes_parent_first(nodes: list) -> list:
+    """Order mesh nodes so parents are registered before children in one add batch."""
+    remaining = [node for node in nodes if getattr(node, "macaddr", None)]
+    ordered: list = []
+    seen: set[str] = set()
+
+    for node in list(remaining):
+        if getattr(node, "is_main_router", False):
+            ordered.append(node)
+            seen.add(node.macaddr)
+            remaining.remove(node)
+
+    progressed = True
+    while remaining and progressed:
+        progressed = False
+        for node in list(remaining):
+            parent = getattr(node, "parent_macaddr", None)
+            if not parent or parent in seen:
+                ordered.append(node)
+                seen.add(node.macaddr)
+                remaining.remove(node)
+                progressed = True
+    ordered.extend(remaining)
+    return ordered
 
 
 def mark_offline_if_expired(tracker: "TPLinkTracker", now: datetime, timeout_seconds: int) -> bool:
@@ -135,7 +182,7 @@ def update_mesh_items(
     """Create or refresh one tracker per EasyMesh node reported by the main router."""
     new_tracked: list[TPLinkMeshTracker] = []
     seen: set[MAC_ADDR] = set()
-    for node in coordinator.mesh_nodes or []:
+    for node in _mesh_nodes_parent_first(list(coordinator.mesh_nodes or [])):
         mac = node.macaddr
         if not mac:
             continue
@@ -244,7 +291,7 @@ class TPLinkMeshTracker(CoordinatorEntity, RestoreEntity, ScannerEntity):
         instead of adding a second one for the same hardware.
 
         Satellites get their own device and hang off the node they uplink through via
-        via_device, which is what makes a multi hop mesh readable in the device page:
+        via_device_id, which is what makes a multi hop mesh readable in the device page:
         a satellite whose parent is another satellite is nested under it, not under the
         main router.
         """
@@ -262,8 +309,9 @@ class TPLinkMeshTracker(CoordinatorEntity, RestoreEntity, ScannerEntity):
             info["model"] = self._model
         if self._vendor:
             info["manufacturer"] = self._vendor
-        if self._parent_macaddr:
-            info["via_device"] = (DOMAIN, self._parent_macaddr)
+        via_id = resolve_via_device_id(self.hass, self._parent_macaddr)
+        if via_id:
+            info["via_device_id"] = via_id
         return info
 
     @property
@@ -431,16 +479,21 @@ class TPLinkTracker(CoordinatorEntity, RestoreEntity, ScannerEntity):
         Opt-in via CONF_TRACKER_AS_DEVICE: on networks with many transient
         clients this can add a lot of device-registry entries, so it
         defaults to off and the entity stays deviceless (current
-        behavior) unless explicitly enabled. via_device must match the
-        router's DeviceInfo identifiers (DOMAIN, lan MAC), not entry_id.
+        behavior) unless explicitly enabled. via_device_id must point at
+        the router's registry device (identifiers DOMAIN + lan MAC).
         """
         if not self._as_device:
             return None
-        return DeviceInfo(
+        info = DeviceInfo(
             connections={(CONNECTION_NETWORK_MAC, self._mac)},
             name=self.hostname or self._mac,
-            via_device=(DOMAIN, self.coordinator.status.lan_macaddr),
         )
+        via_id = resolve_via_device_id(
+            self.hass, self.coordinator.status.lan_macaddr
+        )
+        if via_id:
+            info["via_device_id"] = via_id
+        return info
 
     @property
     def icon(self) -> str:
