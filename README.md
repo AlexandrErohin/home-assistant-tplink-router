@@ -208,7 +208,7 @@ The default data is preset already.
 
 1. Go to the <b>Settings</b>-><b>Devices & services</b>.
 2. Click on `+ ADD INTEGRATION`, search for `TP-Link Router`.
-3. Fill Password.
+3. Fill Login (default `admin`; some routers use `user`) and Password.
 4. Click `SUBMIT`
 
 If you got an error please try to use HTTPS connection first

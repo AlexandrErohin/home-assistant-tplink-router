@@ -43,25 +43,16 @@ OFFLINE_TIMEOUT_SCHEMA = vol.All(
 )
 
 
-def _user_schema(
-    data: dict[str, Any] | None = None,
-    *,
-    include_username: bool = False,
-) -> vol.Schema:
+def _user_schema(data: dict[str, Any] | None = None) -> vol.Schema:
     data = data or {}
-    schema: dict[Any, Any] = {
-        vol.Required(CONF_HOST, default=data.get(CONF_HOST, DEFAULT_HOST)): str,
-        vol.Required(CONF_PASSWORD): cv.string,
-    }
-    if include_username:
-        schema[
+    return vol.Schema(
+        {
+            vol.Required(CONF_HOST, default=data.get(CONF_HOST, DEFAULT_HOST)): str,
             vol.Required(
                 CONF_USERNAME,
                 default=data.get(CONF_USERNAME, DEFAULT_USER),
-            )
-        ] = str
-    schema.update(
-        {
+            ): str,
+            vol.Required(CONF_PASSWORD): cv.string,
             vol.Required(
                 CONF_SCAN_INTERVAL,
                 default=data.get(CONF_SCAN_INTERVAL, 30),
@@ -86,9 +77,9 @@ def _user_schema(
                 CONF_VERIFY_SSL,
                 default=data.get(CONF_VERIFY_SSL, False),
             ): cv.boolean,
-        }
+        },
+        extra=vol.ALLOW_EXTRA,
     )
-    return vol.Schema(schema, extra=vol.ALLOW_EXTRA)
 
 
 class ConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
@@ -107,7 +98,7 @@ class ConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
                     hass=self.hass,
                     host=user_input[CONF_HOST],
                     password=user_input[CONF_PASSWORD],
-                    username=user_input.get(CONF_USERNAME, DEFAULT_USER),
+                    username=user_input[CONF_USERNAME],
                     logger=_LOGGER,
                     verify_ssl=user_input[CONF_VERIFY_SSL],
                 )
@@ -130,10 +121,7 @@ class ConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
 
         return self.async_show_form(
             step_id="user",
-            data_schema=_user_schema(
-                user_input,
-                include_username=True,
-            ),
+            data_schema=_user_schema(user_input),
             errors=errors,
         )
 

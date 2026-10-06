@@ -1,6 +1,6 @@
 # Changelog
 
-## [UNRELEASED]
+## [2.43.0] - 2026-10-06
 
 ### Added
 
@@ -12,6 +12,7 @@
 ### Fixed
 
 - Replace deprecated `DeviceInfo.via_device` with `via_device_id` for mesh satellites and `tracker_as_device` clients ([#423](https://github.com/AlexandrErohin/home-assistant-tplink-router/issues/423))
+- Show the router username on the first setup form so non-admin accounts can authenticate without a failed admin login first ([#408](https://github.com/AlexandrErohin/home-assistant-tplink-router/issues/408), [#422](https://github.com/AlexandrErohin/home-assistant-tplink-router/pull/422))
 
 ## [2.42.0] - 2026-10-02
 
@@ -22,10 +23,6 @@
 ### Changed
 
 - Create status sensors and Wi‑Fi/MLO switches only when the device reports a non-`None` value for that field (avoids forever-unavailable entities on devices that lack Wi‑Fi/WAN/CPU metrics)
-
-### Fixed
-
-- Show the router username on the first setup form so non-admin accounts can authenticate without a failed admin login first ([#408](https://github.com/AlexandrErohin/home-assistant-tplink-router/issues/408))
 
 ## [2.41.0] - 2026-09-28
 

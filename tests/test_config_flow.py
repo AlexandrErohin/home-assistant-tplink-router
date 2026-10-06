@@ -20,6 +20,7 @@ from homeassistant.const import (
     CONF_HOST,
     CONF_PASSWORD,
     CONF_SCAN_INTERVAL,
+    CONF_USERNAME,
     CONF_VERIFY_SSL,
 )
 
@@ -35,6 +36,7 @@ class FakeHass:
 def _user_input(**overrides):
     data = {
         CONF_HOST: "http://192.168.0.1",
+        CONF_USERNAME: "admin",
         CONF_PASSWORD: "secret",
         CONF_SCAN_INTERVAL: 30,
         CONF_VERIFY_SSL: False,
@@ -54,6 +56,12 @@ def test_user_step_shows_form_without_input():
     result = asyncio.run(flow.async_step_user())
     assert result["type"] == "form"
     assert result["step_id"] == "user"
+    schema_keys = [
+        key.schema if hasattr(key, "schema") else key
+        for key in result["data_schema"].schema
+    ]
+    assert CONF_USERNAME in schema_keys
+    assert schema_keys.index(CONF_USERNAME) < schema_keys.index(CONF_PASSWORD)
     assert CONF_SUPPORT_VPN not in result["data_schema"].schema
 
 
