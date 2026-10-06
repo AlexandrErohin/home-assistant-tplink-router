@@ -41,6 +41,7 @@ If you forget to enable it back - it would be automatically enable after the con
  - Control VPN Server List (for some routers)
  - LAN IPv4 DHCP Server Enable/Disable (for some routers)
  - E-WAN connect (for MR/EX-family routers with Ethernet WAN) — on = DHCP Renew, off = DHCP Release; useful to reset a stuck WAN link after reboot
+ - LED Enable/Disable (for TL-SG108E)
 
 Wi‑Fi, VPN, DHCP, and E-WAN switches are created only when the device supports them (status field / API method present).
 

@@ -11,7 +11,7 @@ from homeassistant.helpers.entity_platform import AddEntitiesCallback
 from .const import DOMAIN
 from homeassistant.helpers.update_coordinator import CoordinatorEntity
 from .coordinator import TPLinkRouterCoordinator
-from tplinkrouterc6u import VPN, Connection
+from tplinkrouterc6u import VPN, Connection, TPLinkSG108EClient
 from . import vpn_client
 
 
@@ -295,6 +295,9 @@ async def async_setup_entry(
         for switch in WAN_SWITCH_TYPES:
             switches.append(TPLinkRouterSwitch(coordinator, switch))
 
+    if isinstance(coordinator.router, TPLinkSG108EClient):
+        switches.append(TPLinkSG108ELedSwitch(coordinator))
+
     async_add_entities(switches, False)
 
 
@@ -374,4 +377,44 @@ class TPLinkRouterScanEntity(
     async def async_turn_off(self, **kwargs: Any) -> None:
         """Turn the entity off."""
         self.coordinator.scan_stopped_at = datetime.now()
+        self.async_write_ha_state()
+
+
+class TPLinkSG108ELedSwitch(
+    CoordinatorEntity[TPLinkRouterCoordinator], SwitchEntity
+):
+    """LED control for TL-SG108E switches."""
+
+    _attr_has_entity_name = True
+
+    def __init__(self, coordinator: TPLinkRouterCoordinator) -> None:
+        super().__init__(coordinator)
+
+        self._attr_device_info = coordinator.device_info
+        self.entity_description = SwitchEntityDescription(
+            key="led",
+            name="LED",
+            icon="mdi:led-on",
+            entity_category=EntityCategory.CONFIG,
+        )
+        self._attr_unique_id = f"{coordinator.unique_id}_{DOMAIN}_{self.entity_description.key}"
+
+    @property
+    def is_on(self) -> bool | None:
+        """Return true if the LED is on."""
+        return self.coordinator.led_status
+
+    @property
+    def available(self) -> bool:
+        """Return True if entity is available."""
+        return super().available and self.coordinator.led_status is not None
+
+    async def async_turn_on(self, **kwargs: Any) -> None:
+        """Turn the LED on."""
+        await self.coordinator.set_led(True)
+        self.async_write_ha_state()
+
+    async def async_turn_off(self, **kwargs: Any) -> None:
+        """Turn the LED off."""
+        await self.coordinator.set_led(False)
         self.async_write_ha_state()
