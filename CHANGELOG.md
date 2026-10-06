@@ -1,5 +1,11 @@
 # Changelog
 
+## [UNRELEASED]
+
+### Added
+
+- Added Mercusys MB118-4G v1.0 to supported list
+
 ## [2.42.0] - 2026-10-02
 
 ### Added

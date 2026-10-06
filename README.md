@@ -402,6 +402,7 @@ To do that:
 - Halo H47BE 2.0
 - Halo H60XR 1.0
 - Halo H80X 1.0
+- MB118-4G v1.0
 - ME30 1.0
 - MR47BE v1.0
 - MR50G 1.0
