@@ -23,6 +23,10 @@
 
 - Create status sensors and Wi‑Fi/MLO switches only when the device reports a non-`None` value for that field (avoids forever-unavailable entities on devices that lack Wi‑Fi/WAN/CPU metrics)
 
+### Fixed
+
+- Show the router username on the first setup form so non-admin accounts can authenticate without a failed admin login first ([#408](https://github.com/AlexandrErohin/home-assistant-tplink-router/issues/408))
+
 ## [2.41.0] - 2026-09-28
 
 ### Added
