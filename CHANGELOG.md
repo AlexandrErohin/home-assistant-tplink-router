@@ -4,7 +4,7 @@
 
 ### Added
 
-- Added Mercusys MB118-4G v1.0 to supported list
+- Added Mercusys MB118-4G v1.0 and TP-LINK Archer BE450 v1.0 to supported list
 
 ## [2.42.0] - 2026-10-02
 

@@ -304,6 +304,7 @@ To do that:
 - Archer BE230 (v1.0, v2.0)
 - Archer BE3600 (v1.0, v1.2, v1.6)
 - Archer BE400 v1.0
+- Archer BE450 v1.0
 - Archer BE550 (v1.0, V2)
 - Archer BE800 v1.0
 - Archer BE805 (v1.0, v1.20)
