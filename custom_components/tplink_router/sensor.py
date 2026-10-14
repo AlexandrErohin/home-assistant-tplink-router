@@ -172,6 +172,17 @@ SENSOR_TYPES = (
         ),
     ),
     TPLinkRouterSensorConfig(
+    value=lambda status: status.wan_ipv4_uptime,
+    description=SensorEntityDescription(
+        key="wan_ipv4_uptime",
+        name="WAN Uptime",
+        icon="mdi:timer-outline",
+        device_class=SensorDeviceClass.DURATION,
+        state_class=SensorStateClass.MEASUREMENT,
+        native_unit_of_measurement="s",
+        ),    
+    ),
+    TPLinkRouterSensorConfig(
         value=lambda status: status.wan_ipv4_addr,
         description=SensorEntityDescription(
             key="wan_ipv4_addr",
