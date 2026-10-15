@@ -15,6 +15,7 @@ from .const import (
     MAX_SCAN_PAUSE, MAX_OFFLINE_TIMEOUT,
 )
 from .coordinator import TPLinkRouterCoordinator
+from .re_encrypt import web_encrypt_password
 from homeassistant.const import (
     CONF_HOST,
     CONF_PASSWORD,
@@ -97,7 +98,9 @@ class ConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
                 router = await TPLinkRouterCoordinator.get_client(
                     hass=self.hass,
                     host=user_input[CONF_HOST],
-                    password=user_input[CONF_PASSWORD],
+                    password=web_encrypt_password(
+                        user_input[CONF_HOST], user_input[CONF_PASSWORD]
+                    ),
                     username=user_input[CONF_USERNAME],
                     logger=_LOGGER,
                     verify_ssl=user_input[CONF_VERIFY_SSL],
@@ -177,7 +180,9 @@ class OptionsFlow(config_entries.OptionsFlowWithConfigEntry):
                 router = await TPLinkRouterCoordinator.get_client(
                     hass=self.hass,
                     host=user_input[CONF_HOST],
-                    password=user_input[CONF_PASSWORD],
+                    password=web_encrypt_password(
+                        user_input[CONF_HOST], user_input[CONF_PASSWORD]
+                    ),
                     username=user_input[CONF_USERNAME],
                     logger=_LOGGER,
                     verify_ssl=user_input[CONF_VERIFY_SSL],

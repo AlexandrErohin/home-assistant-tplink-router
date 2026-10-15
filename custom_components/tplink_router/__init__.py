@@ -31,6 +31,7 @@ from .const import (
 )
 import logging
 from .coordinator import TPLinkRouterCoordinator, collect_mesh_nodes, supports_led_control
+from .re_encrypt import web_encrypt_password
 from .utils import validate_ipv4_address, validate_mac_address
 from homeassistant.helpers import device_registry
 
@@ -87,11 +88,12 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
 
     try:
         client_class = entry.data.get(CONF_CLIENT_CLASS)
+        password = web_encrypt_password(host, entry.data[CONF_PASSWORD])
         if not client_class:
             client = await TPLinkRouterCoordinator.get_client(
                 hass=hass,
                 host=host,
-                password=entry.data[CONF_PASSWORD],
+                password=password,
                 username=entry.data.get(CONF_USERNAME, DEFAULT_USER),
                 logger=_LOGGER,
                 verify_ssl=verify_ssl
@@ -105,7 +107,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
         else:
             client = TPLinkRouterCoordinator.get_client_by_class(client_class)(
                 host=host,
-                password=entry.data[CONF_PASSWORD],
+                password=password,
                 username=entry.data.get(CONF_USERNAME, DEFAULT_USER),
                 logger=_LOGGER,
                 verify_ssl=verify_ssl
