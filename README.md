@@ -60,6 +60,7 @@ Status sensors (client counts, CPU/memory, WAN/LAN addresses, …) are created o
  - CPU used
  - Memory used
  - Connection Type
+ - WAN Uptime (Internet connection duration in seconds; useful to detect WAN reconnects)
  - WAN IPv4 Address
  - LAN IPv4 Address
  - DHCP Reservations (count; full lease list in attributes — on routers with `get_ipv4_reservations`, when enabled in options)

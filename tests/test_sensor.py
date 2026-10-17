@@ -13,6 +13,7 @@ def _status(**overrides):
         "cpu_usage": None,
         "mem_usage": None,
         "conn_type": None,
+        "wan_ipv4_uptime": None,
         "wan_ipv4_addr": None,
         "lan_ipv4_addr": None,
         "wan_ipv6_enabled": None,
@@ -44,6 +45,13 @@ def test_status_sensors_skip_none_values():
     sensors = _status_sensor_types(status)
     assert [sensor.description.key for sensor in sensors] == ["cpu_used"]
     assert sensors[0].value(status) == 25.0
+
+
+def test_status_sensors_include_wan_ipv4_uptime():
+    status = _status(wan_ipv4_uptime=3600)
+    sensors = _status_sensor_types(status)
+    assert [sensor.description.key for sensor in sensors] == ["wan_ipv4_uptime"]
+    assert sensors[0].value(status) == 3600
 
 
 def test_status_sensors_empty_when_all_none():

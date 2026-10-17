@@ -15,6 +15,7 @@ from homeassistant.const import (
     UnitOfDataRate,
     UnitOfInformation,
     UnitOfFrequency,
+    UnitOfTime,
 )
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import HomeAssistant, callback
@@ -172,15 +173,14 @@ SENSOR_TYPES = (
         ),
     ),
     TPLinkRouterSensorConfig(
-    value=lambda status: status.wan_ipv4_uptime,
-    description=SensorEntityDescription(
-        key="wan_ipv4_uptime",
-        name="WAN Uptime",
-        icon="mdi:timer-outline",
-        device_class=SensorDeviceClass.DURATION,
-        state_class=SensorStateClass.MEASUREMENT,
-        native_unit_of_measurement="s",
-        ),    
+        value=lambda status: status.wan_ipv4_uptime,
+        description=SensorEntityDescription(
+            key="wan_ipv4_uptime",
+            name="WAN Uptime",
+            device_class=SensorDeviceClass.DURATION,
+            state_class=SensorStateClass.MEASUREMENT,
+            native_unit_of_measurement=UnitOfTime.SECONDS,
+        ),
     ),
     TPLinkRouterSensorConfig(
         value=lambda status: status.wan_ipv4_addr,

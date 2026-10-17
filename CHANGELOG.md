@@ -1,5 +1,17 @@
 # Changelog
 
+## [2.44.0] - 2026-10-17
+
+### Added
+
+- WAN Uptime sensor (`wan_ipv4_uptime` / Internet Uptime from the router UI), created only when the device reports the value ([#429](https://github.com/AlexandrErohin/home-assistant-tplink-router/pull/429))
+- **RE500X / RE505X / RE813XE / RE700X:** routers RE500X/RE505X/RE813XE/RE700X family now accept the **plaintext** password directly ([#245](https://github.com/AlexandrErohin/TP-Link-Archer-C6U/pull/245)).
+- **MR / VR:** added `cpu_usage` and `mem_usage` ([#242](https://github.com/AlexandrErohin/TP-Link-Archer-C6U/pull/242)).
+
+### Fixed
+
+- **RE813XE / RE700X:** CPU/memory polling recovers after transient failures ([#244](https://github.com/AlexandrErohin/TP-Link-Archer-C6U/pull/244)).
+
 ## [2.43.0] - 2026-10-06
 
 ### Added
