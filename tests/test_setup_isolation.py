@@ -2,6 +2,9 @@ import asyncio
 import logging
 from unittest.mock import AsyncMock, Mock, patch
 
+import pytest
+from homeassistant.exceptions import ConfigEntryNotReady
+
 from tplinkrouterc6u import TPLinkSG108EClient
 
 from custom_components.tplink_router import async_setup_entry
@@ -74,8 +77,8 @@ def _sg108e_client(*, led_status):
     return client
 
 
-def test_async_setup_entry_returns_false_when_initial_request_fails(caplog):
-    """A failing initial request must fail this entry gracefully, not raise."""
+def test_async_setup_entry_retries_when_initial_request_fails():
+    """An unreachable router fails only this entry, and Home Assistant retries it."""
     hass = FakeHass()
     entry = _entry()
     client = Mock()
@@ -84,13 +87,12 @@ def test_async_setup_entry_returns_false_when_initial_request_fails(caplog):
     ), patch.object(
         TPLinkRouterCoordinator, "request", side_effect=Exception("Cannot authorize!")
     ):
-        with caplog.at_level(logging.ERROR):
-            assert asyncio.run(async_setup_entry(hass, entry)) is False
-    assert "TPLink Router setup failed for" in caplog.text
+        with pytest.raises(ConfigEntryNotReady, match="TPLink Router setup failed for"):
+            asyncio.run(async_setup_entry(hass, entry))
 
 
-def test_async_setup_entry_returns_false_when_client_init_fails(caplog):
-    """Client construction/discovery failures must also isolate the entry."""
+def test_async_setup_entry_retries_when_client_init_fails():
+    """An unreachable router fails only this entry, and Home Assistant retries it."""
     hass = FakeHass()
     entry = _entry()
     del entry.data["client_class"]
@@ -99,9 +101,8 @@ def test_async_setup_entry_returns_false_when_client_init_fails(caplog):
         "get_client",
         side_effect=Exception("connection timed out"),
     ):
-        with caplog.at_level(logging.ERROR):
-            assert asyncio.run(async_setup_entry(hass, entry)) is False
-    assert "TPLink Router setup failed for" in caplog.text
+        with pytest.raises(ConfigEntryNotReady, match="TPLink Router setup failed for"):
+            asyncio.run(async_setup_entry(hass, entry))
 
 
 def test_async_setup_entry_reads_sg108e_led_successfully():
