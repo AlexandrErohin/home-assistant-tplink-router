@@ -7,6 +7,7 @@ from collections.abc import Callable
 from logging import Logger
 from typing import Any, TypeVar
 
+from requests import exceptions as requests_exceptions
 from tplinkrouterc6u import AuthorizeError
 
 T = TypeVar("T")
@@ -65,6 +66,8 @@ def is_retryable_error(error: Exception) -> bool:
     (bad credentials / HTTP 401) are not retried — that only delays failure
     and may trigger the router's login attempt limit.
     """
+    if _is_network_error(error):
+        return True
     message = str(error)
     if _TRANSIENT_RE.search(message):
         return True
@@ -73,6 +76,17 @@ def is_retryable_error(error: Exception) -> bool:
     if _AUTH_FAILURE_RE.search(message):
         return False
     return True
+
+
+def _is_network_error(error: BaseException | None) -> bool:
+    """Return whether the router could not be reached, even when a client wrapped the error."""
+    while error is not None:
+        if isinstance(error, OSError) and not isinstance(error, requests_exceptions.RequestException):
+            return True
+        if isinstance(error, (requests_exceptions.ConnectionError, requests_exceptions.Timeout)):
+            return True
+        error = error.__cause__ or error.__context__
+    return False
 
 
 def safe_call(

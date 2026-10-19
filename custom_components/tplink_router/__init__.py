@@ -32,7 +32,7 @@ from .const import (
 )
 import logging
 from .coordinator import TPLinkRouterCoordinator, collect_mesh_nodes, supports_led_control
-from .utils import validate_ipv4_address, validate_mac_address
+from .utils import validate_ipv4_address, validate_mac_address, is_retryable_error
 from homeassistant.helpers import device_registry
 
 
@@ -237,9 +237,17 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
             TPLinkRouterCoordinator.request, client, callback
         )
     except Exception as error:
-        raise ConfigEntryNotReady(
-            f"TPLink Router setup failed for {host}: {error}"
-        ) from error
+        if is_retryable_error(error):
+            raise ConfigEntryNotReady(
+                f"TPLink Router setup failed for {host}: {error}"
+            ) from error
+        _LOGGER.error(
+            "TPLink Router setup failed for %s: %s",
+            host,
+            error,
+            exc_info=True,
+        )
+        return False
     # Create device coordinator and fetch data
     coordinator = TPLinkRouterCoordinator(hass, client, entry.data[CONF_SCAN_INTERVAL], firmware, status,
                                           lte_status, _LOGGER, entry.entry_id, vpn_server_stat, vpn_client_status,

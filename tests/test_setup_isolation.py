@@ -5,7 +5,8 @@ from unittest.mock import AsyncMock, Mock, patch
 import pytest
 from homeassistant.exceptions import ConfigEntryNotReady
 
-from tplinkrouterc6u import TPLinkSG108EClient
+import requests
+from tplinkrouterc6u import AuthorizeError, ClientException, TPLinkSG108EClient
 
 from custom_components.tplink_router import async_setup_entry
 from custom_components.tplink_router.const import DOMAIN
@@ -77,18 +78,41 @@ def _sg108e_client(*, led_status):
     return client
 
 
-def test_async_setup_entry_retries_when_initial_request_fails():
-    """An unreachable router fails only this entry, and Home Assistant retries it."""
+def _unreachable_error():
+    """Build the error the C6U client raises when the router does not answer."""
+    try:
+        try:
+            raise requests.exceptions.ConnectionError(
+                OSError(113, "Host is unreachable")
+            )
+        except Exception as error:
+            raise ClientException(
+                f"TplinkRouter - TplinkRouterProvider - Cannot authorize! Error - {error}; Response - None"
+            )
+    except ClientException as wrapped:
+        return wrapped
+
+
+def _setup_with_request_error(error):
     hass = FakeHass()
     entry = _entry()
-    client = Mock()
     with patch.object(
-        TPLinkRouterCoordinator, "get_client_by_class", return_value=Mock(return_value=client)
-    ), patch.object(
-        TPLinkRouterCoordinator, "request", side_effect=Exception("Cannot authorize!")
-    ):
-        with pytest.raises(ConfigEntryNotReady, match="TPLink Router setup failed for"):
-            asyncio.run(async_setup_entry(hass, entry))
+        TPLinkRouterCoordinator, "get_client_by_class", return_value=Mock(return_value=Mock())
+    ), patch.object(TPLinkRouterCoordinator, "request", side_effect=error):
+        return asyncio.run(async_setup_entry(hass, entry))
+
+
+def test_async_setup_entry_retries_when_router_is_unreachable():
+    """An unreachable router fails only this entry, and Home Assistant retries it."""
+    with pytest.raises(ConfigEntryNotReady, match="TPLink Router setup failed for"):
+        _setup_with_request_error(_unreachable_error())
+
+
+def test_async_setup_entry_fails_without_retry_on_wrong_password(caplog):
+    """Bad credentials must not retry, or the router may lock the account."""
+    with caplog.at_level(logging.ERROR):
+        assert _setup_with_request_error(AuthorizeError("Login failed: wrong password")) is False
+    assert "TPLink Router setup failed for" in caplog.text
 
 
 def test_async_setup_entry_retries_when_client_init_fails():
