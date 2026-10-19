@@ -2,6 +2,7 @@
 from unittest.mock import Mock
 
 import pytest
+import requests
 
 from tplinkrouterc6u import AuthorizeError
 
@@ -101,6 +102,26 @@ def test_is_retryable_error_rejects_401():
 
 def test_is_retryable_error_does_not_treat_port_401_as_auth_failure():
     assert is_retryable_error(RuntimeError("Failed to connect to host:4010"))
+
+
+def test_is_retryable_error_retries_wrapped_unreachable_host():
+    try:
+        try:
+            raise requests.exceptions.ConnectionError(OSError(113, "Host is unreachable"))
+        except Exception as error:
+            raise ValueError(f"TplinkRouter - Cannot authorize! Error - {error}")
+    except ValueError as wrapped:
+        assert is_retryable_error(wrapped)
+
+
+def test_is_retryable_error_rejects_wrapped_401():
+    try:
+        try:
+            raise requests.exceptions.HTTPError("401 Client Error: Unauthorized")
+        except Exception as error:
+            raise ValueError(f"TplinkRouter - Cannot authorize! Error - {error}")
+    except ValueError as wrapped:
+        assert not is_retryable_error(wrapped)
 
 
 def test_is_retryable_error_accepts_transient_errors():

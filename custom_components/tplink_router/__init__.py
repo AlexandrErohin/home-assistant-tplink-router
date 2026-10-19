@@ -9,6 +9,7 @@ from homeassistant.const import (
 from datetime import datetime
 from homeassistant.core import HomeAssistant, ServiceCall
 from homeassistant.config_entries import ConfigEntry
+from homeassistant.exceptions import ConfigEntryNotReady
 import homeassistant.helpers.config_validation as cv
 import voluptuous as vol
 from .const import (
@@ -31,7 +32,7 @@ from .const import (
 )
 import logging
 from .coordinator import TPLinkRouterCoordinator, collect_mesh_nodes, supports_led_control
-from .utils import validate_ipv4_address, validate_mac_address
+from .utils import validate_ipv4_address, validate_mac_address, is_retryable_error
 from homeassistant.helpers import device_registry
 
 
@@ -236,6 +237,10 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
             TPLinkRouterCoordinator.request, client, callback
         )
     except Exception as error:
+        if is_retryable_error(error):
+            raise ConfigEntryNotReady(
+                f"TPLink Router setup failed for {host}: {error}"
+            ) from error
         _LOGGER.error(
             "TPLink Router setup failed for %s: %s",
             host,
