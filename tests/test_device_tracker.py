@@ -89,14 +89,17 @@ def test_device_info_uses_via_device_id_when_router_is_registered():
 
     parent = Mock(id="router-device-id")
     registry = Mock()
-    registry.async_get_device = Mock(return_value=parent)
+    registry.async_get_device_by_identifier = Mock(return_value=parent)
 
     with patch(
         "custom_components.tplink_router.device_tracker.dr.async_get",
         return_value=registry,
     ):
         info = tracker.device_info
-        assert resolve_via_device_id(tracker.hass, "11:22:33:44:55:66") == "router-device-id"
+        assert (
+            resolve_via_device_id(tracker.hass, "entry-1", "11:22:33:44:55:66")
+            == "router-device-id"
+        )
 
     assert info is not None
     assert info["connections"] == {(CONNECTION_NETWORK_MAC, "AA:BB:CC:DD:EE:FF")}
@@ -112,7 +115,8 @@ def test_device_info_omits_via_when_parent_not_registered():
     tracker.hass = tracker.coordinator.hass
 
     registry = Mock()
-    registry.async_get_device = Mock(return_value=None)
+    registry.async_get_device_by_identifier = Mock(return_value=None)
+    registry.async_get_device_by_connection = Mock(return_value=None)
     with patch(
         "custom_components.tplink_router.device_tracker.dr.async_get",
         return_value=registry,
@@ -129,14 +133,20 @@ def test_resolve_via_device_id_falls_back_to_connections():
 
     parent = Mock(id="via-conn")
     registry = Mock()
-    registry.async_get_device = Mock(side_effect=[None, parent])
+    registry.async_get_device_by_identifier = Mock(return_value=None)
+    registry.async_get_device_by_connection = Mock(return_value=parent)
     hass = FakeHass()
     with patch(
         "custom_components.tplink_router.device_tracker.dr.async_get",
         return_value=registry,
     ):
-        assert resolve_via_device_id(hass, "11:22:33:44:55:66") == "via-conn"
-    assert registry.async_get_device.call_count == 2
+        assert resolve_via_device_id(hass, "entry-1", "11:22:33:44:55:66") == "via-conn"
+    registry.async_get_device_by_identifier.assert_called_once_with(
+        ("tplink_router", "11:22:33:44:55:66"), "entry-1"
+    )
+    registry.async_get_device_by_connection.assert_called_once_with(
+        ("mac", "11:22:33:44:55:66"), "entry-1"
+    )
 
 
 def test_remember_keeps_last_meaningful_hostname_and_ip():
@@ -484,7 +494,7 @@ def test_mesh_tracker_satellite_gets_its_own_device_linked_to_its_parent():
     tracker.hass = tracker.coordinator.hass
     parent = Mock(id="parent-device-id")
     registry = Mock()
-    registry.async_get_device = Mock(return_value=parent)
+    registry.async_get_device_by_identifier = Mock(return_value=parent)
 
     with patch(
         "custom_components.tplink_router.device_tracker.dr.async_get",
@@ -509,7 +519,7 @@ def test_mesh_tracker_multi_hop_parent_is_the_uplink_node_not_the_router():
     tracker.hass = tracker.coordinator.hass
     parent = Mock(id="uplink-sat-id")
     registry = Mock()
-    registry.async_get_device = Mock(return_value=parent)
+    registry.async_get_device_by_identifier = Mock(return_value=parent)
 
     with patch(
         "custom_components.tplink_router.device_tracker.dr.async_get",
@@ -518,8 +528,8 @@ def test_mesh_tracker_multi_hop_parent_is_the_uplink_node_not_the_router():
         info = tracker.device_info
 
     assert info["via_device_id"] == "uplink-sat-id"
-    registry.async_get_device.assert_any_call(
-        identifiers={("tplink_router", "24-00-00-00-00-02")}
+    registry.async_get_device_by_identifier.assert_any_call(
+        ("tplink_router", "24-00-00-00-00-02"), "entry-1"
     )
 
 
@@ -531,7 +541,7 @@ def test_mesh_tracker_device_survives_the_node_dropping_out():
     tracker.hass = tracker.coordinator.hass
     parent = Mock(id="parent-device-id")
     registry = Mock()
-    registry.async_get_device = Mock(return_value=parent)
+    registry.async_get_device_by_identifier = Mock(return_value=parent)
 
     tracker.node = None
 

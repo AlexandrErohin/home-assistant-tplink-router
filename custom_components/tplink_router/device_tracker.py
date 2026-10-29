@@ -34,12 +34,15 @@ MAC_ADDR: TypeAlias = str
 MESH_ID_MARKER = "mesh_"
 
 
-def resolve_via_device_id(hass: HomeAssistant | None, mac: str | None) -> str | None:
+def resolve_via_device_id(
+    hass: HomeAssistant | None, config_entry_id: str, mac: str | None
+) -> str | None:
     """Return the device-registry id for a tplink_router device keyed by MAC.
 
     Home Assistant deprecated DeviceInfo.via_device=(domain, identifier) in favor of
     via_device_id (the registry id string). Look up by identifiers first, then by
-    network MAC connection — the main router device uses both.
+    network MAC connection — the main router device uses both. Identifiers and
+    connections are only unique per config entry, so the lookup is scoped to it.
     """
     if hass is None or not mac:
         return None
@@ -47,10 +50,10 @@ def resolve_via_device_id(hass: HomeAssistant | None, mac: str | None) -> str | 
         registry = dr.async_get(hass)
     except Exception:
         return None
-    device = registry.async_get_device(identifiers={(DOMAIN, mac)})
+    device = registry.async_get_device_by_identifier((DOMAIN, mac), config_entry_id)
     if device is None:
-        device = registry.async_get_device(
-            connections={(CONNECTION_NETWORK_MAC, mac)}
+        device = registry.async_get_device_by_connection(
+            (CONNECTION_NETWORK_MAC, mac), config_entry_id
         )
     return device.id if device else None
 
@@ -309,7 +312,9 @@ class TPLinkMeshTracker(CoordinatorEntity, RestoreEntity, ScannerEntity):
             info["model"] = self._model
         if self._vendor:
             info["manufacturer"] = self._vendor
-        via_id = resolve_via_device_id(self.hass, self._parent_macaddr)
+        via_id = resolve_via_device_id(
+            self.hass, self.coordinator.unique_id, self._parent_macaddr
+        )
         if via_id:
             info["via_device_id"] = via_id
         return info
@@ -489,7 +494,7 @@ class TPLinkTracker(CoordinatorEntity, RestoreEntity, ScannerEntity):
             name=self.hostname or self._mac,
         )
         via_id = resolve_via_device_id(
-            self.hass, self.coordinator.status.lan_macaddr
+            self.hass, self.coordinator.unique_id, self.coordinator.status.lan_macaddr
         )
         if via_id:
             info["via_device_id"] = via_id
