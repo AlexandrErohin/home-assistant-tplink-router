@@ -1,6 +1,8 @@
 from types import SimpleNamespace
 
-from custom_components.tplink_router.sensor import _status_sensor_types
+from tplinkrouterc6u import PortStatus, RouterPortStatus
+
+from custom_components.tplink_router.sensor import TPLinkRouterPortLinkSpeedSensor, _status_sensor_types
 
 
 def _status(**overrides):
@@ -56,3 +58,40 @@ def test_status_sensors_include_wan_ipv4_uptime():
 
 def test_status_sensors_empty_when_all_none():
     assert _status_sensor_types(_status()) == ()
+
+
+def _port_coordinator(ports):
+    return SimpleNamespace(unique_id="test", device_info=None, port_status=ports, last_update_success=True)
+
+
+def test_port_link_speed_sensor_router_port():
+    # Router ports (Archer C5400X) come as RouterPortStatus: only link, speed and duplex
+    ports = [RouterPortStatus(port=0, link_up=True, negotiated_speed=1000, negotiated_duplex="full")]
+    sensor = TPLinkRouterPortLinkSpeedSensor(_port_coordinator(ports), 0)
+    assert sensor.native_value == 1000
+    assert sensor.extra_state_attributes == {"negotiated_duplex": "full"}
+
+
+def test_port_link_speed_sensor_switch_port():
+    # Switch ports (TL-SG108E) come as PortStatus and keep all their attributes
+    port = PortStatus(
+        port=1, enabled=True, link_up=True, auto_negotiation=True, configured_speed=1000, configured_duplex="full",
+        negotiated_speed=1000, negotiated_duplex="full", flow_control_enabled=False, flow_control_active=False,
+        lag=0, tx_good_packets=10, tx_bad_packets=0, rx_good_packets=20, rx_bad_packets=0,
+    )
+    sensor = TPLinkRouterPortLinkSpeedSensor(_port_coordinator([port]), 1)
+    assert sensor.native_value == 1000
+    assert sensor.extra_state_attributes == {
+        "negotiated_duplex": "full",
+        "enabled": True,
+        "auto_negotiation": True,
+        "configured_speed": 1000,
+        "configured_duplex": "full",
+        "flow_control_enabled": False,
+        "flow_control_active": False,
+        "lag": 0,
+        "tx_good_packets": 10,
+        "tx_bad_packets": 0,
+        "rx_good_packets": 20,
+        "rx_bad_packets": 0,
+    }
