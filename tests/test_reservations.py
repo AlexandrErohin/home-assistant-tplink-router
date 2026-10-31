@@ -1,10 +1,15 @@
 from types import SimpleNamespace
-from unittest.mock import Mock
+from unittest.mock import Mock, patch
 
 import pytest
 import voluptuous as vol
 
-from custom_components.tplink_router import ADD_RESERVATION_SCHEMA, DELETE_RESERVATION_SCHEMA
+from custom_components.tplink_router import (
+    ADD_RESERVATION_SCHEMA,
+    DELETE_RESERVATION_SCHEMA,
+    get_coordinator_for_device,
+)
+from custom_components.tplink_router.const import DOMAIN
 from custom_components.tplink_router.sensor import TPLinkRouterReservationsSensor
 
 
@@ -78,3 +83,56 @@ def test_delete_reservation_schema_requires_mac():
     assert data["mac"] == "AA-BB-CC-DD-EE-FF"
     with pytest.raises(vol.Invalid):
         DELETE_RESERVATION_SCHEMA({"device": "abc123", "mac": "nope"})
+
+
+def test_get_coordinator_for_device_uses_config_entry_scoped_lookup():
+    entry = SimpleNamespace(entry_id="entry-1", domain=DOMAIN)
+    device = SimpleNamespace(id="dev-1")
+    coordinator = Mock()
+    coordinator.router = Mock(spec=["add_ipv4_reservation"])
+    coordinator.support_dhcp_reservations = True
+
+    hass = Mock()
+    hass.data = {DOMAIN: {"entry-1": coordinator}}
+
+    # create=True: helper exists only on Home Assistant >= 2026.8
+    with patch(
+        "custom_components.tplink_router.device_registry.async_get_device_and_config_entry_for_domain",
+        return_value=(device, entry),
+        create=True,
+    ) as lookup:
+        assert (
+            get_coordinator_for_device(hass, "dev-1", "add_ipv4_reservation")
+            is coordinator
+        )
+    lookup.assert_called_once_with(hass, "dev-1", domain=DOMAIN)
+
+
+def test_get_coordinator_for_device_returns_none_when_device_missing():
+    hass = Mock()
+    hass.data = {DOMAIN: {}}
+    with patch(
+        "custom_components.tplink_router.device_registry.async_get_device_and_config_entry_for_domain",
+        return_value=(None, None),
+        create=True,
+    ):
+        assert get_coordinator_for_device(hass, "missing", "send_sms") is None
+    assert get_coordinator_for_device(hass, None, "send_sms") is None
+
+
+def test_get_coordinator_for_device_rejects_disabled_dhcp_reservations():
+    entry = SimpleNamespace(entry_id="entry-1", domain=DOMAIN)
+    coordinator = Mock()
+    coordinator.router = Mock(spec=["add_ipv4_reservation"])
+    coordinator.support_dhcp_reservations = False
+    hass = Mock()
+    hass.data = {DOMAIN: {"entry-1": coordinator}}
+
+    with patch(
+        "custom_components.tplink_router.device_registry.async_get_device_and_config_entry_for_domain",
+        return_value=(SimpleNamespace(id="dev-1"), entry),
+        create=True,
+    ):
+        assert (
+            get_coordinator_for_device(hass, "dev-1", "add_ipv4_reservation") is None
+        )

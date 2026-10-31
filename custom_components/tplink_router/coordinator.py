@@ -140,6 +140,8 @@ class TPLinkRouterCoordinator(DataUpdateCoordinator):
             led_status: bool | None = None,
     ) -> None:
         self.router = router
+        # ConfigEntry.entry_id (not the flow unique_id / LAN MAC). Used in entity
+        # unique_ids and as config_entry_id for device-registry lookups.
         self.unique_id = unique_id
         self.status = status
         self.tracked = {}

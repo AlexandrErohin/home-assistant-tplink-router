@@ -43,6 +43,10 @@ def resolve_via_device_id(
     via_device_id (the registry id string). Look up by identifiers first, then by
     network MAC connection — the main router device uses both. Identifiers and
     connections are only unique per config entry, so the lookup is scoped to it.
+
+    ``config_entry_id`` is the owning ConfigEntry.entry_id. Callers pass
+    ``coordinator.unique_id``, which is set to that entry id at setup (not the
+    config-flow unique id / LAN MAC).
     """
     if hass is None or not mac:
         return None

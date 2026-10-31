@@ -7,6 +7,11 @@
 - TP-LINK RE505X v1.0 to supported list
 - TP-LINK XGB834v v1.1 to supported list
 
+### Fixed
+
+- Replace deprecated `DeviceRegistry.async_get_device` with config-entry-scoped lookups for `via_device_id` ([#438](https://github.com/AlexandrErohin/home-assistant-tplink-router/pull/438))
+- Resolve service target devices without deprecated `DeviceEntry.config_entries`
+
 ## [2.44.0] - 2026-10-17
 
 ### Added
