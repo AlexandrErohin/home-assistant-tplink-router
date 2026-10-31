@@ -11,6 +11,7 @@
 
 - Replace deprecated `DeviceRegistry.async_get_device` with config-entry-scoped lookups for `via_device_id` ([#438](https://github.com/AlexandrErohin/home-assistant-tplink-router/pull/438))
 - Resolve service target devices without deprecated `DeviceEntry.config_entries`
+- Retry setup with `ConfigEntryNotReady` when the router is temporarily unreachable (e.g. after a power cut); bad credentials still fail without retry ([#433](https://github.com/AlexandrErohin/home-assistant-tplink-router/pull/433))
 
 ## [2.44.0] - 2026-10-17
 
