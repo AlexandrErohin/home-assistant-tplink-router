@@ -374,6 +374,7 @@ To do that:
 - RE305 4.0
 - RE315 1.0
 - RE330 v1
+- RE505X v1.0
 - RE700X
 - RE813XE v1.6
 - TD-W9960 (v1, V1.20)
@@ -402,6 +403,7 @@ To do that:
 - VX420-G2h v1.1
 - VX800v v1
 - XC220-G3v v2.30
+- XGB834v v1.1
 ### <a id="mercusys">MERCUSYS routers</a>
 - AC10 1.20
 - Halo H25BE 1.0

@@ -1,5 +1,12 @@
 # Changelog
 
+## [2.45.0] - 2026-10-31
+
+### Added
+
+- TP-LINK RE505X v1.0 to supported list
+- TP-LINK XGB834v v1.1 to supported list
+
 ## [2.44.0] - 2026-10-17
 
 ### Added
