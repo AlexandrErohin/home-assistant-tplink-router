@@ -127,6 +127,7 @@ def _led_coordinator(led_status=True):
     )
     coordinator.vpn_server_status = None
     coordinator.vpn_client_status = None
+    coordinator.parental_status = None
     return coordinator
 
 

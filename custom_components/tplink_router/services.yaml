@@ -49,3 +49,103 @@ delete_reservation:
       required: true
       selector:
         text:
+
+get_parental_devices:
+  name: Get parental devices
+  description: Admin only. Read devices assigned to the selected profile. Choose All router devices explicitly to discover assignment candidates.
+  fields:
+    profile: &parental_profile
+      name: Parental profile
+      description: Select the profile's internet-access switch, not a bedtime or daily-limit switch.
+      required: true
+      selector:
+        entity:
+          integration: tplink_router
+          domain: switch
+    scope:
+      name: Device scope
+      description: Defaults to the selected profile's current assignments, including offline devices.
+      default: profile
+      selector:
+        select:
+          options:
+            - value: profile
+              label: Selected profile only
+            - value: inventory
+              label: All router devices (assignment inventory)
+
+assign_parental_device:
+  name: Assign parental device
+  description: Admin only. Add a device to an existing profile. For explicit cross-profile moves with recovery, use the Network & parental controls sidebar.
+  fields:
+    profile: *parental_profile
+    device_id: &parental_device
+      name: Router device ID
+      description: The device_id from Get parental devices. Use All router devices to find new candidates, not a Home Assistant device registry ID.
+      required: true
+      selector:
+        text:
+
+remove_parental_device:
+  name: Remove parental device
+  description: Admin only. Remove one device assignment without changing other devices, filters or schedules.
+  fields:
+    profile: *parental_profile
+    device_id: *parental_device
+
+set_parental_bedtime:
+  name: Set parental bedtime
+  description: Admin only. Set router-local bedtime times atomically. Overnight windows are supported; start and end must differ.
+  fields:
+    profile: *parental_profile
+    period:
+      name: Night group
+      required: true
+      selector:
+        select:
+          options:
+            - value: workday
+              label: School nights (Sunday-Thursday)
+            - value: weekend
+              label: Weekend nights (Friday-Saturday)
+    enabled: &parental_enabled
+      name: Enabled
+      description: Omit to keep the current enable flag.
+      selector:
+        boolean:
+    begin:
+      name: Bedtime start
+      description: Router-local HH:MM; seconds must be zero. Omit to keep the current time.
+      selector:
+        time:
+    end:
+      name: Bedtime end
+      description: Router-local HH:MM; seconds must be zero. Omit to keep the current time.
+      selector:
+        time:
+
+set_parental_daily_limit:
+  name: Set parental daily limit
+  description: Admin only. Set the daily online-time budget, not an access window. Omitted fields keep their current values.
+  fields:
+    profile: *parental_profile
+    period:
+      name: Day group
+      required: true
+      selector:
+        select:
+          options:
+            - value: workday
+              label: Weekdays (Monday-Friday)
+            - value: weekend
+              label: Weekend (Saturday-Sunday)
+    enabled: *parental_enabled
+    minutes:
+      name: Daily online-time budget
+      selector:
+        number:
+          min: 15
+          max: 960
+          step: 15
+          unit_of_measurement: min
+          mode: box

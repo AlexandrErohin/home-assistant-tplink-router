@@ -1,0 +1,262 @@
+<!doctype html>
+<html lang="en"><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Synthetic TP-Link network workspace</title>
+<style>
+  body{margin:0;font:14px Arial,sans-serif;background:#f5f5f5;color:#212121}
+  .caption{padding:16px;margin:0}iframe{display:block;border:1px solid #ccc;margin:0 16px 32px;background:#fff}
+  #desktop{width:1280px;height:1000px}#mobile{width:390px;height:900px}
+</style>
+<script type="module">
+import "../../custom_components/tplink_router/frontend/network-panel.js";
+import { fixture } from "./fixture-data.mjs";
+if (!new URLSearchParams(location.search).has("frame")) {
+  document.body.innerHTML = `<p class="caption">Synthetic desktop · no live router connection</p><iframe id="desktop" title="Desktop preview" src="?frame=1"></iframe><p class="caption">Synthetic mobile · 390px</p><iframe id="mobile" title="Mobile preview" src="?frame=1"></iframe>`;
+} else {
+  const panel = document.createElement("tplink-network-panel");
+  let data = fixture();
+  const calls = [];
+  window.failAction = false;
+  window.failRead = false;
+  window.batchPartial = false;
+  panel.hass = {
+    async callWS(request) {
+      calls.push(request);
+      if (request.type === "tplink_router/network" && !request.entry_id) {
+        return [{ entry_id: data.entry_id, name: "Synthetic router" }];
+      }
+      if (request.type === "tplink_router/network" && window.failRead) {
+        throw new Error("Synthetic snapshot read failed");
+      }
+      if (request.type === "tplink_router/profile_read") {
+        if (window.failFeature) throw new Error("Synthetic profile metadata/report unavailable");
+        if (request.kind === "creation_options") return {
+          maximum: 16, remaining: 16 - data.profiles.length,
+          presets: [{ filter_level: "teen", categories: ["Example category", "<unsafe category>"] }, { filter_level: "adult", categories: [] }],
+        };
+        if (request.kind === "delete_preview") {
+          const p = data.profiles.find(p => p.owner_id === request.owner_id);
+          return { owner_id: p.owner_id, name: p.name, members: p.members, revision: "a".repeat(64) };
+        }
+        return {
+          owner_id: request.owner_id,
+          insights: { status: "ok", data: [
+            { minutes: 42, websites: [{ website: "example.test", minutes: 12, blocked: false }, { website: "<script>synthetic<\/script>", minutes: 2, blocked: true }] },
+            { minutes: 0, websites: [] },
+          ] },
+          history: window.partialReport ? { status: "unavailable", error: "Synthetic history read failed" } : { status: "ok", data: [
+            { website: "example.test", timestamp: 1700000000, blocked: true },
+          ] },
+        };
+      }
+      if (request.type === "tplink_router/network_action") {
+        if (window.failAction) throw new Error("Synthetic write not confirmed. Inspect actual membership.");
+        if (request.action === "change_profile") {
+          const device = data.devices.find(d => d.mac === request.mac);
+          if ((device.owners[0] || "") !== request.expected_owner) throw new Error("Membership changed; refresh");
+          data.profiles.forEach(p => { p.members = p.members.filter(mac => mac !== request.mac); });
+          device.owners = request.destination ? [request.destination] : [];
+          if (request.destination) data.profiles.find(p => p.owner_id === request.destination).members.push(device.mac);
+        } else if (request.action === "assign_devices") {
+          if (!request.macs.every(mac => data.devices.find(d => d.mac === mac)?.owners.length === 0)) {
+            throw new Error("Selection ownership changed");
+          }
+          const outcomes = request.macs.map((mac, i) => {
+            if (window.batchPartial && i === request.macs.length - 1) return { mac, status: "not_assigned" };
+            const device = data.devices.find(d => d.mac === mac);
+            device.owners = [request.destination];
+            data.profiles.find(p => p.owner_id === request.destination).members.push(mac);
+            return { mac, status: window.batchPartial ? "assigned_unconfirmed" : "assigned" };
+          });
+          return { ...structuredClone(data), assignment_result: {
+            confirmed: !window.batchPartial, error: window.batchPartial ? "Synthetic partial assignment" : null, outcomes,
+          } };
+        } else if (request.action === "create_profile") {
+          const p = {
+            ...structuredClone(data.profiles[2]), owner_id: "new", name: request.name, members: [],
+          };
+          data.profiles.push(p);
+          return { ...structuredClone(data), creation_result: { confirmed: true, owner_id: "new", error: null } };
+        } else if (request.action === "rename_profile") {
+          data.profiles.find(p => p.owner_id === request.owner_id).name = request.name;
+        } else if (request.action === "delete_profile") {
+          data.profiles = data.profiles.filter(p => p.owner_id !== request.owner_id);
+          data.devices.forEach(d => { d.owners = d.owners.filter(id => id !== request.owner_id); });
+        } else if (request.action === "schedule") {
+          const p = data.profiles.find(p => p.owner_id === request.owner_id);
+          p.settings[`enable_${request.period}_${request.kind}`] = request.enabled;
+          if ("minutes" in request) p.settings[`${request.period}_daily_time`] = request.minutes;
+        }
+      }
+      return structuredClone(data);
+    },
+  };
+  document.body.append(panel);
+  window.panel = panel;
+  const tick = () => new Promise(resolve => setTimeout(resolve, 0));
+  window.runTests = async () => {
+    await tick();
+    const results = [];
+    const ok = (condition, name) => { if (!condition) throw new Error(name); results.push(name); };
+    const root = panel.shadowRoot;
+    const input = (selector, value) => {
+      const el = root.querySelector(selector);
+      if (el.type === "checkbox") el.checked = value; else el.value = value;
+      el.dispatchEvent(new Event("input", { bubbles: true }));
+      return el;
+    };
+    ok(root.querySelectorAll(".device-row").length === 2, "Default online Wi-Fi only");
+    const search = input("#search", "laptop");
+    search.focus(); search.setSelectionRange(3, 3);
+    await panel.load(true);
+    ok(root.activeElement.id === "search" && root.activeElement.selectionStart === 3, "Quiet update preserves search focus and cursor");
+    ok(root.querySelectorAll(".device-row").length === 1, "Search narrows devices");
+    input("#search", "missing");
+    ok(root.querySelector(".empty").textContent.includes("No matching"), "Actionable empty state");
+    input("#search", "");
+    root.querySelector('[data-id="02:00:00:00:00:01"]').click();
+    ok(root.activeElement.id === "detail-heading", "Keyboard focus enters details");
+    input('[name="destination"]', "1");
+    root.querySelector("#profile-change").requestSubmit();
+    ok(root.querySelector("dialog").open && root.querySelector("dialog").textContent.includes("Study → Shared"), "Move confirmation names source and destination");
+    await panel.load(true);
+    ok(root.querySelector("dialog").open && panel.pending, "In-flight quiet read preserves open confirmation");
+    root.querySelector('[data-action="cancel"]').click();
+    ok(!calls.some(c => c.action === "change_profile"), "Cancel never sends a write");
+    root.querySelector("#profile-change").requestSubmit();
+    root.querySelector('[data-action="confirm"]').click();
+    await tick();
+    ok(panel.data.devices[0].owners[0] === "1" && panel.notice.includes("read-back"), "Move shows confirmed actual membership");
+    window.failAction = true;
+    input('[name="destination"]', "2");
+    root.querySelector("#profile-change").requestSubmit();
+    root.querySelector('[data-action="confirm"]').click();
+    await tick();
+    ok(panel.error.includes("not confirmed") && panel.data.devices[0].owners[0] === "1", "Failed move reads actual state without optimistic success");
+    await panel.load(true);
+    ok(panel.error.includes("not confirmed"), "Background read does not hide a write failure");
+    window.failRead = true;
+    await panel.load(true);
+    ok(panel.readFailed && !panel.data.devices.some(d => d.online), "Read failure cannot retain a live-looking online list");
+    window.failRead = false;
+    await panel.load();
+    window.failAction = false;
+    root.querySelector('[data-tab="profiles"]').click();
+    root.querySelector('[data-id="0"]').click();
+    const budget = root.querySelector('form[data-kind="time_limit"]');
+    input('form[data-kind="time_limit"] [name="minutes"]', "180");
+    input('form[data-kind="time_limit"] [name="enabled"]', true);
+    await panel.load(true);
+    ok(root.querySelector('form[data-kind="time_limit"] [name="minutes"]').value === "180", "Quiet refresh preserves unsaved schedule draft");
+    root.querySelector('form[data-kind="time_limit"]').requestSubmit();
+    root.querySelector('[data-action="confirm"]').click();
+    await tick();
+    ok(calls.some(c => c.action === "schedule" && c.minutes === 180 && c.enabled), "Schedule form submits explicit minutes and enable flag");
+    panel.data.stale = true; panel.render();
+    ok([...root.querySelectorAll("form button")].every(b => b.disabled), "Stale snapshot disables writes");
+    const priorCalls = calls.length;
+    root.querySelector('form[data-kind="time_limit"]').dispatchEvent(new Event("submit", { bubbles: true, cancelable: true }));
+    ok(!panel.pending && calls.length === priorCalls, "Stale form cannot bypass disabled button");
+    panel.data = fixture(); panel.selected = "2"; panel.tab = "profiles"; panel.render();
+    ok(root.querySelector("aside").textContent.includes("No devices assigned"), "Empty profile is not whole inventory");
+    panel.data = fixture(); panel.tab = "devices"; panel.selected = null; panel.render();
+    input('[data-filter="status"]', "offline"); input('[data-filter="connection"]', "all");
+    ok(root.querySelectorAll(".device-row").length === 2, "Offline and cached filters");
+    panel.data = null; panel.loading = true; panel.render();
+    ok(root.textContent.includes("Loading network"), "Loading state");
+    panel.loading = false; panel.data = fixture(); panel.readFailed = true;
+    panel.error = "Synthetic connection lost"; panel.render();
+    ok(root.querySelector('[role="alert"]').textContent.includes("connection lost"), "Read error is explicit");
+    panel.readFailed = false; panel.error = ""; panel.notice = ""; panel.tab = "devices"; panel.selected = null;
+    panel.filters = { search: "", status: "online", connection: "wifi", profile: "all" };
+    data = fixture();
+    const additional = { ...data.devices[1], mac: "02:00:00:00:00:06", name: "Second guest tablet", ip: "192.0.2.16", owners: [] };
+    data.devices.push(additional);
+    panel.data = structuredClone(data); panel.render();
+    ok(root.querySelector('[data-batch-mac="02:00:00:00:00:01"]').disabled, "Batch cannot silently select an assigned device");
+    input('[data-batch-mac="02:00:00:00:00:02"]', true);
+    input('[data-batch-mac="02:00:00:00:00:06"]', true);
+    ok(panel.batchSelection.size === 2, "Multiple device checkboxes select independently from details");
+    input("#search", "Second");
+    ok(root.querySelector("#batch-controls").textContent.includes("1 hidden by filters"), "Filtered selections remain explicit, not silently added or dropped");
+    input('[name="batchDestination"]', "2");
+    await panel.load(true);
+    ok(panel.batchSelection.size === 2 && root.querySelector('[name="batchDestination"]').value === "2", "Quiet refresh preserves selected devices and destination");
+    root.querySelector("#batch-assign").requestSubmit();
+    ok(root.querySelector("dialog").open && root.querySelector("dialog").textContent.includes("2 selected unassigned") &&
+      root.querySelector("dialog").textContent.includes("Empty profile"), "Batch confirmation names count, destination and selected devices");
+    root.querySelector('[data-action="cancel"]').click();
+    ok(!calls.some(c => c.action === "assign_devices"), "Cancelling a batch sends no write");
+    root.querySelector("#batch-assign").requestSubmit();
+    panel.data.updated_at = new Date(Date.now() - 121000).toISOString();
+    root.querySelector('[data-action="confirm"]').click();
+    await tick();
+    ok(!calls.some(c => c.action === "assign_devices"), "Expired batch confirmation cannot send a write");
+    await panel.load();
+    root.querySelector("#batch-assign").requestSubmit();
+    window.batchPartial = true;
+    root.querySelector('[data-action="confirm"]').click();
+    await tick();
+    ok(calls.filter(c => c.action === "assign_devices").length === 1, "Batch sends one action without per-device retry");
+    ok(panel.error.includes("partial") && panel.batchResult.outcomes[0].status === "assigned_unconfirmed" &&
+      panel.batchResult.outcomes[1].status === "not_assigned", "Partial readback is shown per device, never blanket success");
+    ok(panel.batchSelection.size === 0 && root.querySelector(".batch-results"), "Submitted selection clears and partial results persist for review");
+    await panel.load(true);
+    ok(panel.batchResult && panel.error.includes("partial"), "Quiet reads retain batch failure results");
+    window.batchPartial = false;
+    data = fixture(); panel.data = structuredClone(data); panel.batchResult = null;
+    panel.error = ""; panel.notice = ""; panel.tab = "profiles"; panel.selected = null; panel.render();
+    ok(!calls.some(c => c.kind === "report"), "Browsing reports never load during ordinary polling or navigation");
+    root.querySelector('[data-action="new-profile"]').click(); await tick();
+    ok(panel.creationOptions.remaining === 13 && root.querySelector("#create-profile"), "Create form loads live metadata explicitly");
+    input("#newName", "New synthetic profile"); input('[name="newFilter"]', "teen");
+    ok(root.textContent.includes("<unsafe category>") && !root.querySelector("unsafe"), "Preset categories are shown as escaped text");
+    await panel.load(true);
+    ok(root.querySelector("#newName").value === "New synthetic profile", "Quiet refresh preserves new profile draft");
+    root.querySelector("#create-profile").requestSubmit();
+    ok(root.querySelector("dialog").textContent.includes("No device is assigned"), "Creation confirmation never silently assigns or moves devices");
+    root.querySelector('[data-action="cancel"]').click();
+    ok(!calls.some(c => c.action === "create_profile"), "Cancel creation sends no write");
+    root.querySelector("#create-profile").requestSubmit(); root.querySelector('[data-action="confirm"]').click(); await tick();
+    ok(calls.filter(c => c.action === "create_profile").length === 1 && panel.selected === "new" &&
+      panel.notice.includes("confirmed"), "One create action opens confirmed empty profile");
+    input("#profileName", "Renamed synthetic profile"); root.querySelector("#rename-profile").requestSubmit();
+    ok(root.querySelector("dialog").textContent.includes("Entity IDs are not renamed"), "Rename confirmation preserves stable profile identity");
+    root.querySelector('[data-action="confirm"]').click(); await tick();
+    ok(panel.data.profiles.find(p => p.owner_id === "new").name === "Renamed synthetic profile", "Rename reads back new profile name");
+    root.querySelector('[data-action="load-report"]').click(); await tick();
+    ok(panel.report && root.textContent.includes("42 minutes online") &&
+      root.textContent.includes("No byte-usage totals") && !root.querySelector("script"), "On-demand profile report has minutes and escaped site labels, not byte claims");
+    const reportCalls = calls.filter(c => c.kind === "report").length;
+    await panel.load(true);
+    ok(calls.filter(c => c.kind === "report").length === reportCalls, "Quiet polls never reload sensitive reports");
+    input('[name="reportDay"]', "1");
+    ok(root.textContent.includes("No website records for this period"), "Empty report period is distinct from a failed read");
+    root.querySelector('[data-action="clear-report"]').click();
+    ok(!panel.report && !root.textContent.includes("example.test"), "Clear report removes private content from memory and DOM");
+    window.partialReport = true; root.querySelector('[data-action="load-report"]').click(); await tick();
+    ok(panel.report && root.textContent.includes("Synthetic history read failed") &&
+      root.textContent.includes("42 minutes online"), "Partial report failures retain successful section without claiming empty history");
+    window.partialReport = false;
+    root.querySelector('[data-action="close"]').click();
+    ok(!panel.report && !root.textContent.includes("example.test"), "Leaving details clears report without automatic reload");
+    root.querySelector('[data-id="0"]').click();
+    root.querySelector('[data-action="delete-profile"]').click(); await tick();
+    ok(panel.pending?.action === "delete_profile" && root.querySelector("dialog").textContent.includes("2 assigned devices") &&
+      panel.confirmationDevices.length === 2, "Delete preview names profile and current affected-device count");
+    root.querySelector('[data-action="cancel"]').click();
+    ok(!calls.some(c => c.action === "delete_profile"), "Cancel deletion sends no write");
+    root.querySelector('[data-action="delete-profile"]').click(); await tick();
+    root.querySelector('[data-action="confirm"]').click(); await tick();
+    ok(calls.filter(c => c.action === "delete_profile").length === 1 &&
+      !panel.data.profiles.some(p => p.owner_id === "0") && !panel.selected, "One delete action closes removed profile after readback");
+    panel.readFailed = false; panel.error = ""; panel.notice = ""; panel.draft = {};
+    panel.filters = { search: "", status: "online", connection: "wifi", profile: "all" };
+    data = fixture(); data.devices.push(additional); panel.data = structuredClone(data);
+    panel.batchSelection = new Set([data.devices[1].mac, additional.mac]); panel.batchDestination = "2";
+    panel.batchResult = null; panel.tab = "devices"; panel.selected = null;
+    panel.render();
+    return results;
+  };
+}
+</script>
+<body></body></html>

@@ -44,11 +44,367 @@ If you forget to enable it back - it would be automatically enable after the con
  - LAN IPv4 DHCP Server Enable/Disable (for some routers)
  - E-WAN connect (for MR/EX-family routers with Ethernet WAN) — on = DHCP Renew, off = DHCP Release; useful to reset a stuck WAN link after reboot
  - LED Enable/Disable (for TL-SG family)
+ - Per-profile internet access (Archer AX50 HomeCare only; see below)
 
 Wi‑Fi, VPN, DHCP, E-WAN, and LED switches are created only when the device supports them (status field / API method present).
 
 > [!WARNING]
 > Disabling the LAN IPv4 DHCP server can leave clients without an IP address (including the Home Assistant host, if it uses DHCP). Prefer static addresses or another DHCP server before turning this switch off.
+
+#### HomeCare parental profiles
+
+Archer AX50 HomeCare profiles are read during the existing router polling cycle,
+using the same client, login/logout cycle and request lock. Each profile gets an
+internet-access switch: **on** clears its manual pause; **off** manually blocks
+internet access. This is **not** effective connectivity: schedules, time limits,
+content filters and other router policies still apply when the switch is on.
+Profile names may change without changing entity identity. Newly added profiles
+are discovered on subsequent polls; removed profiles become unavailable.
+
+Support is initially restricted to AX50 clients using the library's LuCI transport.
+Other models (including HomeShield and Deco parental controls) are not probed.
+The profile-list API was read on Archer AX50 v1.0 firmware
+`1.1.2 Build 20251022 rel.69668(4555)`. The pause/resume endpoint and boolean
+encoding come from that firmware's web UI source and have been verified with a
+controlled profile pause/resume test. Write acknowledgements without a `data`
+field are supported; the resulting pause flag is also read back. Other AX50
+firmware may not implement this API. Explicitly
+unsupported clients stop profile polling; unknown endpoint errors, malformed
+responses and temporary failures make profiles unavailable and retry on the next
+poll, without interrupting normal router updates or appearing as an empty list.
+Profile filters and browsing insights are not retained as attributes or logged.
+Internet-access switches expose `owner_id`, sanitized `assigned_devices` (router
+device ID, name, MAC and client type) and the validated current `schedule`.
+
+Profiles with valid non-Pro schedule data also get four configuration switches:
+workday/weekend daily-limit enable flags and school-night/weekend bedtime enable
+flags. These enable or disable the existing schedule without resetting its times
+or budgets. The firmware's `"0"` budget with a disabled flag is an unset-budget
+sentinel, not an enabled zero-minute allowance. Its switch remains off; configure
+a valid positive budget before enabling it (or set the budget and enable flag
+together in the daily-limit action). User-supplied zero-minute budgets are rejected.
+Incomplete or HomeCare Pro schedule data is not editable; this does not
+hide the profile's manual internet-access switch. Schedule changes and device
+assignments are available in the **Network & parental controls** sidebar panel
+and as actions in **Developer tools > Actions**. Each action's `profile` field selects the existing **internet-access
+switch**, not a schedule switch or Home Assistant device registry ID.
+
+| Action | Settings |
+|---|---|
+| `tplink_router.get_parental_devices` | Defaults to devices assigned to the selected profile, including offline assignments. Optional `scope: inventory` explicitly returns all router assignment candidates. |
+| `tplink_router.assign_parental_device` | Add one router `device_id` to the selected existing profile. Honors the router-reported device limit. |
+| `tplink_router.remove_parental_device` | Remove one router `device_id` from that profile, leaving other assignments intact. |
+| `tplink_router.set_parental_bedtime` | Set `period` (`workday` or `weekend`), optional `enabled`, optional `begin` and `end` in router-local `HH:MM` (zero seconds). |
+| `tplink_router.set_parental_daily_limit` | Set `period`, optional `enabled`, optional `minutes`: **15-960 minutes in 15-minute steps**. This is a daily online-time budget, not an access window. |
+
+Daily-limit `workday` means **Monday-Friday**, and `weekend` means
+**Saturday-Sunday**. Bedtime `workday` means **Sunday-Thursday school nights**;
+bedtime `weekend` means **Friday-Saturday nights**. Times use the router's local
+clock, not Home Assistant timezone conversion. Overnight windows such as
+22:00-07:00 are supported. Equal start/end times are rejected because that
+firmware's all-day/empty-window semantics have not been established.
+
+Omitted action fields retain their current values; supply at least one setting.
+Changing times/budgets does not implicitly enable them. The bedtime action
+accepts both ends and the enable flag together to avoid intermediate schedules.
+For example (replace the entity ID with your profile's internet-access switch):
+
+```yaml
+action: tplink_router.set_parental_bedtime
+data:
+  profile: switch.example_internet_access
+  period: workday
+  enabled: true
+  begin: "22:00"
+  end: "07:00"
+```
+
+```yaml
+action: tplink_router.set_parental_daily_limit
+data:
+  profile: switch.example_internet_access
+  period: weekend
+  minutes: 180
+  enabled: true
+```
+
+`get_parental_devices` returns `{"devices": [...]}`; each record contains
+`device_id`, `name`, `mac`, `client_type` and `owner_id`. Its default
+`scope: profile` reads fresh authoritative profile membership and returns only
+that profile's devices; an empty profile returns `{"devices": []}`. Removed
+profiles and invalid assignment data raise an error instead of returning empty
+success. To discover devices to assign, explicitly choose **All router devices
+(assignment inventory)** (`scope: inventory`); an empty inventory `owner_id`
+means unassigned. Both modes validate that the selected profile still exists.
+The response wrapper and device fields are unchanged; automations relying on
+the earlier whole-router response must now set `scope: inventory`.
+
+Use `get_parental_devices` with `scope: inventory` to obtain new assignment IDs;
+`assigned_devices` also exposes IDs for removal, including offline assignments.
+Assigning an already assigned device or removing an absent device is a no-op.
+Devices owned by another profile are **not silently moved**: explicitly remove
+them there first. This intentionally creates an unassigned interval; do not use
+that workflow for live devices without planning the interruption to restrictions.
+Profile creation, rename and deletion are available in the admin panel described
+below, not as additional automation services. Arbitrary content-filter editing
+and Pro/custom-day schedules remain outside this interface.
+
+Every profile edit reads the latest complete record under the shared coordinator
+lock, sends the firmware UI's `operation=update` with row `index`, `key`, and JSON
+`old`/`new`, and reads the result back. It preserves unrelated names, pause flags,
+filters, schedules, device records and unknown fields. Application aliases are
+serialized using the router's application metadata without adding the web UI's
+default category filters. The native Store's read-only `insights` response field
+is excluded from both update records; valid bedtime minute strings are emitted
+as JSON numbers, matching the native editor without changing their times.
+Missing metadata, invalid assignments or unavailable capacity are explicit errors,
+never guessed defaults. This lock serializes this
+integration's requests, not independent router clients; avoid concurrent external
+edits. Only the firmware's observed empty-object (`{}`) array encoding is
+normalized to an empty list; nonempty objects and malformed enabled limits remain
+errors.
+
+The native-compatible serializer sends only `client_type`, `name`, `mac`
+and string `device_id` for each **new** client-list entry, using stored values for
+existing assignments rather than silently refreshing their names from inventory.
+The **old** record retains its response metadata. Only the exact observed string
+`"0"` daily budget with its enable flag `false` is omitted from the new record;
+positive budgets and enabled budgets are never omitted. Raw expected records
+remain separate from the wire payload. Readback must retain the disabled sentinel,
+filters, schedules, existing names, device identities/types, priorities
+(`prio`, `prio_time`, `time_period`) and other existing opaque settings.
+Generated per-client `online`/`owner_id` representations do not determine
+configured membership; the authoritative list and stable ID/MAC pair do.
+
+**Validation boundary:** the extended assignment/bedtime/daily-limit payloads
+were derived from the AX50 firmware's static UI/Store sources and tested with
+mocked transport, including the pinned library. Read-only live inspection has
+verified the device inventory, capacity metadata, application metadata
+(`app_list`, `operation=read`), disabled-budget sentinels and empty-array shapes.
+The first extension deployment was rolled back when read-only checks exposed
+those schema differences. After restoring the working baseline and removing the
+temporary read-only diagnostic, regression-tested corrections were deployed with
+fresh approval. Read-only verification confirmed all four schedule switches per
+profile, valid device assignments (including empty profiles), the inventory
+action and continued polling without new availability failures. An approved
+single-device assignment attempt received a successful firmware
+acknowledgement but did not persist the requested membership. Readback correctly
+reported failure with all existing memberships and protected settings unchanged.
+A capture-only native-editor comparison identified additional serialization
+differences. The read-only-field/clock encoding compatibility
+changes were deployed with a verified current-baseline backup, configuration
+check, Core restart and read-only state/polling checks, but a separately approved
+single assignment test still did not persist. A subsequent, separately approved
+**unmodified native-editor save succeeded**, including for the reported guest
+Wi-Fi device. It retained disabled `"0"` budgets, priorities, filters, schedules
+and other memberships; one existing client name refreshed from native inventory.
+The four-field/disabled-sentinel serializer follows that successful wire
+shape without copying the unrelated name refresh. This is evidence for a
+serialization correction, not an isolated proof of which wire difference caused
+the ignored writes. The integration correction and batch interface were deployed
+with a verified current-baseline backup, independently rehearsed rollback,
+configuration check and Core restart. Read-only verification confirmed unchanged
+memberships/settings, entity availability and panel selection/confirmation
+cancellation on desktop and mobile. No integration assignment or batch submission
+was included: their write behavior and schedule writes remain hardware-unverified.
+
+Writes are read back under the coordinator lock and request a normal refresh.
+They report an error if the write or confirmation fails; a confirmation failure
+can mean the router accepted the change but its new state could not be read.
+When router data fetching is paused, an explicit switch action still performs its
+own write/read-back, but periodic polling remains paused.
+
+The AX50 firmware permits only one admin session. This feature does not change
+that limitation: pause router data fetching before using its admin UI and avoid
+switch actions while using that UI. Installing this code requires updating the
+`custom_components/tplink_router` directory and restarting Home Assistant Core
+to load the changed Python modules; existing configuration can be retained.
+Keep integration backups outside `custom_components`, since duplicate manifests
+can interfere with Home Assistant's integration discovery. Before deploying an
+extension, make a fresh checksum-verified backup of the **currently deployed**
+integration, preserve any older known-good backups, stage only the intended
+integration files, run the Core configuration check, then restart Core after
+approval. Verify entity state and normal polling read-only first. Roll back by
+restoring that fresh backup and restarting Core. Real assignment/schedule tests
+need separate approval for a safe target and an independent, server-side
+restoration mechanism; do not rely on browser timers for restoration.
+
+### Network & parental controls workspace
+
+After installing this version and restarting Core, administrators get a
+**Network & parental controls** sidebar entry (`/tplink-network`); no dashboard
+YAML, custom card, CDN or separate router login is needed. The locally served
+native custom panel inherits Home Assistant's theme and supports desktop/mobile.
+For multiple router entries, select the router at the top.
+
+The default view is **Online + Wi-Fi (main and guest)**. Search device names,
+IP/MAC addresses or friendly profile names; filter state, connection and profile.
+Wired, main Wi-Fi, guest Wi-Fi and unknown connections are separate. Current
+coordinator device activity determines online status, never a restored tracker's
+historical `home` state. Profile-only and historical devices remain available in
+All/Offline views, explicitly marked cached when not current. A failed, stale
+or paused poll is not presented as live connectivity. The latest poll age is
+visible; automatic panel updates read the existing in-memory snapshot every
+15 seconds, not the router. **Refresh router** requests the existing coordinator's
+normal polling cycle and does not override paused polling.
+Incomplete/unavailable membership data is shown as unknown ownership, not
+unassigned devices; profile filters and assignment changes are disabled.
+
+Select a device for its supplied name, IP, MAC, connection, band, router-reported
+type and available telemetry. No type/vendor guesses are made. Speeds, online
+time, signal and traffic usage are labeled **raw router values** because their
+units, accumulation window and reset behavior have not been independently
+verified for this firmware. Packet counts are counts, not bytes; none of these
+values is labeled daily/monthly usage.
+
+**Review profile change** supports assignment, removal and explicit moves between
+existing profiles. Confirmation identifies the source and destination and warns
+that a move has a briefly unassigned interval, during which restrictions may be
+absent. Fresh authoritative membership, device identity, destination capacity and
+filter metadata are checked under the existing session lock before removal.
+Both steps use full-record edits/readback, preserve unrelated memberships,
+filters and schedules, and retain opaque fields on the moved assignment.
+There is no atomic firmware move operation. A failed second step first attempts
+destination cleanup, then restoration of the original assignment. If recovery
+cannot be confirmed, the interface reports failure and refreshes the actual
+state; it never silently retries or assumes protection was restored. Inspect
+both profiles in that case before another action.
+
+**Assign selected devices** adds multiple **currently unassigned** devices to one
+existing profile. Check individual device boxes or **Select visible unassigned**;
+the latter only adds the currently filtered candidates. Selection survives search
+and quiet refreshes, with a count of selected devices hidden by filters. Clear the
+selection explicitly when needed. Cached devices and devices already owned by a
+profile cannot be batch-selected: use their individual **Review profile change**
+flow for explicit moves or removal. This batch action does not authorize either.
+
+Choose a destination and review its name, count and the selected device names
+before confirmation. The new admin-only panel action rechecks fresh memberships,
+unique identities and the router's remaining capacity for the **whole** selection
+under the incumbent lock. The request is limited to 32 devices, with the smaller
+router-reported capacity still enforced. Invalid/stale ownership, ambiguous or
+missing inventory entries and insufficient capacity reject the entire preflight
+without a write. One full-profile update is submitted, not one update per device.
+This is not a guarantee of transactional firmware behavior.
+
+Results are displayed per device: confirmed assigned, assigned with unconfirmed
+protected settings/acknowledgement, not assigned, conflicting ownership/identity,
+or unknown. A partial application or lost response never becomes blanket success.
+The submitted selection clears, the error/results remain visible across quiet
+reads, and no retry, automatic cross-profile move or compensating removal occurs.
+Inspect actual memberships and protected settings before another action.
+The batch interface is deployed; no live batch assignment test has been made.
+
+A read-back mismatch is not proof of success or of a guest-network restriction.
+Assignment errors distinguish a missing destination assignment, an applied
+assignment with differing protected settings/details, and a removal that did not
+persist. Verification remains strict. Mismatch logs contain only fixed field
+labels/types, client counts and requested-identity presence booleans, never
+device IDs, MAC/IP addresses, names, browsing/filter values or raw profiles.
+These diagnostics do not retry an edit; a controlled hardware retry requires
+separate approval.
+
+The **Parental profiles** tab shows current membership, manual internet-access
+pause and usable forms for bedtime windows and daily budgets, including their
+enable flags. Forms state the actual night/day groups and router-local units.
+Unsaved drafts survive background snapshot updates. Stale/unavailable data
+disables panel writes; the backend independently validates every edit.
+
+The new panel's reads and writes require an **authenticated, active Home Assistant
+administrator**, enforced by its websocket handlers as well as the sidebar.
+Existing parental actions and switches retain Home Assistant's standard
+admin-service context semantics: trusted internal/system calls and automations
+without a user ID continue to work; calls carrying a user ID must resolve to an
+active administrator. Unknown, inactive and non-admin direct users are rejected.
+No administrator identity is fabricated for an automation, and a call carrying a
+non-admin user ID does not gain access merely by having an automation parent
+context. Other router controls are unchanged. Router credentials and session
+tokens never enter the frontend.
+
+**Staged profile management:** the **Create new profile** button loads the router's
+`patrol_limit` capacity and `patrol_filter` presets on request. Enter a name of
+1–64 UTF-16 code units, choose a preset and review its blocked-category identifiers.
+The categories are the native editor's union of its selected `prefilter_list`
+and mandatory `categories_list`; unavailable/malformed metadata has no fallback.
+Capacity and the exact reviewed preset are checked again under the shared lock.
+The native `operation=insert&index=0&key=add&old=add` creates an **empty** profile.
+No device is assigned or moved implicitly; use the existing assignment workflow
+after creation is confirmed. Native initial values are explicit: no custom
+websites/apps, manual pause cleared, daily limits disabled with stored 120-minute
+values, and bedtime disabled with stored 22:00–07:00 router-local windows.
+
+**Review rename** retains the owner ID, memberships, filters, schedules,
+priorities and unknown fields. It rejects a stale original name or a conflicting
+name; entity IDs are not renamed. **Review delete profile** first loads a fresh
+profile name and affected-device list. Confirmation warns that all its filters,
+budgets and schedules are removed and its devices lose that profile's protection.
+A revision of all protected fields prevents deleting a changed profile from a
+stale confirmation; generated online/owner metadata does not invalidate it.
+Native Store `operation=remove` sends the one fresh row key/index, not a sequence
+of device removals. Other profiles are read back and checked unchanged.
+Deleted-profile entity registry entries are not silently erased; their entities
+become unavailable, preserving user customizations and automation references.
+All management writes use one application-level submission, explicit
+acknowledgement plus strict readback, and no automatic retry, deletion,
+recreation or other compensating mutation on ambiguous results.
+
+**Staged private reporting:** select a profile (or one of its devices) and click
+**Load profile report**. The two native read-only endpoints,
+`patrol_insights` and `patrol_insights_history`, use `operation=read&owner_id=...`
+under the incumbent authentication/request lock. They are never added to routine
+polling. Native UI decoding establishes `spend_online` as **minutes** and
+`access_timestamp` as Unix **seconds**, with period 0 today through period 6 six
+days ago. The view shows only returned periods, website labels, online minutes,
+timestamped history and the router's block flag. History times use the browser's
+local time zone; no unverified router-date conversion is invented.
+Partial endpoint/schema errors remain explicit beside successful sections.
+An empty successful response is distinct from unsupported or failed reads.
+
+These are **profile-wide router observations**, not per-device attribution,
+full-URL/person-level browsing proof or byte-usage totals. Encryption and router
+coverage can leave records incomplete; actual retention/reset boundaries remain
+unverified. Raw device traffic counters still carry their earlier unit/period
+warning. Report snapshots are not automatically refreshed. **Clear private
+report**, leaving details, changing router, hiding the page or disconnecting the
+panel removes the transient report; late navigation responses are discarded.
+Report contents are never stored in coordinator/entity state, Recorder,
+local/session storage, ordinary logs, artifacts or external services. Site labels
+are escaped text, never executable markup or outgoing links.
+
+Creation/rename/deletion and reporting are **deployed and synthetically
+validated, but their write/report operations are not hardware-verified**. The
+deployed forms, capacity/filter metadata read, confirmation and cancellation
+flows, admin gating, registration, and polling were checked without submitting
+profile changes or loading reports. No live report was retrieved. Different
+firmware response shapes fail visibly rather than masquerading as empty reports
+or successful writes. The router's single-admin-session limitation still
+applies; these features do not add another router client.
+
+**Validation and deployment boundary:** the workspace and compensating move
+workflow have synthetic backend/frontend regression coverage, including admin
+denial, preservation, failed acknowledgements, cleanup/restoration failures,
+filtering, confirmation, drafts, errors and stale data. The native registration
+API is exercised on Home Assistant 2026.10.4 with `tplinkrouterc6u==5.38.0`;
+desktop/mobile interaction checks use a synthetic fixture. Read-only deployment
+checks also verified the installed admin panel at desktop/mobile sizes, current
+profile membership, unchanged existing parental states and continued polling.
+The native-editor assignment success above does not validate the corrected
+integration serializer, batch feature, moves, bedtime or budget writes.
+The profile management/reporting extension was deployed after fresh approval;
+profile writes and report reads still require a separately defined
+hardware-verification scope. Each deployment needs fresh approval, a
+checksum-verified backup of the current integration outside
+`custom_components`, an independently rehearsed rollback, the changed Python
+files/manifest plus `frontend/network-panel.js`, a Core configuration check and
+restart. Preserve earlier backups and verify existing entities, availability,
+normal polling and read-only views before considering any separately approved
+hardware-write test.
+
+Developer checks: `.venv\Scripts\python.exe -m pytest tests -q` and
+`node --test tests\frontend\network-panel.test.mjs`. For browser interaction checks,
+serve the repository on loopback and open `tests/frontend/network-fixture.html`;
+call each iframe's `runTests()` from browser tools. Both frames are fully
+synthetic and make no router/Home Assistant requests.
 
 ### Sensors
 Status sensors (client counts, CPU/memory, WAN/LAN addresses, …) are created only when the device reports a non-`None` value for that metric:

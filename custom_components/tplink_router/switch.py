@@ -6,13 +6,15 @@ from typing import Any
 from homeassistant.components.switch import SwitchEntity, SwitchEntityDescription
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.const import EntityCategory
-from homeassistant.core import HomeAssistant
+from homeassistant.core import HomeAssistant, callback
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 from .const import DOMAIN
 from homeassistant.helpers.update_coordinator import CoordinatorEntity
 from .coordinator import TPLinkRouterCoordinator
 from tplinkrouterc6u import VPN, Connection
 from . import vpn_client
+from .parental_control import ParentalProfile, SCHEDULE_FLAGS
+from .permissions import require_admin
 
 
 @dataclass
@@ -320,6 +322,145 @@ async def async_setup_entry(
             switches.append(TPLinkRouterSwitch(coordinator, switch))
 
     async_add_entities(switches, False)
+    if coordinator.parental_status is not None:
+        setup_parental_entities(coordinator, entry, async_add_entities)
+
+
+def setup_parental_entities(
+    coordinator: TPLinkRouterCoordinator,
+    entry: ConfigEntry,
+    async_add_entities: AddEntitiesCallback,
+) -> None:
+    """Discover profiles on every poll, including recovery from a failed first read."""
+    known: set[tuple[str, str]] = set()
+
+    @callback
+    def coordinator_updated() -> None:
+        status = coordinator.parental_status
+        if status is None or status.profiles is None:
+            return
+        entities = []
+        for owner_id, profile in status.profiles.items():
+            if (owner_id, "access") not in known:
+                entities.append(TPLinkParentalAccessSwitch(coordinator, profile))
+                known.add((owner_id, "access"))
+            for flag in SCHEDULE_FLAGS:
+                if flag in profile.settings and (owner_id, flag) not in known:
+                    entities.append(TPLinkParentalScheduleSwitch(coordinator, profile, flag))
+                    known.add((owner_id, flag))
+        if entities:
+            async_add_entities(entities, False)
+
+    entry.async_on_unload(coordinator.async_add_listener(coordinator_updated))
+    coordinator_updated()
+
+
+class TPLinkParentalAccessSwitch(CoordinatorEntity[TPLinkRouterCoordinator], SwitchEntity):
+    """Control the manual pause flag, not scheduled or filtered connectivity."""
+
+    _attr_has_entity_name = True
+    _attr_icon = "mdi:account-network"
+
+    def __init__(self, coordinator: TPLinkRouterCoordinator, profile: ParentalProfile) -> None:
+        super().__init__(coordinator)
+        self._owner_id = profile.owner_id
+        self._label = profile.name or profile.owner_id
+        self._attr_device_info = coordinator.device_info
+        self._attr_unique_id = (
+            f"{coordinator.unique_id}_{DOMAIN}_parental_access_{profile.owner_id}"
+        )
+
+    @property
+    def profile(self) -> ParentalProfile | None:
+        status = self.coordinator.parental_status
+        if status is None or status.profiles is None:
+            return None
+        return status.profiles.get(self._owner_id)
+
+    @property
+    def name(self) -> str:
+        if (profile := self.profile) is not None:
+            self._label = profile.name or profile.owner_id
+        return f"{self._label} internet access"
+
+    @property
+    def available(self) -> bool:
+        return super().available and self.profile is not None
+
+    @property
+    def is_on(self) -> bool | None:
+        profile = self.profile
+        return not profile.internet_blocked if profile is not None else None
+
+    @property
+    def extra_state_attributes(self) -> dict[str, Any]:
+        profile = self.profile
+        if profile is None:
+            return {"owner_id": self._owner_id}
+        settings: dict[str, Any] = dict(profile.settings)
+        for key, value in settings.items():
+            if key.endswith(("_bed_time_begin", "_bed_time_end")):
+                settings[key] = f"{value // 60:02d}:{value % 60:02d}"
+        return {
+            "owner_id": self._owner_id,
+            "assigned_devices": (
+                [client.as_dict() for client in profile.clients]
+                if profile.clients is not None else None
+            ),
+            "schedule": settings,
+        }
+
+    async def async_turn_on(self, **kwargs: Any) -> None:
+        await require_admin(self.hass, self._context)
+        await self.coordinator.set_profile_access(self._owner_id, True)
+
+    async def async_turn_off(self, **kwargs: Any) -> None:
+        await require_admin(self.hass, self._context)
+        await self.coordinator.set_profile_access(self._owner_id, False)
+
+
+class TPLinkParentalScheduleSwitch(TPLinkParentalAccessSwitch):
+    """Enable a validated schedule without changing its configured times."""
+
+    _attr_entity_category = EntityCategory.CONFIG
+    _attr_icon = "mdi:calendar-clock"
+
+    def __init__(self, coordinator: TPLinkRouterCoordinator, profile: ParentalProfile, flag: str) -> None:
+        super().__init__(coordinator, profile)
+        self._flag = flag
+        self._period = "workday" if flag.startswith("enable_workday_") else "weekend"
+        self._kind = "bed_time" if flag.endswith("_bed_time") else "time_limit"
+        self._attr_unique_id = f"{coordinator.unique_id}_{DOMAIN}_parental_{profile.owner_id}_{flag}"
+
+    @property
+    def name(self) -> str:
+        if (profile := self.profile) is not None:
+            self._label = profile.name or profile.owner_id
+        if self._kind == "bed_time":
+            label = "School-night bedtime (Sun-Thu)" if self._period == "workday" else "Weekend bedtime (Fri-Sat)"
+        else:
+            label = "Daily limit (Mon-Fri)" if self._period == "workday" else "Daily limit (Sat-Sun)"
+        return f"{self._label} {label}"
+
+    @property
+    def available(self) -> bool:
+        return super().available and self._flag in self.profile.settings
+
+    @property
+    def is_on(self) -> bool | None:
+        profile = self.profile
+        if profile is None:
+            return None
+        value = profile.settings.get(self._flag)
+        return value if isinstance(value, bool) else None
+
+    async def async_turn_on(self, **kwargs: Any) -> None:
+        await require_admin(self.hass, self._context)
+        await self.coordinator.set_profile_schedule(self._owner_id, self._period, self._kind, enabled=True)
+
+    async def async_turn_off(self, **kwargs: Any) -> None:
+        await require_admin(self.hass, self._context)
+        await self.coordinator.set_profile_schedule(self._owner_id, self._period, self._kind, enabled=False)
 
 
 class TPLinkRouterSwitch(
