@@ -1,5 +1,21 @@
 # Changelog
 
+## [Unreleased]
+
+### Added
+
+- `tplink_router.update_reservation` service: edit a DHCP reservation in place (`old_mac` + any of `mac`, `ip`, `comment`, `enable`) with the router's own update operation; returns the stored row as response data
+- DHCP Reservations limit / free sensors and `max_reservations` / `free` attributes on DHCP Reservations (table capacity from the router, 64 on Archer AX1800)
+- DHCP Reservations near full binary sensor with a configurable warning threshold (default 60)
+- `randomized_mac` (locally administered MAC; QEMU/KVM `52:54:00` excluded) and `reserved_ip` on device trackers and in `tplink_router_new_device` / `_device_online` / `_device_offline` event data
+
+### Changed
+
+- Reservation services check the table before writing (full table, duplicate MAC/IP), reload it afterwards and raise a Home Assistant error when the router did not store the change (Archer AX1800 answers success to inserts into a full table); `add_reservation` returns the stored row
+- The reservation name is sent as both `comment` and `hostname` (Archer AX1800 stores an empty name otherwise)
+- The reservation table is read on every poll: the sensors and services now appear after the router answers once, instead of never when the setup probe failed, and a failed poll keeps the last known table instead of stopping reservation polling
+- Works with the pinned `tplinkrouterc6u`; uses its native `get_ipv4_reservations_info` / `update_ipv4_reservation` when a release provides them
+
 ## [2.45.0] - 2026-10-31
 
 ### Added

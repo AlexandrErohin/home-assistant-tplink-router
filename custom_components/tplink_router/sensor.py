@@ -699,10 +699,26 @@ async def async_setup_entry(
         for sensor in VPN_SERVER_SENSOR_TYPES:
             sensors.append(TPLinkRouterSensor(coordinator, sensor))
 
-    if coordinator.reservations is not None:
-        sensors.append(TPLinkRouterReservationsSensor(coordinator))
-
     async_add_entities(sensors, False)
+
+    reservation_sensors_added = False
+
+    @callback
+    def add_reservation_sensors() -> None:
+        # Added as soon as the table is known: at setup when the probe worked,
+        # otherwise on the first poll that manages to read it.
+        nonlocal reservation_sensors_added
+        if reservation_sensors_added or coordinator.reservation_table is None:
+            return
+        reservation_sensors_added = True
+        async_add_entities([
+            TPLinkRouterReservationsSensor(coordinator),
+            TPLinkRouterReservationsCapacitySensor(coordinator, "limit"),
+            TPLinkRouterReservationsCapacitySensor(coordinator, "free"),
+        ])
+
+    entry.async_on_unload(coordinator.async_add_listener(add_reservation_sensors))
+    add_reservation_sensors()
 
     tracked: set[int] = set()
     tracked_mesh: set[tuple[str, str]] = set()
@@ -821,6 +837,8 @@ class TPLinkRouterPortLinkSpeedSensor(CoordinatorEntity[TPLinkRouterCoordinator]
 
 
 class TPLinkRouterReservationsSensor(CoordinatorEntity[TPLinkRouterCoordinator], SensorEntity):
+    """Number of DHCP reservations, with the table and its capacity as attributes."""
+
     _attr_has_entity_name = True
 
     def __init__(self, coordinator: TPLinkRouterCoordinator) -> None:
@@ -831,30 +849,57 @@ class TPLinkRouterReservationsSensor(CoordinatorEntity[TPLinkRouterCoordinator],
             key="dhcp_reservations",
             name="DHCP Reservations",
             icon="mdi:table-network",
+            state_class=SensorStateClass.MEASUREMENT,
             entity_category=EntityCategory.DIAGNOSTIC,
         )
 
     @property
     def native_value(self) -> int | None:
-        if self.coordinator.reservations is None:
+        table = self.coordinator.reservation_table
+        if table is None:
             return None
-        return len(self.coordinator.reservations)
+        return table.used
 
     @property
     def extra_state_attributes(self) -> dict[str, Any]:
-        if not self.coordinator.reservations:
+        table = self.coordinator.reservation_table
+        if table is None:
             return {"reservations": []}
         return {
-            "reservations": [
-                {
-                    "mac": r.macaddr,
-                    "ip": r.ipaddr,
-                    "hostname": r.hostname or "",
-                    "enabled": r.enabled,
-                }
-                for r in self.coordinator.reservations
-            ]
+            "max_reservations": table.max_rules,
+            "free": table.free,
+            "reservations": [row.as_dict() for row in table.rows],
         }
+
+
+class TPLinkRouterReservationsCapacitySensor(CoordinatorEntity[TPLinkRouterCoordinator], SensorEntity):
+    """Size of the DHCP reservation table ("limit") or slots left ("free")."""
+
+    _attr_has_entity_name = True
+
+    def __init__(self, coordinator: TPLinkRouterCoordinator, kind: str) -> None:
+        super().__init__(coordinator)
+        self._kind = kind
+        self._attr_device_info = coordinator.device_info
+        self._attr_unique_id = f"{coordinator.unique_id}_{DOMAIN}_dhcp_reservations_{kind}"
+        self.entity_description = SensorEntityDescription(
+            key=f"dhcp_reservations_{kind}",
+            name="DHCP Reservations limit" if kind == "limit" else "DHCP Reservations free",
+            icon="mdi:table-large" if kind == "limit" else "mdi:table-plus",
+            state_class=SensorStateClass.MEASUREMENT,
+            entity_category=EntityCategory.DIAGNOSTIC,
+        )
+
+    @property
+    def native_value(self) -> int | None:
+        table = self.coordinator.reservation_table
+        if table is None:
+            return None
+        return table.max_rules if self._kind == "limit" else table.free
+
+    @property
+    def available(self) -> bool:
+        return super().available and self.native_value is not None
 
 
 class TPLinkRouterMeshNodeSensor(CoordinatorEntity[TPLinkRouterCoordinator], SensorEntity):

@@ -97,6 +97,9 @@ def _bare_coordinator(**overrides):
     coord.mesh_nodes = None
     coord.led_status = None
     coord.support_dhcp_reservations = True
+    coord.reservations_supported = False
+    coord.reservation_table = None
+    coord._reservation_poll_failed = False
     coord.logger = logging.getLogger("test")
     coord.async_update_listeners = Mock()
     for key, value in overrides.items():
@@ -194,32 +197,6 @@ def test_collect_status_skips_reservations_when_disabled():
     )
     assert result[7] is None
     router.get_ipv4_reservations.assert_not_called()
-
-
-def test_coordinator_add_and_delete_reservation():
-    coord, router = _bare_coordinator()
-    router.add_ipv4_reservation = Mock()
-    router.delete_ipv4_reservation = Mock()
-
-    async def fake_run(cb):
-        cb()
-
-    coord._run_router_request = fake_run
-
-    async def fake_refresh():
-        pass
-
-    coord.async_request_refresh = fake_refresh
-
-    async def run():
-        await coord.add_ipv4_reservation("02:00:00:00:00:16", "192.168.1.100", "test", True)
-        await coord.delete_ipv4_reservation("02:00:00:00:00:16")
-
-    asyncio.run(run())
-    router.add_ipv4_reservation.assert_called_once_with(
-        "02:00:00:00:00:16", "192.168.1.100", "test", True
-    )
-    router.delete_ipv4_reservation.assert_called_once_with("02:00:00:00:00:16")
 
 
 def test_coordinator_init_stores_reservations():

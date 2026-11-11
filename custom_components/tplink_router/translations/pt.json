@@ -21,8 +21,9 @@
           "support_vpn": "Incluir suporte para servidor e cliente VPN",
           "support_tracker": "Incluir rastreadores de dispositivos (desative em routers que não são pontos de acesso para evitar duplicados)",
           "tracker_as_device": "Dar a cada cliente monitorizado a sua própria entrada de dispositivo (desativado por predefinição; em redes ocupadas pode adicionar muitos dispositivos)",
-          "support_dhcp_reservations": "Incluir sensor de reservas DHCP e serviços de adicionar/eliminar",
-          "support_serving_cells": "Incluir sensores LTE serving cells"
+          "support_dhcp_reservations": "Incluir sensores de reservas DHCP e serviços de adicionar/atualizar/eliminar",
+          "support_serving_cells": "Incluir sensores LTE serving cells",
+          "reservations_warning_threshold": "Reservas utilizadas antes do aviso de tabela quase cheia (predefinição: 60)"
         }
       }
     }
@@ -44,8 +45,9 @@
           "scan_pause": "Minutos antes da recolha de dados ser reativada automaticamente (0 = nunca)",
           "offline_timeout": "Segundos em que um dispositivo em falta permanece 'home' antes de offline (0 = imediato)",
           "tracker_as_device": "Dar a cada cliente monitorizado a sua própria entrada de dispositivo (desativado por predefinição; em redes ocupadas pode adicionar muitos dispositivos)",
-          "support_dhcp_reservations": "Incluir sensor de reservas DHCP e serviços de adicionar/eliminar",
-          "support_serving_cells": "Incluir sensores LTE serving cells"
+          "support_dhcp_reservations": "Incluir sensores de reservas DHCP e serviços de adicionar/atualizar/eliminar",
+          "support_serving_cells": "Incluir sensores LTE serving cells",
+          "reservations_warning_threshold": "Reservas utilizadas antes do aviso de tabela quase cheia (predefinição: 60)"
         }
       }
     }
@@ -71,7 +73,7 @@
     },
     "add_reservation": {
       "name": "Adicionar reserva DHCP",
-      "description": "Reservar um endereço IPv4 estático para um dispositivo no router.",
+      "description": "Reservar um endereço IPv4 estático para um dispositivo no router. Recusa tabela cheia ou MAC/IP duplicado; verifica se a reserva foi gravada.",
       "fields": {
         "device": {
           "name": "Router",
@@ -97,7 +99,7 @@
     },
     "delete_reservation": {
       "name": "Eliminar reserva DHCP",
-      "description": "Remover uma reserva IPv4 estática do router.",
+      "description": "Remover uma reserva IPv4 estática do router. Verifica se foi removida.",
       "fields": {
         "device": {
           "name": "Router",
@@ -106,6 +108,36 @@
         "mac": {
           "name": "Endereço MAC",
           "description": "MAC da reserva a eliminar"
+        }
+      }
+    },
+    "update_reservation": {
+      "name": "Atualizar reserva DHCP",
+      "description": "Editar uma reserva DHCP no router. Os campos não definidos mantêm o valor atual. A alteração é verificada.",
+      "fields": {
+        "device": {
+          "name": "Router",
+          "description": "Selecione o router TP-Link"
+        },
+        "old_mac": {
+          "name": "Endereço MAC atual",
+          "description": "Endereço MAC da reserva existente a atualizar"
+        },
+        "mac": {
+          "name": "Novo endereço MAC",
+          "description": "Novo MAC (opcional; por exemplo, após mudar o MAC privado)"
+        },
+        "ip": {
+          "name": "Endereço IP",
+          "description": "IPv4 a reservar (opcional; mantém o IP atual se não definido)"
+        },
+        "comment": {
+          "name": "Descrição",
+          "description": "Nome ou comentário do dispositivo (opcional)"
+        },
+        "enable": {
+          "name": "Ativa",
+          "description": "Ativar ou desativar esta reserva (opcional)"
         }
       }
     }

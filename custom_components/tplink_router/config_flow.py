@@ -13,6 +13,7 @@ from .const import (
     CONF_SCAN_PAUSE, CONF_OFFLINE_TIMEOUT, DEFAULT_SCAN_RETRIES, DEFAULT_SCAN_BACKOFF,
     DEFAULT_SCAN_PAUSE, DEFAULT_OFFLINE_TIMEOUT, MAX_SCAN_RETRIES, MAX_SCAN_BACKOFF,
     MAX_SCAN_PAUSE, MAX_OFFLINE_TIMEOUT,
+    CONF_RESERVATIONS_THRESHOLD, DEFAULT_RESERVATIONS_THRESHOLD, MAX_RESERVATIONS_THRESHOLD,
 )
 from .coordinator import TPLinkRouterCoordinator
 from homeassistant.const import (
@@ -40,6 +41,10 @@ SCAN_PAUSE_SCHEMA = vol.All(
 OFFLINE_TIMEOUT_SCHEMA = vol.All(
     vol.Coerce(int),
     vol.Range(min=0, max=MAX_OFFLINE_TIMEOUT),
+)
+RESERVATIONS_THRESHOLD_SCHEMA = vol.All(
+    vol.Coerce(int),
+    vol.Range(min=1, max=MAX_RESERVATIONS_THRESHOLD),
 )
 
 
@@ -151,6 +156,10 @@ class ConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
                         CONF_SUPPORT_DHCP_RESERVATIONS,
                         default=self.data_initial.get(CONF_SUPPORT_DHCP_RESERVATIONS, True),
                     ): cv.boolean,
+                    vol.Optional(
+                        CONF_RESERVATIONS_THRESHOLD,
+                        default=self.data_initial.get(CONF_RESERVATIONS_THRESHOLD, DEFAULT_RESERVATIONS_THRESHOLD),
+                    ): RESERVATIONS_THRESHOLD_SCHEMA,
                     vol.Required(
                         CONF_SUPPORT_SERVING_CELLS,
                         default=self.data_initial.get(CONF_SUPPORT_SERVING_CELLS, False),
@@ -226,6 +235,10 @@ class OptionsFlow(config_entries.OptionsFlowWithConfigEntry):
                     CONF_SUPPORT_DHCP_RESERVATIONS,
                     default=data.get(CONF_SUPPORT_DHCP_RESERVATIONS, True),
                 ): cv.boolean,
+                vol.Optional(
+                    CONF_RESERVATIONS_THRESHOLD,
+                    default=data.get(CONF_RESERVATIONS_THRESHOLD, DEFAULT_RESERVATIONS_THRESHOLD),
+                ): RESERVATIONS_THRESHOLD_SCHEMA,
                 vol.Required(
                     CONF_SUPPORT_SERVING_CELLS,
                     default=data.get(CONF_SUPPORT_SERVING_CELLS, False),

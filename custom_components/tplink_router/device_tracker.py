@@ -13,6 +13,7 @@ from homeassistant.helpers.restore_state import RestoreEntity
 from homeassistant.helpers.update_coordinator import CoordinatorEntity
 from .coordinator import TPLinkRouterCoordinator
 from .utils import prefer
+from .reservations import is_randomized_mac
 from .const import (
     DOMAIN,
     CONF_SUPPORT_TRACKER,
@@ -512,8 +513,9 @@ class TPLinkTracker(CoordinatorEntity, RestoreEntity, ScannerEntity):
     @property
     def extra_state_attributes(self) -> dict[str, str]:
         if self.device is None:
-            return self._restored_attributes
+            return {**self._restored_attributes, 'randomized_mac': is_randomized_mac(self.mac_address)}
         attributes = {
+            'randomized_mac': is_randomized_mac(self.mac_address),
             'connection': self.device.type.get_type(),
             'band': self.device.type.get_band(),
             'packets_sent': self.device.packets_sent,
@@ -533,7 +535,21 @@ class TPLinkTracker(CoordinatorEntity, RestoreEntity, ScannerEntity):
             attributes['signal'] = self.device.signal
         if self.device.ap_name is not None:
             attributes['ap_name'] = self.device.ap_name
+        if getattr(self.coordinator, "reservation_table", None) is not None:
+            attributes['reserved_ip'] = self.reserved_ip
         return attributes
+
+    @property
+    def reserved_ip(self) -> str | None:
+        """IP reserved for this MAC in the router's DHCP table, if known."""
+        table = getattr(self.coordinator, "reservation_table", None)
+        if table is None or not self._mac:
+            return None
+        try:
+            row = table.find_mac(self._mac)
+        except ValueError:
+            return None
+        return row.ip if row is not None else None
 
     @property
     def data(self) -> dict[str, str]:
@@ -541,6 +557,8 @@ class TPLinkTracker(CoordinatorEntity, RestoreEntity, ScannerEntity):
             'hostname': self.hostname,
             'ip_address': self.ip_address,
             'mac_address': self.mac_address,
+            'randomized_mac': is_randomized_mac(self.mac_address),
+            'reserved_ip': self.reserved_ip,
         }.items())
 
     @property

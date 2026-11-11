@@ -35,7 +35,19 @@ from .const import (
     DEFAULT_SCAN_PAUSE,
     DEFAULT_OFFLINE_TIMEOUT,
 )
+from homeassistant.exceptions import HomeAssistantError
 from .utils import safe_call, is_retryable_error
+from .reservations import (
+    ReservationError,
+    ReservationRow,
+    ReservationTable,
+    add_reservation,
+    delete_reservation,
+    fetch_table,
+    supports_reservations,
+    supports_update,
+    update_reservation,
+)
 
 
 def supports_led_control(router: AbstractRouter) -> bool:
@@ -138,6 +150,7 @@ class TPLinkRouterCoordinator(DataUpdateCoordinator):
             support_dhcp_reservations: bool = True,
             mesh_nodes: list[MeshNode] | None = None,
             led_status: bool | None = None,
+            reservation_table: ReservationTable | None = None,
     ) -> None:
         self.router = router
         # ConfigEntry.entry_id (not the flow unique_id / LAN MAC). Used in entity
@@ -171,6 +184,12 @@ class TPLinkRouterCoordinator(DataUpdateCoordinator):
         self.vpn_client_status = vpn_client_status
         self.reservations: list[IPv4Reservation] | None = reservations
         self.support_dhcp_reservations = support_dhcp_reservations
+        # The reservation table is polled on every update while the client can
+        # provide it, so a failed setup probe no longer hides the sensors and
+        # services forever: they appear once a poll succeeds.
+        self.reservation_table: ReservationTable | None = reservation_table
+        self.reservations_supported = bool(support_dhcp_reservations) and supports_reservations(router)
+        self._reservation_poll_failed = False
 
         self.scan_stopped_at: datetime | None = None
         self._last_update_time: datetime | None = None
@@ -264,21 +283,82 @@ class TPLinkRouterCoordinator(DataUpdateCoordinator):
 
         await self._run_router_request(callback)
 
+    @property
+    def supports_reservation_update(self) -> bool:
+        return self.reservations_supported and supports_update(self.router)
+
+    def poll_reservation_table(self) -> ReservationTable | None:
+        """Fetch the reservation table inside an authorized session (blocking).
+
+        Keeps the last known table on a transient failure; stops asking only
+        when the client says the feature is not implemented.
+        """
+        if not self.reservations_supported:
+            return self.reservation_table
+        try:
+            table = fetch_table(self.router)
+        except NotImplementedError:
+            self.reservations_supported = False
+            return self.reservation_table
+        except Exception:
+            self.logger.log(
+                logging.DEBUG if self._reservation_poll_failed else logging.WARNING,
+                "TPLink Router failed to fetch IPv4 reservations",
+                exc_info=True,
+            )
+            self._reservation_poll_failed = True
+            return self.reservation_table
+        self._reservation_poll_failed = False
+        return table
+
+    async def _run_reservation_write(self, action: Callable[[], Any]) -> Any:
+        """Run a reservation write plus a table reload in one router session.
+
+        Errors surface as HomeAssistantError so a failed service call is
+        reported to the caller (UI, script, automation) instead of only logged.
+        """
+        def callback():
+            result = action()
+            try:
+                table = fetch_table(self.router)
+            except Exception:
+                table = None
+            return result, table
+
+        try:
+            result, table = await self._run_router_request(callback)
+        except HomeAssistantError:
+            raise
+        except Exception as err:
+            raise HomeAssistantError(f"TP-Link router DHCP reservation change failed: {err}") from err
+        if table is not None:
+            self.reservation_table = table
+            self.async_update_listeners()
+        return result
+
     async def add_ipv4_reservation(
         self, mac: str, ip: str, comment: str = "", enable: bool = True
-    ) -> None:
-        def callback():
-            self.router.add_ipv4_reservation(mac, ip, comment, enable)
+    ) -> ReservationRow:
+        return await self._run_reservation_write(
+            lambda: add_reservation(self.router, mac, ip, comment, enable)
+        )
 
-        await self._run_router_request(callback)
-        await self.async_request_refresh()
+    async def update_ipv4_reservation(
+        self,
+        old_mac: str,
+        mac: str | None = None,
+        ip: str | None = None,
+        comment: str | None = None,
+        enable: bool | None = None,
+    ) -> ReservationRow:
+        if not self.supports_reservation_update:
+            raise ReservationError("This router does not support editing DHCP reservations")
+        return await self._run_reservation_write(
+            lambda: update_reservation(self.router, old_mac, mac, ip, comment, enable)
+        )
 
     async def delete_ipv4_reservation(self, mac: str) -> None:
-        def callback():
-            self.router.delete_ipv4_reservation(mac)
-
-        await self._run_router_request(callback)
-        await self.async_request_refresh()
+        await self._run_reservation_write(lambda: delete_reservation(self.router, mac))
 
     async def send_sms(self, number: str, text: str) -> None:
         def callback():
@@ -291,22 +371,24 @@ class TPLinkRouterCoordinator(DataUpdateCoordinator):
         retries = max(1, int(self.retries))
         last_error: Exception | None = None
 
-        def update_once():
-            return TPLinkRouterCoordinator.request(
+        def collect():
+            result = collect_status(
                 self.router,
-                lambda: collect_status(
-                    self.router,
-                    self.lte_status,
-                    self.serving_cells,
-                    self.vpn_server_status,
-                    self.vpn_client_status,
-                    self.port_status,
-                    self.reservations,
-                    self.logger,
-                    self.mesh_nodes,
-                    self.led_status,
-                ),
+                self.lte_status,
+                self.serving_cells,
+                self.vpn_server_status,
+                self.vpn_client_status,
+                self.port_status,
+                # The reservation table below replaces the legacy list fetch.
+                None if self.reservations_supported else self.reservations,
+                self.logger,
+                self.mesh_nodes,
+                self.led_status,
             )
+            return result, self.poll_reservation_table()
+
+        def update_once():
+            return TPLinkRouterCoordinator.request(self.router, collect)
 
         for attempt in range(retries):
             try:
@@ -327,17 +409,22 @@ class TPLinkRouterCoordinator(DataUpdateCoordinator):
                         self.scan_stopped_at = None
 
                     (
-                        self.status,
-                        self.lte_status,
-                        self.serving_cells,
-                        self.vpn_server_status,
-                        self.vpn_client_status,
-                        self.port_status,
-                        sms_list,
-                        self.reservations,
-                        self.mesh_nodes,
-                        self.led_status,
+                        (
+                            self.status,
+                            self.lte_status,
+                            self.serving_cells,
+                            self.vpn_server_status,
+                            self.vpn_client_status,
+                            self.port_status,
+                            sms_list,
+                            reservations,
+                            self.mesh_nodes,
+                            self.led_status,
+                        ),
+                        self.reservation_table,
                     ) = await self.hass.async_add_executor_job(update_once)
+                    if not self.reservations_supported:
+                        self.reservations = reservations
 
                 if sms_list is not None:
                     self._process_sms_list(sms_list)

@@ -7,9 +7,9 @@ from homeassistant.const import (
     Platform,
 )
 from datetime import datetime
-from homeassistant.core import HomeAssistant, ServiceCall
+from homeassistant.core import HomeAssistant, ServiceCall, ServiceResponse, SupportsResponse
 from homeassistant.config_entries import ConfigEntry
-from homeassistant.exceptions import ConfigEntryNotReady
+from homeassistant.exceptions import ConfigEntryNotReady, ServiceValidationError
 import homeassistant.helpers.config_validation as cv
 import voluptuous as vol
 from .const import (
@@ -33,6 +33,7 @@ from .const import (
 import logging
 from .coordinator import TPLinkRouterCoordinator, collect_mesh_nodes, supports_led_control
 from .utils import validate_ipv4_address, validate_mac_address, is_retryable_error
+from .reservations import fetch_table, supports_reservations
 from homeassistant.helpers import device_registry
 
 
@@ -65,6 +66,17 @@ DELETE_RESERVATION_SCHEMA = vol.Schema(
         vol.Required("mac"): vol.All(cv.string, _vol_mac),
     }
 )
+UPDATE_RESERVATION_SCHEMA = vol.Schema(
+    {
+        vol.Required("device"): cv.string,
+        vol.Required("old_mac"): vol.All(cv.string, _vol_mac),
+        vol.Optional("mac"): vol.All(cv.string, _vol_mac),
+        vol.Optional("ip"): vol.All(cv.string, _vol_ipv4),
+        vol.Optional("comment"): cv.string,
+        vol.Optional("enable"): cv.boolean,
+    }
+)
+RESERVATION_SERVICES = ("add_reservation", "update_reservation", "delete_reservation")
 PLATFORMS: list[Platform] = [
     Platform.DEVICE_TRACKER,
     Platform.SENSOR,
@@ -185,9 +197,10 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
                         err,
                     )
             reservations = None
-            if support_dhcp_reservations and hasattr(client, "get_ipv4_reservations"):
+            if support_dhcp_reservations and supports_reservations(client):
+                # Setup probe only; polling keeps retrying when this fails.
                 try:
-                    reservations = client.get_ipv4_reservations()
+                    reservations = fetch_table(client)
                 except Exception as err:
                     _LOGGER.debug(
                         "TP-Link router %s: get_ipv4_reservations failed: %s",
@@ -257,7 +270,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
                                           scan_pause_minutes=entry.data.get(CONF_SCAN_PAUSE, DEFAULT_SCAN_PAUSE),
                                           offline_timeout_seconds=entry.data.get(
                                               CONF_OFFLINE_TIMEOUT, DEFAULT_OFFLINE_TIMEOUT),
-                                          reservations=reservations,
+                                          reservation_table=reservations,
                                           support_dhcp_reservations=support_dhcp_reservations,
                                           mesh_nodes=mesh_nodes,
                                           led_status=led_status)
@@ -303,7 +316,7 @@ async def async_unload_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     if unload_ok:
         hass.data[DOMAIN].pop(entry.entry_id)
         if not hass.data[DOMAIN]:
-            for svc in ("send_sms", "add_reservation", "delete_reservation"):
+            for svc in ("send_sms", *RESERVATION_SERVICES):
                 if hass.services.has_service(DOMAIN, svc):
                     hass.services.async_remove(DOMAIN, svc)
     return unload_ok
@@ -341,7 +354,7 @@ def get_coordinator_for_device(
             method_name,
         )
         return None
-    if method_name in ("add_ipv4_reservation", "delete_ipv4_reservation") and not getattr(
+    if method_name in ("add_ipv4_reservation", "delete_ipv4_reservation", "get_ipv4_reservations") and not getattr(
         coordinator, "support_dhcp_reservations", True
     ):
         _LOGGER.error(
@@ -368,44 +381,61 @@ def register_services(hass: HomeAssistant, coord: TPLinkRouterCoordinator) -> No
         if not hass.services.has_service(DOMAIN, 'send_sms'):
             hass.services.async_register(DOMAIN, 'send_sms', send_sms_service)
 
-    if coord.support_dhcp_reservations and hasattr(coord.router, "add_ipv4_reservation"):
-        async def add_reservation_service(service: ServiceCall) -> None:
-            coordinator = get_coordinator_for_device(
-                hass, service.data.get("device"), "add_ipv4_reservation"
-            )
-            if coordinator is None:
-                return
-            await coordinator.add_ipv4_reservation(
-                service.data["mac"],
-                service.data["ip"],
-                service.data.get("comment", ""),
-                service.data.get("enable", True),
-            )
+    if coord.reservations_supported:
+        _register_reservation_services(hass)
 
-        if not hass.services.has_service(DOMAIN, 'add_reservation'):
-            hass.services.async_register(
-                DOMAIN,
-                'add_reservation',
-                add_reservation_service,
-                schema=ADD_RESERVATION_SCHEMA,
-            )
 
-    if coord.support_dhcp_reservations and hasattr(coord.router, "delete_ipv4_reservation"):
-        async def delete_reservation_service(service: ServiceCall) -> None:
-            coordinator = get_coordinator_for_device(
-                hass, service.data.get("device"), "delete_ipv4_reservation"
-            )
-            if coordinator is None:
-                return
-            await coordinator.delete_ipv4_reservation(service.data["mac"])
+def _reservation_coordinator(hass: HomeAssistant, device_id: str | None,
+                             method: str) -> TPLinkRouterCoordinator:
+    """Return the coordinator for a reservation service call or raise a clear error."""
+    coordinator = get_coordinator_for_device(hass, device_id, "get_ipv4_reservations")
+    if coordinator is None or not getattr(coordinator, "reservations_supported", False):
+        raise ServiceValidationError(
+            "The selected TP-Link router is not loaded or does not support DHCP reservations"
+        )
+    supported = (
+        coordinator.supports_reservation_update
+        if method == "update_ipv4_reservation"
+        else hasattr(coordinator.router, method)
+    )
+    if not supported:
+        raise ServiceValidationError(f"The selected TP-Link router does not support {method}")
+    return coordinator
 
-        if not hass.services.has_service(DOMAIN, 'delete_reservation'):
-            hass.services.async_register(
-                DOMAIN,
-                'delete_reservation',
-                delete_reservation_service,
-                schema=DELETE_RESERVATION_SCHEMA,
-            )
+
+def _register_reservation_services(hass: HomeAssistant) -> None:
+    async def add_reservation_service(service: ServiceCall) -> ServiceResponse:
+        coordinator = _reservation_coordinator(hass, service.data.get("device"), "add_ipv4_reservation")
+        row = await coordinator.add_ipv4_reservation(
+            service.data["mac"],
+            service.data["ip"],
+            service.data.get("comment", ""),
+            service.data.get("enable", True),
+        )
+        return {"reservation": row.as_dict()} if row is not None else None
+
+    async def update_reservation_service(service: ServiceCall) -> ServiceResponse:
+        coordinator = _reservation_coordinator(hass, service.data.get("device"), "update_ipv4_reservation")
+        row = await coordinator.update_ipv4_reservation(
+            service.data["old_mac"],
+            service.data.get("mac"),
+            service.data.get("ip"),
+            service.data.get("comment"),
+            service.data.get("enable"),
+        )
+        return {"reservation": row.as_dict()} if row is not None else None
+
+    async def delete_reservation_service(service: ServiceCall) -> None:
+        coordinator = _reservation_coordinator(hass, service.data.get("device"), "delete_ipv4_reservation")
+        await coordinator.delete_ipv4_reservation(service.data["mac"])
+
+    for name, handler, schema, response in (
+        ("add_reservation", add_reservation_service, ADD_RESERVATION_SCHEMA, SupportsResponse.OPTIONAL),
+        ("update_reservation", update_reservation_service, UPDATE_RESERVATION_SCHEMA, SupportsResponse.OPTIONAL),
+        ("delete_reservation", delete_reservation_service, DELETE_RESERVATION_SCHEMA, SupportsResponse.NONE),
+    ):
+        if not hass.services.has_service(DOMAIN, name):
+            hass.services.async_register(DOMAIN, name, handler, schema=schema, supports_response=response)
 
 
 def _async_add_listeners(hass: HomeAssistant, coord: TPLinkRouterCoordinator) -> None:
