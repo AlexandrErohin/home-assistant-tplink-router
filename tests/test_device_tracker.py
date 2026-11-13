@@ -588,3 +588,28 @@ def test_mesh_tracker_can_be_constructed_for_restore_without_a_live_node():
     assert tracker.unique_id == "entry-1_tplink_router_mesh_24-00-00-00-00-02"
     assert tracker.is_connected is False
     assert tracker.extra_state_attributes == {}
+
+
+def test_tracker_reports_randomized_mac_and_reserved_ip():
+    from custom_components.tplink_router.reservations import ReservationRow, ReservationTable
+
+    tracker = build_tracker()
+    tracker._mac = "AA-60-27-17-8D-45"
+    tracker.device = FakeDevice(macaddr="AA-60-27-17-8D-45", hostname="S24", ip="192.168.1.107")
+    tracker.coordinator.reservation_table = None
+    data = tracker.data
+    assert data["randomized_mac"] is True
+    assert data["reserved_ip"] is None
+    assert "reserved_ip" not in tracker.extra_state_attributes
+
+    tracker.coordinator.reservation_table = ReservationTable(
+        [ReservationRow("AA-60-27-17-8D-45", "192.168.1.212", "S24", True)], 64
+    )
+    assert tracker.data["reserved_ip"] == "192.168.1.212"
+    assert tracker.extra_state_attributes["reserved_ip"] == "192.168.1.212"
+    assert tracker.extra_state_attributes["randomized_mac"] is True
+
+    tracker._mac = "80:45:6B:31:C6:68"
+    tracker.device = None
+    assert tracker.data["randomized_mac"] is False
+    assert tracker.data["reserved_ip"] is None

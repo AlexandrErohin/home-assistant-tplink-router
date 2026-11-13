@@ -1,0 +1,145 @@
+{
+  "config": {
+    "step": {
+      "user": {
+        "description": "Configuração da integração",
+        "data": {
+          "host": "Host",
+          "username": "Usuário",
+          "password": "Senha",
+          "scan_interval": "Intervalo de atualização em segundos",
+          "verify_ssl": "Verificar SSL na conexão https",
+          "scan_retries": "Número de tentativas em cada atualização de dados",
+          "scan_backoff": "Segundos entre tentativas",
+          "scan_pause": "Minutos até a coleta de dados ser reativada automaticamente (0 = nunca)",
+          "offline_timeout": "Segundos que um dispositivo ausente continua 'home' antes de ficar offline (0 = imediato)"
+        }
+      },
+      "custom": {
+        "description": "Personalização de funcionalidades",
+        "data": {
+          "support_vpn": "Incluir suporte a servidor e cliente VPN",
+          "support_tracker": "Incluir rastreadores de dispositivos (desative em roteadores que não são pontos de acesso para evitar duplicatas)",
+          "tracker_as_device": "Criar um dispositivo próprio para cada cliente rastreado (desativado por padrão; em redes movimentadas pode criar muitos dispositivos)",
+          "support_dhcp_reservations": "Incluir sensores de reservas DHCP e serviços de adicionar/atualizar/excluir",
+          "support_serving_cells": "Incluir sensores LTE serving cells",
+          "reservations_warning_threshold": "Reservas usadas antes do aviso de tabela quase cheia (padrão: 60)"
+        }
+      }
+    }
+  },
+  "options": {
+    "step": {
+      "init": {
+        "description": "Editar parâmetros do roteador.",
+        "data": {
+          "host": "Host",
+          "username": "Usuário",
+          "password": "Senha",
+          "scan_interval": "Intervalo de atualização em segundos",
+          "verify_ssl": "Verificar SSL na conexão https",
+          "scan_retries": "Número de tentativas em cada atualização de dados",
+          "scan_backoff": "Segundos entre tentativas",
+          "scan_pause": "Minutos até a coleta de dados ser reativada automaticamente (0 = nunca)",
+          "offline_timeout": "Segundos que um dispositivo ausente continua 'home' antes de ficar offline (0 = imediato)",
+          "support_vpn": "Incluir suporte a servidor e cliente VPN",
+          "support_tracker": "Incluir rastreadores de dispositivos (desative em roteadores que não são pontos de acesso para evitar duplicatas)",
+          "tracker_as_device": "Criar um dispositivo próprio para cada cliente rastreado (desativado por padrão; em redes movimentadas pode criar muitos dispositivos)",
+          "support_dhcp_reservations": "Incluir sensores de reservas DHCP e serviços de adicionar/atualizar/excluir",
+          "support_serving_cells": "Incluir sensores LTE serving cells",
+          "reservations_warning_threshold": "Reservas usadas antes do aviso de tabela quase cheia (padrão: 60)"
+        }
+      }
+    }
+  },
+  "services": {
+    "send_sms": {
+      "name": "Enviar SMS",
+      "description": "Enviar SMS",
+      "fields": {
+        "number": {
+          "name": "Telefone",
+          "description": "Número de telefone"
+        },
+        "text": {
+          "name": "Mensagem",
+          "description": "Texto"
+        },
+        "device": {
+          "name": "Roteador",
+          "description": "Selecione o roteador TP-Link que enviará o SMS"
+        }
+      }
+    },
+    "add_reservation": {
+      "name": "Adicionar reserva DHCP",
+      "description": "Reservar um endereço IPv4 fixo para um dispositivo no roteador. Recusa tabela cheia ou MAC/IP duplicado; verifica se a reserva foi gravada.",
+      "fields": {
+        "device": {
+          "name": "Roteador",
+          "description": "Selecione o roteador TP-Link"
+        },
+        "mac": {
+          "name": "Endereço MAC",
+          "description": "Endereço MAC do dispositivo (com dois-pontos, hífen ou só hexadecimal)"
+        },
+        "ip": {
+          "name": "Endereço IP",
+          "description": "Endereço IPv4 fixo a reservar"
+        },
+        "comment": {
+          "name": "Descrição",
+          "description": "Nome do dispositivo ou comentário (opcional)"
+        },
+        "enable": {
+          "name": "Ativa",
+          "description": "Ativar ou desativar esta reserva"
+        }
+      }
+    },
+    "update_reservation": {
+      "name": "Atualizar reserva DHCP",
+      "description": "Editar uma reserva DHCP no próprio roteador. Campos não informados mantêm o valor atual. A alteração é verificada.",
+      "fields": {
+        "device": {
+          "name": "Roteador",
+          "description": "Selecione o roteador TP-Link"
+        },
+        "old_mac": {
+          "name": "MAC atual",
+          "description": "Endereço MAC da reserva existente"
+        },
+        "mac": {
+          "name": "Novo MAC",
+          "description": "Novo endereço MAC (opcional; ex.: depois que o MAC privado do celular mudou)"
+        },
+        "ip": {
+          "name": "Endereço IP",
+          "description": "IPv4 a reservar (opcional; mantém o IP atual se vazio)"
+        },
+        "comment": {
+          "name": "Descrição",
+          "description": "Nome do dispositivo ou comentário (opcional)"
+        },
+        "enable": {
+          "name": "Ativa",
+          "description": "Ativar ou desativar esta reserva (opcional)"
+        }
+      }
+    },
+    "delete_reservation": {
+      "name": "Excluir reserva DHCP",
+      "description": "Remover uma reserva IPv4 fixa do roteador. Verifica se foi removida.",
+      "fields": {
+        "device": {
+          "name": "Roteador",
+          "description": "Selecione o roteador TP-Link"
+        },
+        "mac": {
+          "name": "Endereço MAC",
+          "description": "MAC da reserva a excluir"
+        }
+      }
+    }
+  }
+}

@@ -21,8 +21,9 @@
           "support_vpn": "Include support for VPN server and client",
           "support_tracker": "Include device trackers (disable for non-access-point routers to avoid duplicates)",
           "tracker_as_device": "Give each tracked client its own device entry (off by default; can add many devices on busy networks)",
-          "support_dhcp_reservations": "Include DHCP reservations sensor and add/delete services",
-          "support_serving_cells": "Include LTE serving cells sensors"
+          "support_dhcp_reservations": "Include DHCP reservation sensors and add/update/delete services",
+          "support_serving_cells": "Include LTE serving cells sensors",
+          "reservations_warning_threshold": "Reservations used before the near-full warning turns on (default 60)"
         }
       }
     }
@@ -44,8 +45,9 @@
           "support_vpn": "Include support for VPN server and client",
           "support_tracker": "Include device trackers (disable for non-access-point routers to avoid duplicates)",
           "tracker_as_device": "Give each tracked client its own device entry (off by default; can add many devices on busy networks)",
-          "support_dhcp_reservations": "Include DHCP reservations sensor and add/delete services",
-          "support_serving_cells": "Include LTE serving cells sensors"
+          "support_dhcp_reservations": "Include DHCP reservation sensors and add/update/delete services",
+          "support_serving_cells": "Include LTE serving cells sensors",
+          "reservations_warning_threshold": "Reservations used before the near-full warning turns on (default 60)"
         }
       }
     }
@@ -71,7 +73,7 @@
     },
     "add_reservation": {
       "name": "Add DHCP Reservation",
-      "description": "Reserve a static IPv4 address for a device on the router.",
+      "description": "Reserve a static IPv4 address for a device on the router. Refuses a full table or duplicate MAC/IP; verifies the row was stored.",
       "fields": {
         "device": {
           "name": "Router",
@@ -97,7 +99,7 @@
     },
     "delete_reservation": {
       "name": "Delete DHCP Reservation",
-      "description": "Remove a static IPv4 address reservation from the router.",
+      "description": "Remove a static IPv4 address reservation from the router. Verifies the row was removed.",
       "fields": {
         "device": {
           "name": "Router",
@@ -106,6 +108,36 @@
         "mac": {
           "name": "MAC Address",
           "description": "MAC address of the reservation to delete"
+        }
+      }
+    },
+    "update_reservation": {
+      "name": "Update DHCP Reservation",
+      "description": "Edit a DHCP reservation in place on the router. Unset fields keep their value. The change is verified.",
+      "fields": {
+        "device": {
+          "name": "Router",
+          "description": "Select the TP-Link router"
+        },
+        "old_mac": {
+          "name": "Current MAC address",
+          "description": "MAC address of the existing reservation to update"
+        },
+        "mac": {
+          "name": "New MAC address",
+          "description": "New MAC address (optional; e.g. after a privacy MAC changed)"
+        },
+        "ip": {
+          "name": "IP address",
+          "description": "IPv4 address to reserve (optional; keeps the current IP if unset)"
+        },
+        "comment": {
+          "name": "Description",
+          "description": "Device name or comment (optional)"
+        },
+        "enable": {
+          "name": "Enabled",
+          "description": "Enable or disable this reservation (optional)"
         }
       }
     }

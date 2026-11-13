@@ -133,3 +133,12 @@ def validate_ipv4_address(value: str) -> str:
         return str(ipaddress.IPv4Address(value.strip()))
     except ipaddress.AddressValueError as err:
         raise ValueError(f"Invalid IPv4 address: {value}") from err
+
+
+def normalize_mac(value: str) -> str:
+    """Return a MAC address as dash-separated uppercase (router storage format)."""
+    cleaned = str(value).strip().replace("-", "").replace(":", "").replace(".", "")
+    if not _MAC_HEX_RE.fullmatch(cleaned):
+        raise ValueError(f"Invalid MAC address: {value}")
+    cleaned = cleaned.upper()
+    return "-".join(cleaned[i:i + 2] for i in range(0, 12, 2))

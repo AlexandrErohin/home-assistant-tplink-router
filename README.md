@@ -63,7 +63,8 @@ Status sensors (client counts, CPU/memory, WAN/LAN addresses, …) are created o
  - WAN Uptime (Internet connection duration in seconds; useful to detect WAN reconnects)
  - WAN IPv4 Address
  - LAN IPv4 Address
- - DHCP Reservations (count; full lease list in attributes — on routers with `get_ipv4_reservations`, when enabled in options)
+ - DHCP Reservations (count; full reservation list, `max_reservations` and `free` in attributes — on routers with `get_ipv4_reservations`, when enabled in options)
+ - DHCP Reservations limit / DHCP Reservations free (table capacity reported by the router, e.g. 64 on Archer AX1800; unavailable when the router does not report it)
  - Mesh node backhaul (Deco / EasyMesh with backhaul metrics): signal 2.4/5 GHz, RX/TX rate 2.4/5 GHz, internet status — one diagnostic sensor per reported metric, on the mesh node device from the tracker platform (only when device tracking is enabled)
 
 For LTE Routers
@@ -85,12 +86,17 @@ For LTE Routers
 For devices with `get_port_status` (e.g. TL-SG108E):
  - Per-port connectivity (link up/down)
 
+For routers with DHCP reservations:
+ - DHCP Reservations near full (`problem`): on when the number of reservations reaches the warning threshold (option, default 60) or the table is full
+
 ### Port Sensors
 For devices with `get_port_status` (e.g. TL-SG108E):
  - Per-port negotiated link speed (Mbps), with attributes for duplex, enabled, auto-negotiation, configured speed/duplex, flow control, LAG and TX/RX packet counters
 
 ### Device Tracker
  - Track connected to router devices by MAC address with connection information
+ - `randomized_mac` attribute: `true` for locally administered (privacy / random) MAC addresses, as used by phones per Wi-Fi network. QEMU/KVM guests (`52:54:00:…`) carry the same bit but keep a fixed address, so they report `false`
+ - `reserved_ip` attribute: the IP reserved for the MAC in the router's DHCP table (when reservations are enabled)
  - On EasyMesh networks, one tracker per mesh node (the main router included), carrying the node's model, role, uplink type, client count and the MAC of the node it uplinks through
 
 Mesh node trackers appear only when the router reports an EasyMesh (or Deco mesh) network and the installed `tplinkrouterc6u` exposes `get_mesh_nodes`; otherwise nothing is created and nothing is logged. Their attributes reuse the names `ha-tplink-deco` publishes (`device_type`, `device_model`, `connection_type`), so a dashboard or card written for one works for the other. The uplink quality is published as `signal_level`, a 1 to 3 bar level, rather than as `signal`, which for clients is a dBm value.
@@ -105,14 +111,32 @@ To find your device - Go to `Developer tools` and search for your MAC address - 
 
 By default tracked clients don't get their own entry in `Settings > Devices & Services > Devices` - they're plain entities, findable via the Entities list. Enable "Give each tracked client its own device entry" in the integration options if you'd rather see one device card per client; it's off by default since busy networks can end up with a lot of device entries. Turning the option off later does not delete those device-registry entries — remove them manually in Devices if you no longer want them.
 
-It will also fire Home Assistant event when a device connects to router
+It will also fire Home Assistant event when a device connects to router. Event data includes `hostname`, `ip_address`, `mac_address`, `randomized_mac` and `reserved_ip` plus the tracker attributes.
 
 ### Services
  - Send SMS message - Available only for MR LTE routers
  - Add DHCP Reservation (`tplink_router.add_reservation`) — available on c6u-family routers that implement `add_ipv4_reservation` (when enabled in options)
+ - Update DHCP Reservation (`tplink_router.update_reservation`) — edits a reservation in place (`old_mac` plus any of `mac`, `ip`, `comment`, `enable`) using the router's own update operation; on c6u-family (LuCI) routers
  - Delete DHCP Reservation (`tplink_router.delete_reservation`) — same routers with `delete_ipv4_reservation`
 
 Many router models expose a read-only DHCP reservations sensor via `get_ipv4_reservations` even when add/delete actions are not supported. Disable "Include DHCP reservations..." in the integration options to skip polling and hide the sensor/services.
+
+#### DHCP reservations: verified changes
+Some firmware answers "success" to a reservation change it did not store — Archer AX1800 v1.20 does so for an insert into a full table (64 rules). The reservation services therefore:
+ - refuse an insert when the table is full or the MAC/IP is already reserved (`update_reservation` refuses a MAC/IP used by another row);
+ - reload the table after every change and fail with an error when the change is not there.
+
+A failed call raises an error in Home Assistant (shown in the UI, stops a script/automation unless `continue_on_error: true`). `add_reservation` and `update_reservation` return the stored row as response data (`response_variable`). The reservation table is read on every poll, so the reservation sensors and services also appear when the router was busy during setup.
+
+Example — move an existing reservation to a phone's new private MAC, keeping its IP:
+```yaml
+action: tplink_router.update_reservation
+data:
+  device: YOUR_ROUTER_DEVICE_ID
+  old_mac: 2E-6B-B3-EC-42-40
+  mac: AA-60-27-17-8D-45
+response_variable: result
+```
 ### Notification
 #### Device events
 To receive notifications of appearing a new device in your network, or becoming device online\offline add following lines to your `configuration.yaml` file:
@@ -259,8 +283,9 @@ You may edit configuration data like:
 9. Include support for VPN server/client (enable/disable VPN status polling and related VPN entities)
 10. Include device trackers (disable for non-AP routers to avoid duplicate entries)
 11. Give each tracked client its own device entry (off by default; disabling later does not remove already-created device cards)
-12. Include DHCP reservations sensor and add/delete services (default on)
-13. Include LTE serving cells sensors (default on; disable to skip probing/polling on routers without this feature)
+12. Include DHCP reservations sensors and add/update/delete services (default on)
+13. Reservations warning threshold (default 60) — number of reservations that turns on "DHCP Reservations near full"
+14. Include LTE serving cells sensors (default on; disable to skip probing/polling on routers without this feature)
 
 Transient poll failures (timeouts, dropped connections, session expiry) are retried automatically. Authorization failures (wrong password / HTTP 401) are not retried. A failing SMS mailbox fetch does not fail the whole update.
 An unreachable router during setup fails only that config entry (`Failed to set up`) and does not block other TP-Link Router entries.

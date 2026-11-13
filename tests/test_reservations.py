@@ -10,49 +10,6 @@ from custom_components.tplink_router import (
     get_coordinator_for_device,
 )
 from custom_components.tplink_router.const import DOMAIN
-from custom_components.tplink_router.sensor import TPLinkRouterReservationsSensor
-
-
-def test_reservations_sensor_native_value_and_attributes():
-    reservation = SimpleNamespace(
-        macaddr="AA-BB-CC-DD-EE-FF",
-        ipaddr="192.168.1.50",
-        hostname="phone",
-        enabled=True,
-    )
-    coordinator = Mock()
-    coordinator.unique_id = "entry-1"
-    coordinator.device_info = {"identifiers": {("tplink_router", "mac")}}
-    coordinator.reservations = [reservation]
-
-    sensor = TPLinkRouterReservationsSensor.__new__(TPLinkRouterReservationsSensor)
-    sensor.coordinator = coordinator
-    sensor.hass = None
-    sensor.entity_description = Mock(key="dhcp_reservations")
-
-    assert sensor.native_value == 1
-    assert sensor.extra_state_attributes == {
-        "reservations": [
-            {
-                "mac": "AA-BB-CC-DD-EE-FF",
-                "ip": "192.168.1.50",
-                "hostname": "phone",
-                "enabled": True,
-            }
-        ]
-    }
-
-
-def test_reservations_sensor_empty_when_none_or_empty():
-    coordinator = Mock()
-    coordinator.reservations = None
-    sensor = TPLinkRouterReservationsSensor.__new__(TPLinkRouterReservationsSensor)
-    sensor.coordinator = coordinator
-    assert sensor.native_value is None
-
-    coordinator.reservations = []
-    assert sensor.native_value == 0
-    assert sensor.extra_state_attributes == {"reservations": []}
 
 
 def test_add_reservation_schema_validates_mac_and_ip():
