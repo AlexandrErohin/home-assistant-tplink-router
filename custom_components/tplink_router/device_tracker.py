@@ -164,6 +164,7 @@ def update_items(
         else:
             tracked[device.macaddr].device = device
             tracked[device.macaddr]._remember(device)
+            tracked[device.macaddr]._maybe_rename_device()
             if fire_event and not tracked[device.macaddr].active and device.active:
                 coordinator.hass.bus.fire(EVENT_ONLINE, tracked[device.macaddr].data)
             if fire_event and tracked[device.macaddr].active and not device.active:
@@ -398,6 +399,10 @@ class TPLinkMeshTracker(CoordinatorEntity, RestoreEntity, ScannerEntity):
 class TPLinkTracker(CoordinatorEntity, RestoreEntity, ScannerEntity):
     """Representation of network device."""
 
+    # Tracker is the main feature of the client device: name lives on the device.
+    _attr_has_entity_name = True
+    _attr_name = None
+
     def __init__(
             self,
             coordinator: TPLinkRouterCoordinator,
@@ -409,6 +414,8 @@ class TPLinkTracker(CoordinatorEntity, RestoreEntity, ScannerEntity):
         self.device = data
         self._mac = mac or (data.macaddr if data else None)
         self.active = data.active if data else False
+        # When True, nest the client device under the router via via_device_id.
+        # Device info with the MAC connection is always provided (HA 2026.11+).
         self._as_device = as_device
         self._restored_attributes: dict[str, str] = {}
         self._last_hostname = ""
@@ -425,6 +432,46 @@ class TPLinkTracker(CoordinatorEntity, RestoreEntity, ScannerEntity):
         if data.ipaddr and str(data.ipaddr) != "0.0.0.0":
             self._last_ip_address = str(data.ipaddr)
 
+    def _existing_registry_devices(self) -> list:
+        """Return devices already registered for this client's MAC on this entry."""
+        if self.hass is None or not self._mac:
+            return []
+        try:
+            registry = dr.async_get(self.hass)
+            return list(
+                registry.async_get_devices(
+                    connections={(CONNECTION_NETWORK_MAC, self._mac)},
+                    config_entry_id=self.coordinator.unique_id,
+                )
+            )
+        except Exception:
+            return []
+
+    def _device_name_for_info(self) -> str | None:
+        """Name for DeviceInfo without overwriting an existing registry name with a MAC.
+
+        Hostname is often unknown for restored offline clients until
+        async_added_to_hass runs, which is after the device is created. Prefer the
+        hostname, then the existing device name; only fall back to the MAC for a
+        brand-new device.
+        """
+        if hostname := self.hostname:
+            return hostname
+        existing = self._existing_registry_devices()
+        if existing:
+            return existing[0].name
+        return self._mac
+
+    def _maybe_rename_device(self) -> None:
+        """Keep the device name in sync when the router reports a hostname."""
+        name = self.hostname
+        if not name or self.hass is None:
+            return
+        device_entry = self.device_entry
+        if device_entry is None or device_entry.name == name:
+            return
+        dr.async_get(self.hass).async_update_device(device_entry.id, name=name)
+
     @property
     def is_connected(self) -> bool:
         """Return true if the client is connected to the network."""
@@ -434,18 +481,6 @@ class TPLinkTracker(CoordinatorEntity, RestoreEntity, ScannerEntity):
     def source_type(self) -> str:
         """Return the source type of the client."""
         return SourceType.ROUTER
-
-    @property
-    def name(self) -> str:
-        """Return the name of the client."""
-        if self.device is not None:
-            return (
-                self.device.hostname
-                or self._last_hostname
-                or self._restored_attributes.get("hostname")
-                or self._mac
-            )
-        return self._restored_attributes.get("hostname") or self._last_hostname or self._mac
 
     @property
     def hostname(self) -> str:
@@ -482,26 +517,27 @@ class TPLinkTracker(CoordinatorEntity, RestoreEntity, ScannerEntity):
         return f"{self.coordinator.unique_id}_{DOMAIN}_{self.mac_address}"
 
     @property
-    def device_info(self) -> DeviceInfo | None:
-        """Return a device entry for this client, grouped under the router.
+    def device_info(self) -> DeviceInfo:
+        """Return a device for the tracked client (MAC connection).
 
-        Opt-in via CONF_TRACKER_AS_DEVICE: on networks with many transient
-        clients this can add a lot of device-registry entries, so it
-        defaults to off and the entity stays deviceless (current
-        behavior) unless explicitly enabled. via_device_id must point at
-        the router's registry device (identifiers DOMAIN + lan MAC).
+        Always set so the tracker joins/merges by MAC with devices from other
+        integrations and avoids the ScannerEntity default deprecated in HA
+        2027.11. CONF_TRACKER_AS_DEVICE only nests the client under the router
+        via via_device_id.
         """
-        if not self._as_device:
-            return None
         info = DeviceInfo(
             connections={(CONNECTION_NETWORK_MAC, self._mac)},
-            name=self.hostname or self._mac,
         )
-        via_id = resolve_via_device_id(
-            self.hass, self.coordinator.unique_id, self.coordinator.status.lan_macaddr
-        )
-        if via_id:
-            info["via_device_id"] = via_id
+        if (name := self._device_name_for_info()) is not None:
+            info["name"] = name
+        if self._as_device:
+            via_id = resolve_via_device_id(
+                self.hass,
+                self.coordinator.unique_id,
+                self.coordinator.status.lan_macaddr,
+            )
+            if via_id:
+                info["via_device_id"] = via_id
         return info
 
     @property
@@ -551,6 +587,7 @@ class TPLinkTracker(CoordinatorEntity, RestoreEntity, ScannerEntity):
         """Restore entity attributes if not already updated."""
         await super().async_added_to_hass()
         if self.device is not None:
+            self._maybe_rename_device()
             return
         last_state = await self.async_get_last_state()
         if last_state is None:
@@ -562,3 +599,4 @@ class TPLinkTracker(CoordinatorEntity, RestoreEntity, ScannerEntity):
         ip_address = self._restored_attributes.get("ip_address")
         if ip_address and str(ip_address) != "0.0.0.0":
             self._last_ip_address = str(ip_address)
+        self._maybe_rename_device()

@@ -1,5 +1,11 @@
 # Changelog
 
+## [UNRELEASED]
+
+### Fixed
+
+- Provide `DeviceInfo` with MAC connection for client trackers (HA 2026.11 `ScannerEntity` changes); `tracker_as_device` now only nests clients under the router ([#440](https://github.com/AlexandrErohin/home-assistant-tplink-router/issues/440))
+
 ## [2.46.0] - 2026-11-13
 
 ### Added

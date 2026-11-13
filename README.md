@@ -103,7 +103,7 @@ When using multiple routers (for example, a WAN router and a separate access poi
 
 To find your device - Go to `Developer tools` and search for your MAC address - you’ll find sensor like `device_tracker.YOUR_MAC` or `device_tracker.YOUR_PHONE_NAME`.
 
-By default tracked clients don't get their own entry in `Settings > Devices & Services > Devices` - they're plain entities, findable via the Entities list. Enable "Give each tracked client its own device entry" in the integration options if you'd rather see one device card per client; it's off by default since busy networks can end up with a lot of device entries. Turning the option off later does not delete those device-registry entries — remove them manually in Devices if you no longer want them.
+Each tracked client gets a device entry linked by MAC (so it can merge with devices from other integrations). Enable "Nest each tracked client under the router device" in the integration options if you also want those client devices nested under the router via `via_device_id`; it's off by default. Turning the option off later does not delete already-created device-registry entries — remove them manually in Devices if you no longer want them.
 
 It will also fire Home Assistant event when a device connects to router
 
@@ -258,7 +258,7 @@ You may edit configuration data like:
 8. Verify https
 9. Include support for VPN server/client (enable/disable VPN status polling and related VPN entities)
 10. Include device trackers (disable for non-AP routers to avoid duplicate entries)
-11. Give each tracked client its own device entry (off by default; disabling later does not remove already-created device cards)
+11. Nest each tracked client under the router device (off by default; clients always get a MAC-linked device; disabling later does not remove already-created device cards)
 12. Include DHCP reservations sensor and add/delete services (default on)
 13. Include LTE serving cells sensors (default on; disable to skip probing/polling on routers without this feature)
 
