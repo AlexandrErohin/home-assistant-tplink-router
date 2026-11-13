@@ -1,5 +1,16 @@
 # Changelog
 
+## [Unreleased]
+
+### Added
+
+- Added TP-LINK RE705X v1.0 to supported router list
+- Added TP-LINK TL-WDR7660 3.0.10 to supported router list
+
+### Fixed
+
+- Port link speed sensor attributes for router ports (`RouterPortStatus`, e.g. Archer C5400X); switch ports (`PortStatus`) unchanged ([#439](https://github.com/AlexandrErohin/home-assistant-tplink-router/pull/439))
+
 ## [2.45.0] - 2026-10-31
 
 ### Added

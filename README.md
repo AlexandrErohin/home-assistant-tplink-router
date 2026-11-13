@@ -82,12 +82,12 @@ For LTE Routers
 - LTE ISP Name
 
 ### Binary Sensors
-For devices with `get_port_status` (e.g. TL-SG108E):
+For devices with `get_port_status` (e.g. TL-SG108E, Archer C5400X):
  - Per-port connectivity (link up/down)
 
 ### Port Sensors
-For devices with `get_port_status` (e.g. TL-SG108E):
- - Per-port negotiated link speed (Mbps), with attributes for duplex, enabled, auto-negotiation, configured speed/duplex, flow control, LAG and TX/RX packet counters
+For devices with `get_port_status` (e.g. TL-SG108E, Archer C5400X):
+ - Per-port negotiated link speed (Mbps). Switch ports (`PortStatus`, e.g. TL-SG108E) keep attributes for duplex, enabled, auto-negotiation, configured speed/duplex, flow control, LAG and TX/RX packet counters; router ports (`RouterPortStatus`, e.g. Archer C5400X) expose `negotiated_duplex` only
 
 ### Device Tracker
  - Track connected to router devices by MAC address with connection information
@@ -286,7 +286,7 @@ To do that:
 - Archer AX11000 V1
 - Archer AX12 v1.0
 - Archer AX17 v1.0
-- Archer AX1800
+- Archer AX1800 v1.20
 - Archer AX20 (v1.0, v3.0)
 - Archer AX21 (v1.20, v3.0, v4.6)
 - Archer AX23 (v1.0, v1.2)
@@ -311,6 +311,7 @@ To do that:
 - Archer BE400 v1.0
 - Archer BE450 v1.0
 - Archer BE550 (v1.0, V2)
+- Archer BE600 v1.0
 - Archer BE800 v1.0
 - Archer BE805 (v1.0, v1.20)
 - Archer C1200 (v1.0, v2.0)
@@ -376,6 +377,7 @@ To do that:
 - RE330 v1
 - RE505X v1.0
 - RE700X
+- RE705X v1.0
 - RE813XE v1.6
 - TD-W9960 (v1, V1.20)
 - TL-7DR6430 1.0
@@ -396,6 +398,7 @@ To do that:
 - TL-WR844N v1.0
 - TL-WR3002X v1.0
 - TL-WDR3600 V1
+- TL-WDR7660 3.0.10
 - TL-XDR3010 V2
 - TL-XDR5410 1.0
 - TL-XDR6010

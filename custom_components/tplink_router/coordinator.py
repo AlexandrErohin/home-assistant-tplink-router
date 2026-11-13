@@ -20,6 +20,7 @@ from tplinkrouterc6u import (
     VpnClientStatus,
     VPNStatus,
     PortStatus,
+    RouterPortStatus,
     IPv4Reservation,
 )
 
@@ -70,13 +71,13 @@ def collect_status(
         serving_cells: list[ServingCell] | None,
         vpn_server_status: VPNStatus | None,
         vpn_client_status: VpnClientStatus | None,
-        port_status: list[PortStatus] | None,
+        port_status: list[PortStatus | RouterPortStatus] | None,
         reservations: list[IPv4Reservation] | None,
         logger: Logger,
         mesh_nodes: list[MeshNode] | None = None,
         led_status: bool | None = None,
 ) -> tuple[Status, LTEStatus | None, list[ServingCell] | None, VPNStatus | None,
-           VpnClientStatus | None, list[PortStatus] | None, list[SMS] | None,
+           VpnClientStatus | None, list[PortStatus | RouterPortStatus] | None, list[SMS] | None,
            list[IPv4Reservation] | None, list[MeshNode] | None, bool | None]:
     """Gather all status data from the router; a failing SMS fetch must not break the update."""
     status = router.get_status()
@@ -129,7 +130,7 @@ class TPLinkRouterCoordinator(DataUpdateCoordinator):
             vpn_server_status: VPNStatus | None = None,
             vpn_client_status: VpnClientStatus | None = None,
             serving_cells: list[ServingCell] | None = None,
-            port_status: list[PortStatus] | None = None,
+            port_status: list[PortStatus | RouterPortStatus] | None = None,
             retries: int = 3,
             backoff_seconds: float = 1.0,
             scan_pause_minutes: int = DEFAULT_SCAN_PAUSE,
