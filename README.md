@@ -438,12 +438,12 @@ For LTE Routers
 - LTE ISP Name
 
 ### Binary Sensors
-For devices with `get_port_status` (e.g. TL-SG108E):
+For devices with `get_port_status` (e.g. TL-SG108E, Archer C5400X):
  - Per-port connectivity (link up/down)
 
 ### Port Sensors
-For devices with `get_port_status` (e.g. TL-SG108E):
- - Per-port negotiated link speed (Mbps), with attributes for duplex, enabled, auto-negotiation, configured speed/duplex, flow control, LAG and TX/RX packet counters
+For devices with `get_port_status` (e.g. TL-SG108E, Archer C5400X):
+ - Per-port negotiated link speed (Mbps). Switch ports (`PortStatus`, e.g. TL-SG108E) keep attributes for duplex, enabled, auto-negotiation, configured speed/duplex, flow control, LAG and TX/RX packet counters; router ports (`RouterPortStatus`, e.g. Archer C5400X) expose `negotiated_duplex` only
 
 ### Device Tracker
  - Track connected to router devices by MAC address with connection information
@@ -459,7 +459,7 @@ When using multiple routers (for example, a WAN router and a separate access poi
 
 To find your device - Go to `Developer tools` and search for your MAC address - you’ll find sensor like `device_tracker.YOUR_MAC` or `device_tracker.YOUR_PHONE_NAME`.
 
-By default tracked clients don't get their own entry in `Settings > Devices & Services > Devices` - they're plain entities, findable via the Entities list. Enable "Give each tracked client its own device entry" in the integration options if you'd rather see one device card per client; it's off by default since busy networks can end up with a lot of device entries. Turning the option off later does not delete those device-registry entries — remove them manually in Devices if you no longer want them.
+Each tracked client gets a device entry linked by MAC (so it can merge with devices from other integrations). Enable "Nest each tracked client under the router device" in the integration options if you also want those client devices nested under the router via `via_device_id`; it's off by default. Turning the option off later does not delete already-created device-registry entries — remove them manually in Devices if you no longer want them.
 
 It will also fire Home Assistant event when a device connects to router
 
@@ -614,7 +614,7 @@ You may edit configuration data like:
 8. Verify https
 9. Include support for VPN server/client (enable/disable VPN status polling and related VPN entities)
 10. Include device trackers (disable for non-AP routers to avoid duplicate entries)
-11. Give each tracked client its own device entry (off by default; disabling later does not remove already-created device cards)
+11. Nest each tracked client under the router device (off by default; clients always get a MAC-linked device; disabling later does not remove already-created device cards)
 12. Include DHCP reservations sensor and add/delete services (default on)
 13. Include LTE serving cells sensors (default on; disable to skip probing/polling on routers without this feature)
 
@@ -642,7 +642,7 @@ To do that:
 - Archer AX11000 V1
 - Archer AX12 v1.0
 - Archer AX17 v1.0
-- Archer AX1800
+- Archer AX1800 v1.20
 - Archer AX20 (v1.0, v3.0)
 - Archer AX21 (v1.20, v3.0, v4.6)
 - Archer AX23 (v1.0, v1.2)
@@ -667,6 +667,7 @@ To do that:
 - Archer BE400 v1.0
 - Archer BE450 v1.0
 - Archer BE550 (v1.0, V2)
+- Archer BE600 v1.0
 - Archer BE800 v1.0
 - Archer BE805 (v1.0, v1.20)
 - Archer C1200 (v1.0, v2.0)
@@ -732,6 +733,7 @@ To do that:
 - RE330 v1
 - RE505X v1.0
 - RE700X
+- RE705X v1.0
 - RE813XE v1.6
 - TD-W9960 (v1, V1.20)
 - TL-7DR6430 1.0
@@ -752,6 +754,7 @@ To do that:
 - TL-WR844N v1.0
 - TL-WR3002X v1.0
 - TL-WDR3600 V1
+- TL-WDR7660 3.0.10
 - TL-XDR3010 V2
 - TL-XDR5410 1.0
 - TL-XDR6010

@@ -799,20 +799,13 @@ class TPLinkRouterPortLinkSpeedSensor(CoordinatorEntity[TPLinkRouterCoordinator]
         port_status = self._current_port_status
         if port_status is None:
             return None
-        return {
-            "negotiated_duplex": port_status.negotiated_duplex,
-            "enabled": port_status.enabled,
-            "auto_negotiation": port_status.auto_negotiation,
-            "configured_speed": port_status.configured_speed,
-            "configured_duplex": port_status.configured_duplex,
-            "flow_control_enabled": port_status.flow_control_enabled,
-            "flow_control_active": port_status.flow_control_active,
-            "lag": port_status.lag,
-            "tx_good_packets": port_status.tx_good_packets,
-            "tx_bad_packets": port_status.tx_bad_packets,
-            "rx_good_packets": port_status.rx_good_packets,
-            "rx_bad_packets": port_status.rx_bad_packets,
-        }
+        # Router ports (RouterPortStatus) only have link, speed and duplex; switch ports (PortStatus) have the rest
+        names = (
+            "negotiated_duplex", "enabled", "auto_negotiation", "configured_speed", "configured_duplex",
+            "flow_control_enabled", "flow_control_active", "lag", "tx_good_packets", "tx_bad_packets",
+            "rx_good_packets", "rx_bad_packets",
+        )
+        return {name: getattr(port_status, name) for name in names if hasattr(port_status, name)}
 
     @property
     def available(self) -> bool:

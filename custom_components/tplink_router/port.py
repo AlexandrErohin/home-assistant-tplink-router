@@ -3,13 +3,13 @@ from __future__ import annotations
 from collections.abc import Callable
 from homeassistant.core import callback
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
-from tplinkrouterc6u import PortStatus
+from tplinkrouterc6u import PortStatus, RouterPortStatus
 from .coordinator import TPLinkRouterCoordinator
 
 
 def find_port_status(
     coordinator: TPLinkRouterCoordinator, port: int
-) -> PortStatus | None:
+) -> PortStatus | RouterPortStatus | None:
     if not coordinator.port_status:
         return None
     return next(

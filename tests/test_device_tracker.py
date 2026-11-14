@@ -71,11 +71,19 @@ def build_tracker():
     return tracker
 
 
-def test_device_info_none_when_as_device_disabled():
+def test_device_info_always_includes_mac_when_as_device_disabled():
+    """HA 2026.11+ requires ScannerEntity device info; option only nests under router."""
+    from homeassistant.helpers.device_registry import CONNECTION_NETWORK_MAC
+
     tracker = build_tracker()
     tracker._as_device = False
     tracker._last_hostname = "phone"
-    assert tracker.device_info is None
+    tracker.hass = tracker.coordinator.hass
+
+    info = tracker.device_info
+    assert info["connections"] == {(CONNECTION_NETWORK_MAC, "AA:BB:CC:DD:EE:FF")}
+    assert info["name"] == "phone"
+    assert "via_device_id" not in info
 
 
 def test_device_info_uses_via_device_id_when_router_is_registered():
@@ -126,6 +134,84 @@ def test_device_info_omits_via_when_parent_not_registered():
     assert info is not None
     assert "via_device_id" not in info
     assert "via_device" not in info
+
+
+def test_device_info_uses_existing_registry_name_when_hostname_unknown():
+    """Restored offline clients must not rename an existing device to the MAC."""
+    tracker = build_tracker()
+    tracker.hass = tracker.coordinator.hass
+    existing = Mock(name="Oklyn", id="dev-1")
+    # Mock.name is the constructor kwarg for the mock's name; set the attr explicitly.
+    existing.name = "Oklyn"
+    registry = Mock()
+    registry.async_get_devices = Mock(return_value=[existing])
+
+    with patch(
+        "custom_components.tplink_router.device_tracker.dr.async_get",
+        return_value=registry,
+    ):
+        info = tracker.device_info
+
+    assert info["name"] == "Oklyn"
+    registry.async_get_devices.assert_called_once_with(
+        connections={("mac", "AA:BB:CC:DD:EE:FF")},
+        config_entry_id="entry-1",
+    )
+
+
+def test_device_info_falls_back_to_mac_for_new_device_without_hostname():
+    tracker = build_tracker()
+    tracker.hass = tracker.coordinator.hass
+    registry = Mock()
+    registry.async_get_devices = Mock(return_value=[])
+
+    with patch(
+        "custom_components.tplink_router.device_tracker.dr.async_get",
+        return_value=registry,
+    ):
+        info = tracker.device_info
+
+    assert info["name"] == "AA:BB:CC:DD:EE:FF"
+
+
+def test_maybe_rename_device_updates_registry_when_hostname_changes():
+    tracker = build_tracker()
+    tracker._last_hostname = "phone"
+    tracker.hass = tracker.coordinator.hass
+    device_entry = Mock(id="dev-1")
+    device_entry.name = "old-phone"
+    registry = Mock()
+
+    with (
+        patch.object(TPLinkTracker, "device_entry", device_entry),
+        patch(
+            "custom_components.tplink_router.device_tracker.dr.async_get",
+            return_value=registry,
+        ),
+    ):
+        tracker._maybe_rename_device()
+
+    registry.async_update_device.assert_called_once_with("dev-1", name="phone")
+
+
+def test_maybe_rename_device_skips_when_name_matches():
+    tracker = build_tracker()
+    tracker._last_hostname = "phone"
+    tracker.hass = tracker.coordinator.hass
+    device_entry = Mock(id="dev-1")
+    device_entry.name = "phone"
+    registry = Mock()
+
+    with (
+        patch.object(TPLinkTracker, "device_entry", device_entry),
+        patch(
+            "custom_components.tplink_router.device_tracker.dr.async_get",
+            return_value=registry,
+        ),
+    ):
+        tracker._maybe_rename_device()
+
+    registry.async_update_device.assert_not_called()
 
 
 def test_resolve_via_device_id_falls_back_to_connections():
@@ -184,7 +270,8 @@ def test_hostname_falls_back_to_restored_when_device_blank():
     tracker.device = FakeDevice(hostname="", ip="0.0.0.0")
     assert tracker.hostname == "restored-phone"
     assert tracker.ip_address == "192.168.1.70"
-    assert tracker.name == "restored-phone"
+    assert tracker._attr_name is None
+    assert tracker._attr_has_entity_name is True
 
 
 def test_mark_offline_if_expired_with_zero_timeout_is_immediate():

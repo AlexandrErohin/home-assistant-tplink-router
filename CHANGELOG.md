@@ -1,5 +1,22 @@
 # Changelog
 
+## [UNRELEASED]
+
+### Fixed
+
+- Provide `DeviceInfo` with MAC connection for client trackers (HA 2026.11 `ScannerEntity` changes); `tracker_as_device` now only nests clients under the router ([#440](https://github.com/AlexandrErohin/home-assistant-tplink-router/issues/440))
+
+## [2.46.0] - 2026-11-13
+
+### Added
+
+- Added TP-LINK RE705X v1.0 to supported router list
+- Added TP-LINK TL-WDR7660 3.0.10 to supported router list
+
+### Fixed
+
+- Port link speed sensor attributes for router ports (`RouterPortStatus`, e.g. Archer C5400X); switch ports (`PortStatus`) unchanged ([#439](https://github.com/AlexandrErohin/home-assistant-tplink-router/pull/439))
+
 ## [2.45.0] - 2026-10-31
 
 ### Added
