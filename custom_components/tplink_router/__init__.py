@@ -32,6 +32,9 @@ from .const import (
 )
 import logging
 from .coordinator import TPLinkRouterCoordinator, collect_mesh_nodes, supports_led_control
+from .parental_control import collect_parental_status, supports_parental_control
+from .parental_services import PARENTAL_SERVICES, register_parental_services
+from .network import setup_network_panel, unload_network_panel
 from .utils import validate_ipv4_address, validate_mac_address, is_retryable_error
 from homeassistant.helpers import device_registry
 
@@ -197,6 +200,9 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
             # Probe EasyMesh once so node trackers exist before the first poll.
             # None = unsupported (stop asking); a list (even empty) keeps polling.
             mesh_nodes = collect_mesh_nodes(client, _LOGGER)
+            parental_status = None
+            if supports_parental_control(client, firm.model):
+                parental_status = collect_parental_status(client, _LOGGER)
             led_status = None
             if supports_led_control(client):
                 try:
@@ -219,6 +225,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
                 reservations,
                 mesh_nodes,
                 led_status,
+                parental_status,
             )
 
         (
@@ -233,6 +240,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
             reservations,
             mesh_nodes,
             led_status,
+            parental_status,
         ) = await hass.async_add_executor_job(
             TPLinkRouterCoordinator.request, client, callback
         )
@@ -260,7 +268,8 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
                                           reservations=reservations,
                                           support_dhcp_reservations=support_dhcp_reservations,
                                           mesh_nodes=mesh_nodes,
-                                          led_status=led_status)
+                                          led_status=led_status,
+                                          parental_status=parental_status)
 
     if sms_list is not None:
         coordinator._process_sms_list(sms_list)
@@ -290,6 +299,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     entry.async_on_unload(entry.add_update_listener(async_reload_entry))
 
     register_services(hass, coordinator)
+    await setup_network_panel(hass)
 
     return True
 
@@ -303,7 +313,8 @@ async def async_unload_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     if unload_ok:
         hass.data[DOMAIN].pop(entry.entry_id)
         if not hass.data[DOMAIN]:
-            for svc in ("send_sms", "add_reservation", "delete_reservation"):
+            unload_network_panel(hass)
+            for svc in ("send_sms", "add_reservation", "delete_reservation", *PARENTAL_SERVICES):
                 if hass.services.has_service(DOMAIN, svc):
                     hass.services.async_remove(DOMAIN, svc)
     return unload_ok
@@ -353,6 +364,8 @@ def get_coordinator_for_device(
 
 
 def register_services(hass: HomeAssistant, coord: TPLinkRouterCoordinator) -> None:
+    if getattr(coord, "parental_status", None) is not None:
+        register_parental_services(hass)
     if hasattr(coord.router, "send_sms") and coord.lte_status is not None:
         async def send_sms_service(service: ServiceCall) -> None:
             coordinator = get_coordinator_for_device(

@@ -13,6 +13,12 @@ from custom_components.tplink_router.const import DOMAIN
 from custom_components.tplink_router.coordinator import TPLinkRouterCoordinator
 
 
+@pytest.fixture(autouse=True)
+def isolate_network_registration():
+    with patch("custom_components.tplink_router.setup_network_panel", new_callable=AsyncMock):
+        yield
+
+
 class FakeHass:
     def __init__(self):
         self.data = {}

@@ -37,6 +37,14 @@ from .const import (
     DEFAULT_OFFLINE_TIMEOUT,
 )
 from .utils import safe_call, is_retryable_error
+from .parental_control import (
+    ParentalStatus, ParentalEditError, collect_parental_status, write_profile_access,
+    edit_profile, read_profile_devices, schedule_changes, change_device_profile, assign_profile_devices,
+)
+from .parental_features import (
+    create_profile, delete_profile, deletion_preview, profile_creation_options, read_profile_report, rename_profile,
+)
+from homeassistant.exceptions import HomeAssistantError
 
 
 def supports_led_control(router: AbstractRouter) -> bool:
@@ -76,9 +84,11 @@ def collect_status(
         logger: Logger,
         mesh_nodes: list[MeshNode] | None = None,
         led_status: bool | None = None,
+        parental_status: ParentalStatus | None = None,
 ) -> tuple[Status, LTEStatus | None, list[ServingCell] | None, VPNStatus | None,
            VpnClientStatus | None, list[PortStatus | RouterPortStatus] | None, list[SMS] | None,
-           list[IPv4Reservation] | None, list[MeshNode] | None, bool | None]:
+           list[IPv4Reservation] | None, list[MeshNode] | None, bool | None,
+           ParentalStatus | None]:
     """Gather all status data from the router; a failing SMS fetch must not break the update."""
     status = router.get_status()
     sms_list = None
@@ -102,6 +112,8 @@ def collect_status(
         led_status = safe_call(
             router.led_status, logger, "fetch LED status", level=logging.DEBUG
         )
+    if parental_status is not None:
+        parental_status = collect_parental_status(router, logger)
     return (
         status,
         lte_status,
@@ -113,6 +125,7 @@ def collect_status(
         reservations,
         mesh_nodes,
         led_status,
+        parental_status,
     )
 
 
@@ -139,6 +152,7 @@ class TPLinkRouterCoordinator(DataUpdateCoordinator):
             support_dhcp_reservations: bool = True,
             mesh_nodes: list[MeshNode] | None = None,
             led_status: bool | None = None,
+            parental_status: ParentalStatus | None = None,
     ) -> None:
         self.router = router
         # ConfigEntry.entry_id (not the flow unique_id / LAN MAC). Used in entity
@@ -157,6 +171,7 @@ class TPLinkRouterCoordinator(DataUpdateCoordinator):
         # a node list. Setup probes once so entities exist before the first interval.
         self.mesh_nodes: list[MeshNode] | None = mesh_nodes
         self.led_status: bool | None = led_status
+        self.parental_status = parental_status
         self.device_info = DeviceInfo(
             configuration_url=router.host,
             connections={(CONNECTION_NETWORK_MAC, self.status.lan_macaddr)},
@@ -175,6 +190,7 @@ class TPLinkRouterCoordinator(DataUpdateCoordinator):
 
         self.scan_stopped_at: datetime | None = None
         self._last_update_time: datetime | None = None
+        self.network_updated_at = datetime.now().astimezone()
         self._sms_hashes: set[str] = set()
         self.new_sms: list[SMS] = []
         self._lock = asyncio.Lock()
@@ -274,12 +290,197 @@ class TPLinkRouterCoordinator(DataUpdateCoordinator):
         await self._run_router_request(callback)
         await self.async_request_refresh()
 
+    async def set_profile_access(self, owner_id: str, enabled: bool) -> None:
+        """Write and read back under the same lock, even when scanning is paused."""
+        status = self.parental_status
+        if status is None or status.profiles is None or owner_id not in status.profiles:
+            raise HomeAssistantError("Parental profile is unavailable")
+
+        def callback():
+            write_failed = False
+            try:
+                write_profile_access(self.router, owner_id, enabled)
+            except Exception:
+                write_failed = True
+            # A rejected acknowledgement can follow an applied write. Read back
+            # even on failure so a subsequent restoration action remains possible.
+            return collect_parental_status(self.router, self.logger), write_failed
+
+        try:
+            self.parental_status, write_failed = await self._run_router_request(callback)
+        except Exception:
+            self.parental_status = ParentalStatus(None)
+            self.async_update_listeners()
+            raise HomeAssistantError("Unable to set parental profile internet access") from None
+        self.async_update_listeners()
+        await self.async_request_refresh()
+        if write_failed:
+            raise HomeAssistantError("Unable to set parental profile internet access")
+        status = self.parental_status
+        if (
+            status is None
+            or status.profiles is None
+            or owner_id not in status.profiles
+            or status.profiles[owner_id].internet_blocked != (not enabled)
+        ):
+            raise HomeAssistantError("Parental profile write could not be confirmed")
+
     async def delete_ipv4_reservation(self, mac: str) -> None:
         def callback():
             self.router.delete_ipv4_reservation(mac)
 
         await self._run_router_request(callback)
         await self.async_request_refresh()
+
+    async def get_parental_devices(self, owner_id: str, scope: str = "profile") -> list[dict[str, str | int]]:
+        if self.parental_status is None:
+            raise HomeAssistantError("Parental controls are unsupported")
+        try:
+            return await self._run_router_request(lambda: read_profile_devices(self.router, owner_id, scope))
+        except ParentalEditError as error:
+            raise HomeAssistantError(str(error)) from None
+        except Exception:
+            raise HomeAssistantError("Unable to read parental devices") from None
+
+    async def set_profile_schedule(self, owner_id: str, period: str, kind: str, **values: Any) -> None:
+        try:
+            changes = schedule_changes(period, kind, **values)
+        except ValueError as error:
+            raise HomeAssistantError(str(error)) from None
+        await self._edit_parental_profile(owner_id, changes=changes)
+
+    async def set_profile_device(self, owner_id: str, device_id: str, assigned: bool) -> None:
+        if not isinstance(assigned, bool):
+            raise HomeAssistantError("Assigned must be a boolean")
+        await self._edit_parental_profile(
+            owner_id, **{"add_device" if assigned else "remove_device": device_id},
+        )
+
+    async def change_device_profile(self, mac: str, expected_owner: str, destination: str) -> None:
+        if self.parental_status is None:
+            raise HomeAssistantError("Parental controls are unsupported")
+        try:
+            status, error = await self._run_router_request(lambda: change_device_profile(
+                self.router, self.logger, mac, expected_owner, destination,
+            ))
+        except ParentalEditError as error:
+            raise HomeAssistantError(str(error)) from None
+        except Exception:
+            raise HomeAssistantError("Profile change failed; refresh to inspect current assignments") from None
+        self.parental_status = status
+        self.async_update_listeners()
+        await self.async_request_refresh()
+        if error:
+            raise HomeAssistantError(error)
+
+    async def assign_profile_devices(self, owner_id: str, macs: list[str]) -> dict[str, Any]:
+        if self.parental_status is None:
+            raise HomeAssistantError("Parental controls are unsupported")
+        try:
+            status, result = await self._run_router_request(lambda: assign_profile_devices(
+                self.router, self.logger, owner_id, macs,
+            ))
+        except ParentalEditError as error:
+            raise HomeAssistantError(str(error)) from None
+        except Exception:
+            self.parental_status = ParentalStatus(None)
+            self.async_update_listeners()
+            raise HomeAssistantError(
+                "Batch outcome is unknown; refresh and inspect every selected device. No retry was made"
+            ) from None
+        self.parental_status = status
+        self.async_update_listeners()
+        await self.async_request_refresh()
+        return result
+
+    async def get_profile_feature(self, kind: str, owner_id: str = "") -> dict[str, Any]:
+        if self.parental_status is None:
+            raise HomeAssistantError("Parental controls are unsupported")
+        try:
+            if kind == "creation_options":
+                return await self._run_router_request(lambda: profile_creation_options(self.router))
+            if kind == "report":
+                return await self._run_router_request(lambda: read_profile_report(self.router, owner_id))
+            if kind == "delete_preview":
+                return await self._run_router_request(lambda: deletion_preview(self.router, owner_id))
+            raise ParentalEditError("Unknown profile read")
+        except ParentalEditError as error:
+            raise HomeAssistantError(str(error)) from None
+        except Exception:
+            raise HomeAssistantError("Profile read failed; no private report data was retained") from None
+
+    async def create_parental_profile(
+        self, name: str, filter_level: str, categories: list[str],
+    ) -> dict[str, Any]:
+        if self.parental_status is None:
+            raise HomeAssistantError("Parental controls are unsupported")
+        try:
+            status, result = await self._run_router_request(
+                lambda: create_profile(self.router, name, filter_level, categories),
+            )
+        except ParentalEditError as error:
+            raise HomeAssistantError(str(error)) from None
+        except Exception:
+            self.parental_status = ParentalStatus(None)
+            self.async_update_listeners()
+            raise HomeAssistantError(
+                "Creation outcome is unknown; inspect profiles before retrying. No automatic retry was made"
+            ) from None
+        self.parental_status = status
+        self.async_update_listeners()
+        await self.async_request_refresh()
+        return result
+
+    async def manage_parental_profile(self, action: str, owner_id: str, **values: str) -> None:
+        if self.parental_status is None:
+            raise HomeAssistantError("Parental controls are unsupported")
+        try:
+            if action == "rename_profile":
+                status, error = await self._run_router_request(
+                    lambda: rename_profile(
+                        self.router, self.logger, owner_id, values["expected_name"], values["name"],
+                    ),
+                )
+            elif action == "delete_profile":
+                status, error = await self._run_router_request(
+                    lambda: delete_profile(self.router, owner_id, values["revision"]),
+                )
+            else:
+                raise ParentalEditError("Unknown profile management action")
+        except ParentalEditError as error:
+            raise HomeAssistantError(str(error)) from None
+        except Exception:
+            self.parental_status = ParentalStatus(None)
+            self.async_update_listeners()
+            raise HomeAssistantError("Profile change is unconfirmed; inspect actual profiles before retrying") from None
+        self.parental_status = status
+        self.async_update_listeners()
+        await self.async_request_refresh()
+        if error:
+            raise HomeAssistantError(error)
+
+    async def _edit_parental_profile(
+        self, owner_id: str, *, changes: dict[str, bool | int] | None = None,
+        add_device: str | None = None, remove_device: str | None = None,
+    ) -> None:
+        if self.parental_status is None:
+            raise HomeAssistantError("Parental controls are unsupported")
+        try:
+            status, error = await self._run_router_request(lambda: edit_profile(
+                self.router, self.logger, owner_id,
+                changes=changes, add_device=add_device, remove_device=remove_device,
+            ))
+        except ParentalEditError as error:
+            raise HomeAssistantError(str(error)) from None
+        except Exception:
+            self.parental_status = ParentalStatus(None)
+            self.async_update_listeners()
+            raise HomeAssistantError("Unable to edit parental profile; read or transport failed") from None
+        self.parental_status = status
+        self.async_update_listeners()
+        await self.async_request_refresh()
+        if error is not None:
+            raise HomeAssistantError(error)
 
     async def send_sms(self, number: str, text: str) -> None:
         def callback():
@@ -306,6 +507,7 @@ class TPLinkRouterCoordinator(DataUpdateCoordinator):
                     self.logger,
                     self.mesh_nodes,
                     self.led_status,
+                    self.parental_status,
                 ),
             )
 
@@ -338,11 +540,13 @@ class TPLinkRouterCoordinator(DataUpdateCoordinator):
                         self.reservations,
                         self.mesh_nodes,
                         self.led_status,
+                        self.parental_status,
                     ) = await self.hass.async_add_executor_job(update_once)
 
                 if sms_list is not None:
                     self._process_sms_list(sms_list)
                 self._last_update_time = datetime.now()
+                self.network_updated_at = datetime.now().astimezone()
                 return
             except Exception as error:
                 if not is_retryable_error(error):
