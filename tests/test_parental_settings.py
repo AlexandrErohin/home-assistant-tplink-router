@@ -12,14 +12,16 @@ from homeassistant.core import Context, HomeAssistant, ServiceCall, SupportsResp
 from homeassistant.exceptions import HomeAssistantError
 from homeassistant.util.yaml import load_yaml
 import voluptuous as vol
+from requests.exceptions import Timeout
 from tplinkrouterc6u.client.c6u import TplinkEncryption, TplinkRequest
+from tplinkrouterc6u.common.exception import ClientError
 
 from custom_components.tplink_router import async_unload_entry, register_services
 from custom_components.tplink_router.const import DOMAIN
 from custom_components.tplink_router.parental_control import (
     PERIODS, SCHEDULE_FLAGS, PROFILE_APPS_PATH, PROFILE_DEVICES_PATH, PROFILE_LIMIT_PATH,
-    PROFILE_LIST_PATH, ParentalEditError, ParentalStatus, edit_profile, parse_devices,
-    parse_profiles, schedule_changes,
+    PROFILE_LIST_PATH, ParentalEditError, ParentalStatus, assign_profile_devices,
+    edit_profile, parse_devices, parse_profiles, schedule_changes,
 )
 from custom_components.tplink_router.parental_services import (
     PARENTAL_SERVICES, _resolve_profile, register_parental_services,
@@ -578,6 +580,37 @@ def test_failed_ack_still_reads_applied_state_and_restores_transport_fields(capl
     assert status.profiles["0"].settings["enable_workday_bed_time"] is True
     assert "private filters" not in caplog.text
     assert client._data_block == "data" and client._logger is LOGGER
+
+
+class PrivatePayloadError(Exception):
+    pass
+
+
+@pytest.mark.parametrize("failure,category,exception_type,applied,outcome", [
+    (Timeout("private timeout payload"), "transport_timeout", "Timeout", True, "assigned_unconfirmed"),
+    (ClientError("decrypted private profile"), "library_client_error", "ClientError", False, "not_assigned"),
+    (False, "invalid_acknowledgement", "_ProfileAcknowledgementError", False, "not_assigned"),
+    (PrivatePayloadError("secret profile payload"), "unexpected", "PrivatePayloadError", True, "assigned_unconfirmed"),
+])
+def test_assignment_ack_diagnostics_are_sanitized_and_preserve_readback(
+    caplog, failure, category, exception_type, applied, outcome,
+):
+    client, state = firmware()
+    state.acknowledgement = failure
+    state.apply = applied
+
+    status, result = assign_profile_devices(client, LOGGER, "0", [DEVICE["mac"]])
+
+    assert result["confirmed"] is False
+    assert result["error"] == "Profile edit acknowledgement failed; the router may have applied the change"
+    assert result["outcomes"][0]["status"] == outcome
+    assert bool(status.profiles["0"].clients) is applied
+    assert f"stage=profile_update_ack, category={category}, exception={exception_type}" in caplog.text
+    for private_value in (
+        "private timeout payload", "decrypted private profile", "secret profile payload",
+        DEVICE["device_id"], DEVICE["name"], DEVICE["mac"], FULL_RECORD["name"], "private.example",
+    ):
+        assert private_value not in caplog.text
 
 
 @pytest.mark.parametrize("key,value", [

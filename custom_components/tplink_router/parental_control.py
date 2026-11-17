@@ -9,8 +9,10 @@ import re
 from typing import Any
 from urllib.parse import urlencode
 
+from requests import exceptions as requests_exceptions
 from tplinkrouterc6u import AbstractRouter
 from tplinkrouterc6u.client.c6u import TplinkBaseRouter
+from tplinkrouterc6u.common.exception import ClientError
 
 
 PROFILE_LIST_PATH = "admin/smart_network?form=patrol_owner_list"
@@ -23,6 +25,29 @@ SCHEDULE_FLAGS = tuple(
     f"enable_{period}_{kind}"
     for period in PERIODS for kind in ("time_limit", "bed_time")
 )
+
+
+class _ProfileAcknowledgementError(ValueError):
+    """The profile write returned no valid acknowledgement."""
+
+
+def _profile_acknowledgement_diagnostic(error: Exception) -> tuple[str, str]:
+    if isinstance(error, _ProfileAcknowledgementError):
+        category = "invalid_acknowledgement"
+    elif isinstance(error, requests_exceptions.Timeout):
+        category = "transport_timeout"
+    elif isinstance(error, requests_exceptions.ConnectionError):
+        category = "transport_connection_error"
+    elif isinstance(error, ClientError):
+        # The library uses ClientError for rejected and malformed/decryption responses alike.
+        category = "library_client_error"
+    else:
+        category = "unexpected"
+
+    exception_type = type(error).__name__
+    if not re.fullmatch(r"[A-Za-z_][A-Za-z0-9_]{0,63}", exception_type):
+        exception_type = "Unknown"
+    return category, exception_type
 
 
 @dataclass(frozen=True)
@@ -206,7 +231,7 @@ def _profile_request(
             router._data_block = "success"
         result = router.request(path, data)
         if acknowledgement and result is not True:
-            raise ValueError("Invalid parental profile write acknowledgement")
+            raise _ProfileAcknowledgementError("Invalid parental profile write acknowledgement")
         return result
     finally:
         router._logger = logger
@@ -630,7 +655,14 @@ def _commit_profile(
     error = None
     try:
         _profile_request(router, PROFILE_LIST_PATH, payload, acknowledgement=True)
-    except Exception:
+    except Exception as exc:
+        category, exception_type = _profile_acknowledgement_diagnostic(exc)
+        logger.warning(
+            "TPLink Router parental profile write failed "
+            "(stage=profile_update_ack, category=%s, exception=%s)",
+            category,
+            exception_type,
+        )
         error = "Profile edit acknowledgement failed; the router may have applied the change"
     # Do not let a failed acknowledgement hide the actual state or prevent recovery.
     try:
