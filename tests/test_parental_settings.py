@@ -241,6 +241,14 @@ def test_observed_empty_profile_can_assign_then_remove_without_guessing_capacity
     assert not state.records[0]["enable_workday_time_limit"]
 
 
+def test_single_assignment_refuses_duplicate_mac_in_destination():
+    existing = {**SECOND_DEVICE, "mac": DEVICE["mac"].lower().replace(":", "-")}
+    client, state = firmware([observed_record(client_list=[existing])])
+    with pytest.raises(ParentalEditError, match="MAC conflicts"):
+        edit_profile(client, LOGGER, "0", add_device=DEVICE["device_id"])
+    assert not state.writes
+
+
 def test_bedtime_edit_preserves_observed_disabled_daily_sentinels_and_unknown_device_fields():
     device = {
         **DEVICE, "client_type": "laptop", "owner_id": 0, "prio": "off",

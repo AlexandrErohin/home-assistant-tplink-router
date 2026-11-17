@@ -562,6 +562,11 @@ def edit_profile(
             device = next((candidate for candidate in candidates if candidate.device_id == device_id), None)
             if device is None:
                 raise ParentalEditError("Device is not in the router's assignable device list")
+            if any(
+                member.mac.lower().replace("-", ":") == device.mac.lower().replace("-", ":")
+                for member in profile.clients
+            ):
+                raise ParentalEditError("Device MAC conflicts with an existing assignment; edit was not sent")
             if (restore_client is None and device.owner_id not in ("", owner_id)) or any(
                 other.owner_id != owner_id and (
                     other.clients is None or any(
@@ -765,9 +770,10 @@ def change_device_profile(
     device = memberships[0][1] if memberships else None
     if destination:
         inventory = read_parental_devices(router)
-        candidate = next((item for item in inventory if item.mac.lower().replace("-", ":") == normalized), None)
-        if candidate is None or candidate.owner_id not in ("", source):
-            raise ParentalEditError("Device is unavailable for assignment or ownership changed; refresh")
+        matches = [item for item in inventory if item.mac.lower().replace("-", ":") == normalized]
+        if len(matches) != 1 or matches[0].owner_id not in ("", source):
+            raise ParentalEditError("Device is unavailable, ambiguous or ownership changed; refresh")
+        candidate = matches[0]
         if device is not None and candidate.device_id != device.device_id:
             raise ParentalEditError("Router device identity changed; refresh before moving")
         device = candidate

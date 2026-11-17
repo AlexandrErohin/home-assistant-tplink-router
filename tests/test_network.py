@@ -100,6 +100,18 @@ def test_move_preflight_fails_before_any_write(change, message):
     assert not state.writes
 
 
+@pytest.mark.parametrize("source", ["", "0"])
+def test_move_and_single_assignment_refuse_ambiguous_inventory_mac(source):
+    rows = records()
+    if not source:
+        rows[0]["client_list"] = []
+    client, state = firmware(rows)
+    state.devices.append({**DEVICE, "device_id": "duplicate", "mac": DEVICE["mac"].lower().replace(":", "-")})
+    with pytest.raises(ParentalEditError, match="ambiguous"):
+        change_device_profile(client, LOGGER, DEVICE["mac"], source, "1")
+    assert not state.writes
+
+
 def test_move_noop_and_unsupported_coordinator_do_not_write():
     client, state = firmware(records())
     _, error = run_move(client, "0")
