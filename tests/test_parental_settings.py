@@ -1,6 +1,8 @@
 import asyncio
 import base64
 from copy import deepcopy
+from http.client import HTTPResponse as HTTPClientResponse
+from io import BytesIO
 from json import dumps, loads
 from pathlib import Path
 from types import SimpleNamespace
@@ -12,9 +14,11 @@ from homeassistant.core import Context, HomeAssistant, ServiceCall, SupportsResp
 from homeassistant.exceptions import HomeAssistantError
 from homeassistant.util.yaml import load_yaml
 import voluptuous as vol
-from requests.exceptions import Timeout
+from requests import Response
+from requests.exceptions import ChunkedEncodingError, Timeout
 from tplinkrouterc6u.client.c6u import TplinkEncryption, TplinkRequest
 from tplinkrouterc6u.common.exception import ClientError
+from urllib3.response import HTTPResponse
 
 from custom_components.tplink_router import async_unload_entry, register_services
 from custom_components.tplink_router.const import DOMAIN
@@ -588,6 +592,14 @@ class PrivatePayloadError(Exception):
 
 @pytest.mark.parametrize("failure,category,exception_type,applied,outcome", [
     (Timeout("private timeout payload"), "transport_timeout", "Timeout", True, "assigned_unconfirmed"),
+    (
+        ChunkedEncodingError("private response payload"), "transport_response_framing_error",
+        "ChunkedEncodingError", False, "not_assigned",
+    ),
+    (
+        ChunkedEncodingError("private response payload"), "transport_response_framing_error",
+        "ChunkedEncodingError", True, "assigned_unconfirmed",
+    ),
     (ClientError("decrypted private profile"), "library_client_error", "ClientError", False, "not_assigned"),
     (False, "invalid_acknowledgement", "_ProfileAcknowledgementError", False, "not_assigned"),
     (PrivatePayloadError("secret profile payload"), "unexpected", "PrivatePayloadError", True, "assigned_unconfirmed"),
@@ -605,9 +617,10 @@ def test_assignment_ack_diagnostics_are_sanitized_and_preserve_readback(
     assert result["error"] == "Profile edit acknowledgement failed; the router may have applied the change"
     assert result["outcomes"][0]["status"] == outcome
     assert bool(status.profiles["0"].clients) is applied
+    assert len(state.writes) == 1
     assert f"stage=profile_update_ack, category={category}, exception={exception_type}" in caplog.text
     for private_value in (
-        "private timeout payload", "decrypted private profile", "secret profile payload",
+        "private timeout payload", "private response payload", "decrypted private profile", "secret profile payload",
         DEVICE["device_id"], DEVICE["name"], DEVICE["mac"], FULL_RECORD["name"], "private.example",
     ):
         assert private_value not in caplog.text
@@ -1108,19 +1121,26 @@ def test_service_metadata_describes_every_registered_action():
     assert metadata["set_parental_daily_limit"]["fields"]["minutes"]["selector"]["number"]["step"] == 15
 
 
-@pytest.mark.parametrize("native_assignment", [False, True])
-def test_full_profile_update_through_exact_pinned_transport(native_assignment):
+@pytest.mark.parametrize("operation", ["settings", "single", "bulk"])
+@pytest.mark.parametrize("response_framing", ["complete", "short_content_length", "truncated_chunked"])
+def test_full_profile_update_through_exact_pinned_transport(operation, response_framing, caplog):
+    native_assignment = operation != "settings"
     existing = {**SECOND_DEVICE, "prio": "off", "prio_time": "0", "online": 1, "owner_id": 0}
     client, state = firmware(
         [observed_record(client_list=[existing], insights="readonly")] if native_assignment else None,
     )
     firmware_request = client.request.side_effect
+    third_device = {**DEVICE, "device_id": "third", "mac": "AA:BB:CC:DD:EE:03"}
+    state.devices.append(third_device)
+    state.apply = response_framing == "complete"
     client.request = TplinkRequest.request.__get__(client)
     client._logged = True
     client.host = "http://example.invalid"
     client._stok = "mock"
     client._sysauth = "mock"
-    client._headers_request = {}
+    client._headers_request = {
+        "Referer": "http://example.invalid/webpages/index.html", "Origin": "http://example.invalid",
+    }
     client.timeout = 1
     client._verify_ssl = False
     client._prepare_data = TplinkEncryption._prepare_data.__get__(client)
@@ -1133,36 +1153,92 @@ def test_full_profile_update_through_exact_pinned_transport(native_assignment):
     decrypted = {}
     client._encryption.aes_decrypt.side_effect = lambda value: dumps(decrypted)
 
-    def post(url, **kwargs):
+    prepared_writes = []
+    decode_counts_at_write_failure = []
+
+    def send(request, **kwargs):
         nonlocal decrypted
-        path = url.split(";stok=mock/")[1]
-        assert kwargs["data"]["sign"] == "synthetic-signature"
-        result = firmware_request(path, base64.b64decode(kwargs["data"]["data"]).decode())
+        assert kwargs["stream"] is False
+        assert kwargs["timeout"] == 1 and kwargs["verify"] is False
+        assert request.headers["Content-Type"] == "application/x-www-form-urlencoded"
+        assert int(request.headers["Content-Length"]) == len(request.body.encode("ascii"))
+        assert "Transfer-Encoding" not in request.headers
+        assert request.headers["Cookie"] == "sysauth=mock"
+        path = request.url.split(";stok=mock/")[1]
+        fields = parse_qs(request.body)
+        assert fields["sign"] == ["synthetic-signature"]
+        body = base64.b64decode(fields["data"][0]).decode()
+        is_write = parse_qs(body)["operation"] == ["update"]
+        result = firmware_request(path, body)
         decrypted = {"success": True} if result is True else {"success": True, "data": result}
-        response = Mock()
-        response.json.return_value = {"data": "encrypted"}
+        response = Response()
+        response.request = request
+        response.url = request.url
+        response.status_code = 200
+        if is_write:
+            prepared_writes.append(request)
+        if is_write and response_framing != "complete":
+            decode_counts_at_write_failure.append(client._encryption.aes_decrypt.call_count)
+            raw = b"HTTP/1.1 200 OK\r\n"
+            if response_framing == "short_content_length":
+                raw += b"Content-Length: 100\r\n\r\nprivate response payload"
+            else:
+                raw += b"Transfer-Encoding: chunked\r\n\r\n64\r\nprivate response payload"
+
+            class Socket:
+                def makefile(self, *args, **kwargs):
+                    return BytesIO(raw)
+
+            source = HTTPClientResponse(Socket(), method="POST")
+            source.begin()
+            response.raw = HTTPResponse(
+                body=source, headers=dict(source.getheaders()), original_response=source, preload_content=False,
+            )
+        else:
+            response._content = dumps({"data": "encrypted"}).encode()
         return response
 
-    with patch("tplinkrouterc6u.client.c6u.post", side_effect=post) as transport:
-        status, error = edit_profile(
-            client, LOGGER, "0", **(
-                {"add_device": DEVICE["device_id"]} if native_assignment else {"changes": {"workday_daily_time": 180}}
-            ),
-        )
-    assert error is None
+    with patch("requests.adapters.HTTPAdapter.send", side_effect=send) as transport:
+        if operation == "bulk":
+            status, result = assign_profile_devices(client, LOGGER, "0", [DEVICE["mac"], third_device["mac"]])
+            error = result["error"]
+        else:
+            changes = (
+                {"add_device": DEVICE["device_id"]}
+                if native_assignment else {"changes": {"workday_daily_time": 180}}
+            )
+            status, error = edit_profile(client, LOGGER, "0", **changes)
     assert len(state.writes) == 1
+    assert len(prepared_writes) == 1
     if native_assignment:
         assert transport.call_count == 6  # fresh profile, inventory, capacity, app metadata, update, read-back
         new = loads(state.writes[0]["new"])
         assert "insights" not in new and "workday_daily_time" not in new
-        assert new["client_list"] == [{key: existing[key] for key in DEVICE}, DEVICE]
-        assert len(status.profiles["0"].clients) == 2
+        expected = [{key: existing[key] for key in DEVICE}, DEVICE]
+        if operation == "bulk":
+            expected.append(third_device)
+            assert [outcome["status"] for outcome in result["outcomes"]] == [
+                "assigned" if state.apply else "not_assigned",
+            ] * 2
+            assert result["confirmed"] is state.apply
+        assert new["client_list"] == expected
+        assert len(status.profiles["0"].clients) == (len(expected) if state.apply else 1)
         assert state.records[0]["workday_daily_time"] == "0"
         assert state.records[0]["client_list"][0]["prio"] == "off"
     else:
         assert transport.call_count == 4
-        assert status.profiles["0"].settings["workday_daily_time"] == 180
+        assert status.profiles["0"].settings["workday_daily_time"] == (180 if state.apply else 120)
         assert loads(state.writes[0]["new"])["workday_daily_time"] == "180"
+    if state.apply:
+        assert error is None
+    else:
+        assert error == "Profile edit acknowledgement failed; the router may have applied the change"
+        assert (
+            "stage=profile_update_ack, category=transport_response_framing_error, exception=ChunkedEncodingError"
+            in caplog.text
+        )
+        assert client._encryption.aes_decrypt.call_count == decode_counts_at_write_failure[0] + 1
+        assert "private response payload" not in caplog.text
     assert (
         client._encryption.aes_encrypt.call_count == client._encryption.get_signature.call_count == transport.call_count
     )

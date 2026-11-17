@@ -176,6 +176,14 @@ filters, schedules, existing names, device identities/types, priorities
 Generated per-client `online`/`owner_id` representations do not determine
 configured membership; the authoritative list and stable ID/MAC pair do.
 
+Profile-update acknowledgement warnings include only a fixed stage, failure
+category and sanitized exception class, never response bodies or exception text.
+`transport_response_framing_error` identifies Requests' `ChunkedEncodingError`,
+which can indicate either broken chunk framing or an incomplete `Content-Length`
+response; it does not establish a malformed outbound request or a router rejection.
+The integration still reads back actual membership and does not retry the write.
+An acknowledgement failure is not evidence that an assignment succeeded.
+
 **Validation boundary:** the extended assignment/bedtime/daily-limit payloads
 were derived from the AX50 firmware's static UI/Store sources and tested with
 mocked transport, including the pinned library. Read-only live inspection has

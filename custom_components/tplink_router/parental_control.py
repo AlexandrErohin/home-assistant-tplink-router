@@ -38,6 +38,8 @@ def _profile_acknowledgement_diagnostic(error: Exception) -> tuple[str, str]:
         category = "transport_timeout"
     elif isinstance(error, requests_exceptions.ConnectionError):
         category = "transport_connection_error"
+    elif isinstance(error, requests_exceptions.ChunkedEncodingError):
+        category = "transport_response_framing_error"
     elif isinstance(error, ClientError):
         # The library uses ClientError for rejected and malformed/decryption responses alike.
         category = "library_client_error"
