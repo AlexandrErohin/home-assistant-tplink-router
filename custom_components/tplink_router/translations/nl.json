@@ -108,6 +108,38 @@
           "description": "MAC van de te verwijderen reservering"
         }
       }
+    },
+    "block_device": {
+      "name": "Apparaat blokkeren",
+      "description": "Voegt een apparaat toe aan de Access Control-blacklist. Zet Access Control niet aan en wijzigt de modus niet.",
+      "fields": {
+        "device": {
+          "name": "Router",
+          "description": "Selecteer de TP-Link-router"
+        },
+        "mac": {
+          "name": "MAC-adres",
+          "description": "MAC-adres van het apparaat (dubbele punt, streepje of hex)"
+        },
+        "name": {
+          "name": "Naam",
+          "description": "Optionele naam bij het blacklistitem"
+        }
+      }
+    },
+    "unblock_device": {
+      "name": "Apparaat deblokkeren",
+      "description": "Verwijdert een apparaat van de Access Control-blacklist.",
+      "fields": {
+        "device": {
+          "name": "Router",
+          "description": "Selecteer de TP-Link-router"
+        },
+        "mac": {
+          "name": "MAC-adres",
+          "description": "MAC-adres van het te deblokkeren apparaat"
+        }
+      }
     }
   }
 }

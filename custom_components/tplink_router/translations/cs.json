@@ -108,6 +108,38 @@
           "description": "MAC adresa rezervace ke smazání"
         }
       }
+    },
+    "block_device": {
+      "name": "Blokovat zařízení",
+      "description": "Přidá zařízení na černou listinu Access Control. Nezapíná Access Control ani nemění režim.",
+      "fields": {
+        "device": {
+          "name": "Router",
+          "description": "Vyberte router TP-Link"
+        },
+        "mac": {
+          "name": "MAC adresa",
+          "description": "MAC adresa zařízení (dvojtečka, pomlčka nebo hex)"
+        },
+        "name": {
+          "name": "Název",
+          "description": "Volitelný název uložený u záznamu na černé listině"
+        }
+      }
+    },
+    "unblock_device": {
+      "name": "Odblokovat zařízení",
+      "description": "Odebere zařízení z černé listiny Access Control.",
+      "fields": {
+        "device": {
+          "name": "Router",
+          "description": "Vyberte router TP-Link"
+        },
+        "mac": {
+          "name": "MAC adresa",
+          "description": "MAC adresa zařízení k odblokování"
+        }
+      }
     }
   }
 }

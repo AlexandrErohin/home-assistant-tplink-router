@@ -108,6 +108,38 @@
           "description": "MAC адрес на резервацията за изтриване"
         }
       }
+    },
+    "block_device": {
+      "name": "Блокиране на устройство",
+      "description": "Добавя устройство към черния списък на Access Control. Не включва Access Control и не променя режима.",
+      "fields": {
+        "device": {
+          "name": "Рутер",
+          "description": "Изберете TP-Link рутера"
+        },
+        "mac": {
+          "name": "MAC адрес",
+          "description": "MAC адрес на устройството (двоеточие, тире или hex)"
+        },
+        "name": {
+          "name": "Име",
+          "description": "Опционално име за записа в черния списък"
+        }
+      }
+    },
+    "unblock_device": {
+      "name": "Отблокиране на устройство",
+      "description": "Премахва устройство от черния списък на Access Control.",
+      "fields": {
+        "device": {
+          "name": "Рутер",
+          "description": "Изберете TP-Link рутера"
+        },
+        "mac": {
+          "name": "MAC адрес",
+          "description": "MAC адрес на устройството за отблокиране"
+        }
+      }
     }
   }
 }

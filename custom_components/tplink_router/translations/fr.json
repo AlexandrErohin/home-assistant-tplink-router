@@ -108,6 +108,38 @@
           "description": "MAC de la réservation à supprimer"
         }
       }
+    },
+    "block_device": {
+      "name": "Bloquer un appareil",
+      "description": "Ajoute un appareil à la liste noire Access Control. N'active pas Access Control et ne change pas son mode.",
+      "fields": {
+        "device": {
+          "name": "Routeur",
+          "description": "Sélectionnez le routeur TP-Link"
+        },
+        "mac": {
+          "name": "Adresse MAC",
+          "description": "Adresse MAC de l'appareil (deux-points, tiret ou hex)"
+        },
+        "name": {
+          "name": "Nom",
+          "description": "Nom optionnel enregistré avec l'entrée de la liste noire"
+        }
+      }
+    },
+    "unblock_device": {
+      "name": "Débloquer un appareil",
+      "description": "Retire un appareil de la liste noire Access Control.",
+      "fields": {
+        "device": {
+          "name": "Routeur",
+          "description": "Sélectionnez le routeur TP-Link"
+        },
+        "mac": {
+          "name": "Adresse MAC",
+          "description": "Adresse MAC de l'appareil à débloquer"
+        }
+      }
     }
   }
 }

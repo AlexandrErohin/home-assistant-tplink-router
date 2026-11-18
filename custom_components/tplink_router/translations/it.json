@@ -108,6 +108,38 @@
           "description": "MAC della prenotazione da eliminare"
         }
       }
+    },
+    "block_device": {
+      "name": "Blocca dispositivo",
+      "description": "Aggiunge un dispositivo alla blacklist di Access Control. Non attiva Access Control e non ne cambia la modalità.",
+      "fields": {
+        "device": {
+          "name": "Router",
+          "description": "Seleziona il router TP-Link"
+        },
+        "mac": {
+          "name": "Indirizzo MAC",
+          "description": "MAC del dispositivo (due punti, trattino o hex)"
+        },
+        "name": {
+          "name": "Nome",
+          "description": "Nome opzionale salvato con la voce in blacklist"
+        }
+      }
+    },
+    "unblock_device": {
+      "name": "Sblocca dispositivo",
+      "description": "Rimuove un dispositivo dalla blacklist di Access Control.",
+      "fields": {
+        "device": {
+          "name": "Router",
+          "description": "Seleziona il router TP-Link"
+        },
+        "mac": {
+          "name": "Indirizzo MAC",
+          "description": "MAC del dispositivo da sbloccare"
+        }
+      }
     }
   }
 }

@@ -108,6 +108,38 @@
           "description": "Silinecek rezervasyonun MAC adresi"
         }
       }
+    },
+    "block_device": {
+      "name": "Cihazı engelle",
+      "description": "Bir cihazı Access Control kara listesine ekler. Access Control'ü açmaz ve modunu değiştirmez.",
+      "fields": {
+        "device": {
+          "name": "Yönlendirici",
+          "description": "TP-Link yönlendiriciyi seçin"
+        },
+        "mac": {
+          "name": "MAC Adresi",
+          "description": "Cihazın MAC adresi (iki nokta, tire veya hex)"
+        },
+        "name": {
+          "name": "Ad",
+          "description": "Kara liste kaydıyla saklanacak isteğe bağlı ad"
+        }
+      }
+    },
+    "unblock_device": {
+      "name": "Cihazın engelini kaldır",
+      "description": "Bir cihazı Access Control kara listesinden kaldırır.",
+      "fields": {
+        "device": {
+          "name": "Yönlendirici",
+          "description": "TP-Link yönlendiriciyi seçin"
+        },
+        "mac": {
+          "name": "MAC Adresi",
+          "description": "Engeli kaldırılacak cihazın MAC adresi"
+        }
+      }
     }
   }
 }

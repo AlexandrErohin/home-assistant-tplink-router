@@ -233,8 +233,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
             if supports_access_control(client):
                 try:
                     blocked_devices = client.get_blocked_devices()
-                    if hasattr(client, "get_access_control"):
-                        access_control = client.get_access_control()
+                    access_control = client.get_access_control()
                 except Exception as err:
                     access_control = None
                     blocked_devices = None
