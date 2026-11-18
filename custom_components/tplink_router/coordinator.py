@@ -28,6 +28,11 @@ try:
     from tplinkrouterc6u import MeshNode
 except ImportError:  # pragma: no cover - older tplinkrouterc6u without mesh
     MeshNode = Any  # type: ignore[misc, assignment]
+try:
+    from tplinkrouterc6u import AccessControlStatus, BlockedDevice
+except ImportError:  # pragma: no cover - older tplinkrouterc6u without Access Control
+    AccessControlStatus = Any  # type: ignore[misc, assignment]
+    BlockedDevice = Any  # type: ignore[misc, assignment]
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers.device_registry import CONNECTION_NETWORK_MAC, DeviceInfo
 from .const import (
@@ -42,6 +47,11 @@ from .utils import safe_call, is_retryable_error
 def supports_led_control(router: AbstractRouter) -> bool:
     """Return True when the client exposes LED get/set methods (e.g. TL-SG108E)."""
     return hasattr(router, "led_status") and hasattr(router, "set_led")
+
+
+def supports_access_control(router: AbstractRouter) -> bool:
+    """Return True when the client can list, block and unblock Access Control blacklist devices."""
+    return all(hasattr(router, name) for name in ("get_blocked_devices", "block_device", "unblock_device"))
 
 
 def collect_mesh_nodes(router: AbstractRouter, logger: Logger) -> list[MeshNode] | None:
@@ -76,9 +86,12 @@ def collect_status(
         logger: Logger,
         mesh_nodes: list[MeshNode] | None = None,
         led_status: bool | None = None,
+        access_control: AccessControlStatus | None = None,
+        blocked_devices: list[BlockedDevice] | None = None,
 ) -> tuple[Status, LTEStatus | None, list[ServingCell] | None, VPNStatus | None,
            VpnClientStatus | None, list[PortStatus | RouterPortStatus] | None, list[SMS] | None,
-           list[IPv4Reservation] | None, list[MeshNode] | None, bool | None]:
+           list[IPv4Reservation] | None, list[MeshNode] | None, bool | None,
+           AccessControlStatus | None, list[BlockedDevice] | None]:
     """Gather all status data from the router; a failing SMS fetch must not break the update."""
     status = router.get_status()
     sms_list = None
@@ -102,6 +115,16 @@ def collect_status(
         led_status = safe_call(
             router.led_status, logger, "fetch LED status", level=logging.DEBUG
         )
+    # Keep the last known Access Control state when one poll fails, so the
+    # switches stay in place; None (unsupported) is never asked for.
+    if access_control is not None:
+        access_control = safe_call(
+            router.get_access_control, logger, "fetch Access Control status", default=access_control
+        )
+    if blocked_devices is not None:
+        blocked_devices = safe_call(
+            router.get_blocked_devices, logger, "fetch blocked devices", default=blocked_devices
+        )
     return (
         status,
         lte_status,
@@ -113,6 +136,8 @@ def collect_status(
         reservations,
         mesh_nodes,
         led_status,
+        access_control,
+        blocked_devices,
     )
 
 
@@ -139,6 +164,8 @@ class TPLinkRouterCoordinator(DataUpdateCoordinator):
             support_dhcp_reservations: bool = True,
             mesh_nodes: list[MeshNode] | None = None,
             led_status: bool | None = None,
+            access_control: AccessControlStatus | None = None,
+            blocked_devices: list[BlockedDevice] | None = None,
     ) -> None:
         self.router = router
         # ConfigEntry.entry_id (not the flow unique_id / LAN MAC). Used in entity
@@ -157,6 +184,9 @@ class TPLinkRouterCoordinator(DataUpdateCoordinator):
         # a node list. Setup probes once so entities exist before the first interval.
         self.mesh_nodes: list[MeshNode] | None = mesh_nodes
         self.led_status: bool | None = led_status
+        # None means the client has no Access Control support (no entities, no polling).
+        self.access_control: AccessControlStatus | None = access_control
+        self.blocked_devices: list[BlockedDevice] | None = blocked_devices
         self.device_info = DeviceInfo(
             configuration_url=router.host,
             connections={(CONNECTION_NETWORK_MAC, self.status.lan_macaddr)},
@@ -281,6 +311,30 @@ class TPLinkRouterCoordinator(DataUpdateCoordinator):
         await self._run_router_request(callback)
         await self.async_request_refresh()
 
+    async def set_access_control(self, enable: bool) -> None:
+        """Turn Access Control on or off; the router's blacklist/whitelist mode is left as it is."""
+        def callback():
+            self.router.set_access_control(enable=enable)
+
+        await self._run_router_request(callback)
+
+    async def block_device(self, mac: str, name: str = "") -> None:
+        """Add a device to the blacklist; never turns Access Control on or changes the mode."""
+        def callback():
+            self.router.block_device(mac, name)
+            return self.router.get_blocked_devices()
+
+        self.blocked_devices = await self._run_router_request(callback)
+        self.async_update_listeners()
+
+    async def unblock_device(self, mac: str) -> None:
+        def callback():
+            self.router.unblock_device(mac)
+            return self.router.get_blocked_devices()
+
+        self.blocked_devices = await self._run_router_request(callback)
+        self.async_update_listeners()
+
     async def send_sms(self, number: str, text: str) -> None:
         def callback():
             self.router.send_sms(number, text)
@@ -306,6 +360,8 @@ class TPLinkRouterCoordinator(DataUpdateCoordinator):
                     self.logger,
                     self.mesh_nodes,
                     self.led_status,
+                    self.access_control,
+                    self.blocked_devices,
                 ),
             )
 
@@ -338,6 +394,8 @@ class TPLinkRouterCoordinator(DataUpdateCoordinator):
                         self.reservations,
                         self.mesh_nodes,
                         self.led_status,
+                        self.access_control,
+                        self.blocked_devices,
                     ) = await self.hass.async_add_executor_job(update_once)
 
                 if sms_list is not None:

@@ -2,6 +2,10 @@
 
 ## [UNRELEASED]
 
+### Added
+
+- Access Control: an "Access Control" switch, a "Blocked" switch per client device (disabled by default) and the `block_device` / `unblock_device` services, on routers whose client has `get_blocked_devices`: Archer C80 / C24 and the C6U / SG family, once the next tplinkrouterc6u release (after 5.40.0) is pinned. Blocking only edits the blacklist and never turns Access Control on or changes its mode ([#417](https://github.com/AlexandrErohin/home-assistant-tplink-router/issues/417)) ([#452](https://github.com/AlexandrErohin/home-assistant-tplink-router/pull/452))
+
 ### Fixed
 
 - Provide `DeviceInfo` with MAC connection for client trackers (HA 2026.11 `ScannerEntity` changes); `tracker_as_device` now only nests clients under the router ([#440](https://github.com/AlexandrErohin/home-assistant-tplink-router/issues/440))

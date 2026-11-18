@@ -108,6 +108,38 @@
           "description": "MAC address of the reservation to delete"
         }
       }
+    },
+    "block_device": {
+      "name": "Block device",
+      "description": "Add a device to the router's Access Control blacklist. Does not turn Access Control on or change its mode.",
+      "fields": {
+        "device": {
+          "name": "Router",
+          "description": "Select the TP-Link router"
+        },
+        "mac": {
+          "name": "MAC Address",
+          "description": "MAC address of the device (colon, dash, or plain hex)"
+        },
+        "name": {
+          "name": "Name",
+          "description": "Optional name stored with the blacklist entry"
+        }
+      }
+    },
+    "unblock_device": {
+      "name": "Unblock device",
+      "description": "Remove a device from the router's Access Control blacklist.",
+      "fields": {
+        "device": {
+          "name": "Router",
+          "description": "Select the TP-Link router"
+        },
+        "mac": {
+          "name": "MAC Address",
+          "description": "MAC address of the device to unblock"
+        }
+      }
     }
   }
 }
