@@ -339,7 +339,7 @@ async def async_setup_entry(
 
     if coordinator.access_control is not None and hasattr(coordinator.router, "set_access_control"):
         for switch in ACCESS_CONTROL_SWITCH_TYPES:
-            switches.append(TPLinkRouterSwitch(coordinator, switch))
+            switches.append(TPLinkRouterAccessControlSwitch(coordinator, switch))
 
     # Per-client "Blocked" switches belong on the client devices the trackers create.
     if coordinator.blocked_devices is not None and entry.data.get(CONF_SUPPORT_TRACKER, True):
@@ -404,6 +404,21 @@ class TPLinkRouterSwitch(
         else:
             setattr(self.coordinator, self.switch.coordinator_key, False)
         self.async_write_ha_state()
+
+
+class TPLinkRouterAccessControlSwitch(TPLinkRouterSwitch):
+    """Access Control on/off. Its attributes list the blacklist, so a dashboard can show and
+    unblock every blocked device, also those whose own Blocked switch is disabled."""
+
+    @property
+    def extra_state_attributes(self) -> dict[str, Any]:
+        return {
+            "mode": getattr(self.coordinator.access_control, "mode", None),
+            "blocked_devices": [
+                {"name": device.hostname, "mac": device.macaddr}
+                for device in self.coordinator.blocked_devices or []
+            ],
+        }
 
 
 class TPLinkRouterScanEntity(

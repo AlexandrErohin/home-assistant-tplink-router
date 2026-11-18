@@ -309,6 +309,25 @@ def test_blocked_switch_turn_on_off_calls_coordinator():
     assert entity.available is False
 
 
+def test_access_control_switch_lists_mode_and_blocked_devices():
+    """The blacklist is readable even for devices whose own Blocked switch is disabled."""
+    coordinator = _switch_coordinator(
+        blocked=[_blocked(TV, "tv")],
+        access_control=SimpleNamespace(enable=True, mode="blacklist"),
+        devices=[_client(PHONE, "phone")],
+    )
+    added, _ = _setup_switches(coordinator)
+    master = next(
+        e for e in added if isinstance(e, TPLinkRouterSwitch) and e.entity_description.key == "access_control"
+    )
+    assert master.extra_state_attributes == {
+        "mode": "blacklist",
+        "blocked_devices": [{"name": "tv", "mac": TV}],
+    }
+    coordinator.blocked_devices = None
+    assert master.extra_state_attributes == {"mode": "blacklist", "blocked_devices": []}
+
+
 def test_access_control_master_switch_turns_on():
     coordinator = _switch_coordinator(blocked=[], access_control=SimpleNamespace(enable=False, mode="blacklist"))
     entity = TPLinkRouterSwitch(coordinator, ACCESS_CONTROL_SWITCH_TYPES[0])
