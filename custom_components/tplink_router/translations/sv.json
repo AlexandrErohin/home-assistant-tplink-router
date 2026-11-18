@@ -108,6 +108,38 @@
           "description": "MAC för reservationen som ska tas bort"
         }
       }
+    },
+    "block_device": {
+      "name": "Blockera enhet",
+      "description": "Lägger till en enhet på Access Control-svartlistan. Slår inte på Access Control och ändrar inte läget.",
+      "fields": {
+        "device": {
+          "name": "Router",
+          "description": "Välj TP-Link-routern"
+        },
+        "mac": {
+          "name": "MAC-adress",
+          "description": "Enhetens MAC-adress (kolon, bindestreck eller hex)"
+        },
+        "name": {
+          "name": "Namn",
+          "description": "Valfritt namn som sparas med svartlisteposten"
+        }
+      }
+    },
+    "unblock_device": {
+      "name": "Avblockera enhet",
+      "description": "Tar bort en enhet från Access Control-svartlistan.",
+      "fields": {
+        "device": {
+          "name": "Router",
+          "description": "Välj TP-Link-routern"
+        },
+        "mac": {
+          "name": "MAC-adress",
+          "description": "MAC-adress för enheten som ska avblockeras"
+        }
+      }
     }
   }
 }

@@ -45,7 +45,7 @@ If you forget to enable it back - it would be automatically enable after the con
  - E-WAN connect (for MR/EX-family routers with Ethernet WAN) — on = DHCP Renew, off = DHCP Release; useful to reset a stuck WAN link after reboot
  - LED Enable/Disable (for TL-SG family)
  - Per-profile internet access (Archer AX50 HomeCare only; see below)
- - Access Control Enable/Disable (Archer C80 / C24 and the C6U / SG family, with a tplinkrouterc6u release that has Access Control; 5.40.0 does not) — turns the router's Access Control on or off and keeps its blacklist/whitelist mode as set on the router
+ - Access Control Enable/Disable (Archer C80 / C24 and the C6U / SG family) — turns the router's Access Control on or off and keeps its blacklist/whitelist mode as set on the router
  - Blocked, one per client device (disabled by default; enable the ones you need on the client's device page) — on adds the device to the Access Control blacklist, off removes it. It only edits the blacklist: the router blocks listed devices while Access Control is on and in blacklist mode
 
 Wi‑Fi, VPN, DHCP, E-WAN, LED and Access Control switches are created only when the device supports them (status field / API method present). Access Control is checked once at setup: if the router does not answer it, the switches and services are not created. The Blocked switches need the device tracker (option "Support device tracker").
@@ -743,9 +743,12 @@ To do that:
 - NE211-Outdoor v1.0
 - NX510v v1.0
 - NX600 v2.0
+- PGW2440 v1.0
+- RE235BE v1.0
 - RE305 4.0
 - RE315 1.0
 - RE330 v1
+- RE365 v1.0
 - RE505X v1.0
 - RE700X
 - RE705X v1.0

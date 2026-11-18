@@ -29,10 +29,14 @@ def setup_blocked_device_entities(
         macs += [device.macaddr for device in coordinator.blocked_devices or []]
         new_entities = []
         for mac in macs:
-            if format_mac(mac) not in tracked:
+            key = format_mac(mac)
+            if key not in tracked:
                 entity = TPLinkBlockedDeviceSwitch(coordinator, mac)
-                tracked[format_mac(mac)] = entity
+                tracked[key] = entity
                 new_entities.append(entity)
+            else:
+                # Prefer the library/tracker MAC string once it appears.
+                tracked[key].prefer_library_mac(mac)
         if new_entities:
             async_add_entities(new_entities)
 
@@ -45,10 +49,11 @@ def setup_blocked_device_entities(
         if reg_entry.domain != "switch" or not reg_entry.unique_id.startswith(unique_id_prefix):
             continue
         mac = reg_entry.unique_id[len(unique_id_prefix):]
-        if mac in tracked:
+        key = format_mac(mac)
+        if key in tracked:
             continue
-        tracked[mac] = TPLinkBlockedDeviceSwitch(coordinator, mac)
-        to_restore.append(tracked[mac])
+        tracked[key] = TPLinkBlockedDeviceSwitch(coordinator, mac)
+        to_restore.append(tracked[key])
     if to_restore:
         async_add_entities(to_restore)
 
@@ -69,8 +74,26 @@ class TPLinkBlockedDeviceSwitch(CoordinatorEntity[TPLinkRouterCoordinator], Swit
 
     def __init__(self, coordinator: TPLinkRouterCoordinator, mac: str) -> None:
         super().__init__(coordinator)
-        self._mac = mac
+        # Prefer the router/library MAC string (same as the tracker) so device
+        # registry connections merge. unique_id always uses format_mac().
+        self._mac = self._resolve_library_mac(mac) or mac
         self._attr_unique_id = f"{coordinator.unique_id}_{DOMAIN}_blocked_{format_mac(mac)}"
+
+    def prefer_library_mac(self, mac: str) -> None:
+        """Update the stored MAC when the router reports the tracker form."""
+        if format_mac(mac) == format_mac(self._mac):
+            self._mac = mac
+
+    def _resolve_library_mac(self, mac: str) -> str | None:
+        """Return the MAC string used by status/blocked lists when known."""
+        key = format_mac(mac)
+        for device in self.coordinator.status.devices:
+            if format_mac(device.macaddr) == key:
+                return device.macaddr
+        for device in self.coordinator.blocked_devices or []:
+            if format_mac(device.macaddr) == key:
+                return device.macaddr
+        return None
 
     @property
     def device_info(self) -> DeviceInfo:
@@ -106,6 +129,15 @@ class TPLinkBlockedDeviceSwitch(CoordinatorEntity[TPLinkRouterCoordinator], Swit
                 return device.hostname or ""
         return ""
 
+    def _block_name(self) -> str:
+        """Name to store on the blacklist: live hostname, else existing blacklist name."""
+        if hostname := self._hostname():
+            return hostname
+        blocked = self._blocked_entry()
+        if blocked is not None and blocked.hostname:
+            return blocked.hostname
+        return ""
+
     def _blocked_entry(self):
         return next(
             (
@@ -125,7 +157,7 @@ class TPLinkBlockedDeviceSwitch(CoordinatorEntity[TPLinkRouterCoordinator], Swit
         return super().available and self.coordinator.blocked_devices is not None
 
     async def async_turn_on(self, **kwargs: Any) -> None:
-        await self.coordinator.block_device(self._mac, self._hostname())
+        await self.coordinator.block_device(self._mac, self._block_name())
 
     async def async_turn_off(self, **kwargs: Any) -> None:
         await self.coordinator.unblock_device(self._mac)

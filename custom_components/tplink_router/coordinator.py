@@ -57,9 +57,22 @@ def supports_led_control(router: AbstractRouter) -> bool:
     return hasattr(router, "led_status") and hasattr(router, "set_led")
 
 
+# get_access_control() is two HTTP reads; refresh enable/mode less often than the blacklist.
+ACCESS_CONTROL_STATUS_POLL_EVERY = 3
+
+
 def supports_access_control(router: AbstractRouter) -> bool:
-    """Return True when the client can list, block and unblock Access Control blacklist devices."""
-    return all(hasattr(router, name) for name in ("get_blocked_devices", "block_device", "unblock_device"))
+    """Return True when the client exposes the full Access Control blacklist API."""
+    return all(
+        hasattr(router, name)
+        for name in (
+            "get_blocked_devices",
+            "block_device",
+            "unblock_device",
+            "get_access_control",
+            "set_access_control",
+        )
+    )
 
 
 def collect_mesh_nodes(router: AbstractRouter, logger: Logger) -> list[MeshNode] | None:
@@ -96,6 +109,7 @@ def collect_status(
         led_status: bool | None = None,
         access_control: AccessControlStatus | None = None,
         blocked_devices: list[BlockedDevice] | None = None,
+        poll_access_control_status: bool = True,
         parental_status: ParentalStatus | None = None,
 ) -> tuple[Status, LTEStatus | None, list[ServingCell] | None, VPNStatus | None,
            VpnClientStatus | None, list[PortStatus | RouterPortStatus] | None, list[SMS] | None,
@@ -128,7 +142,9 @@ def collect_status(
         parental_status = collect_parental_status(router, logger)
     # Keep the last known Access Control state when one poll fails, so the
     # switches stay in place; None (unsupported) is never asked for.
-    if access_control is not None:
+    # Blacklist is polled every cycle (Blocked switches); enable/mode less often
+    # because get_access_control() is two HTTP reads on the router.
+    if access_control is not None and poll_access_control_status:
         access_control = safe_call(
             router.get_access_control, logger, "fetch Access Control status", default=access_control
         )
@@ -201,6 +217,7 @@ class TPLinkRouterCoordinator(DataUpdateCoordinator):
         # None means the client has no Access Control support (no entities, no polling).
         self.access_control: AccessControlStatus | None = access_control
         self.blocked_devices: list[BlockedDevice] | None = blocked_devices
+        self._access_control_poll_count = 0
         self.device_info = DeviceInfo(
             configuration_url=router.host,
             connections={(CONNECTION_NETWORK_MAC, self.status.lan_macaddr)},
@@ -515,8 +532,10 @@ class TPLinkRouterCoordinator(DataUpdateCoordinator):
         """Turn Access Control on or off; the router's blacklist/whitelist mode is left as it is."""
         def callback():
             self.router.set_access_control(enable=enable)
+            return self.router.get_access_control()
 
-        await self._run_router_request(callback)
+        self.access_control = await self._run_router_request(callback)
+        self.async_update_listeners()
 
     async def block_device(self, mac: str, name: str = "") -> None:
         """Add a device to the blacklist; never turns Access Control on or changes the mode."""
@@ -547,6 +566,11 @@ class TPLinkRouterCoordinator(DataUpdateCoordinator):
         last_error: Exception | None = None
 
         def update_once():
+            # Blacklist every cycle; enable/mode every Nth (get_access_control is 2 reads).
+            self._access_control_poll_count += 1
+            poll_ac_status = (
+                self._access_control_poll_count % ACCESS_CONTROL_STATUS_POLL_EVERY == 1
+            )
             return TPLinkRouterCoordinator.request(
                 self.router,
                 lambda: collect_status(
@@ -562,7 +586,8 @@ class TPLinkRouterCoordinator(DataUpdateCoordinator):
                     self.led_status,
                     self.access_control,
                     self.blocked_devices,
-                    self.parental_status,
+                    poll_access_control_status=poll_ac_status,
+                    parental_status=self.parental_status,
                 ),
             )
 

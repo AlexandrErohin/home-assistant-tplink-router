@@ -68,6 +68,7 @@ def coordinator(client=None):
     ):
         setattr(coord, key, None)
     coord.retries = 1
+    coord._access_control_poll_count = 0
     coord.scan_stopped_at = None
     coord.scan_pause_minutes = 0
     coord.backoff_seconds = 0

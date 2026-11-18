@@ -108,6 +108,38 @@
           "description": "MAC de la reserva a eliminar"
         }
       }
+    },
+    "block_device": {
+      "name": "Bloquear dispositivo",
+      "description": "Añade un dispositivo a la lista negra de Access Control. No activa Access Control ni cambia su modo.",
+      "fields": {
+        "device": {
+          "name": "Router",
+          "description": "Selecciona el router TP-Link"
+        },
+        "mac": {
+          "name": "Dirección MAC",
+          "description": "MAC del dispositivo (dos puntos, guion o hex)"
+        },
+        "name": {
+          "name": "Nombre",
+          "description": "Nombre opcional guardado con la entrada de la lista negra"
+        }
+      }
+    },
+    "unblock_device": {
+      "name": "Desbloquear dispositivo",
+      "description": "Quita un dispositivo de la lista negra de Access Control.",
+      "fields": {
+        "device": {
+          "name": "Router",
+          "description": "Selecciona el router TP-Link"
+        },
+        "mac": {
+          "name": "Dirección MAC",
+          "description": "MAC del dispositivo a desbloquear"
+        }
+      }
     }
   }
 }

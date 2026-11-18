@@ -1,2 +1,2 @@
 pytest-homeassistant==2026.11.1
-tplinkrouterc6u==5.38.0
+tplinkrouterc6u==5.41.0

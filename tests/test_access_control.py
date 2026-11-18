@@ -133,11 +133,13 @@ class AccessControlRouter(FakeRouter):
         self.blocked = [d for d in self.blocked if d.macaddr != mac]
 
 
-def test_supports_access_control_needs_list_block_and_unblock():
+def test_supports_access_control_needs_full_api():
     assert supports_access_control(AccessControlRouter())
     assert not supports_access_control(FakeRouter())
     partial = FakeRouter()
     partial.get_blocked_devices = Mock()
+    partial.block_device = Mock()
+    partial.unblock_device = Mock()
     assert not supports_access_control(partial)
 
 
@@ -149,6 +151,21 @@ def test_collect_status_polls_access_control_when_supported():
     )
     assert result[10].enable is True
     assert [d.macaddr for d in result[11]] == [PHONE]
+
+
+def test_collect_status_can_skip_access_control_status_poll():
+    """Blacklist is refreshed every cycle; enable/mode can be skipped to cut HTTP load."""
+    router = AccessControlRouter([_blocked(PHONE)], enable=True)
+    router.get_access_control = Mock(wraps=router.get_access_control)
+    last_access = SimpleNamespace(enable=False, mode="blacklist")
+    result = collect_status(
+        router, None, None, None, None, None, None, logging.getLogger("test"),
+        access_control=last_access, blocked_devices=[],
+        poll_access_control_status=False,
+    )
+    assert result[10] is last_access
+    assert [d.macaddr for d in result[11]] == [PHONE]
+    router.get_access_control.assert_not_called()
 
 
 def test_collect_status_skips_access_control_when_unsupported():
@@ -198,11 +215,13 @@ def test_coordinator_block_and_unblock_refresh_the_list():
     assert not any(call[0] == "set_access_control" for call in router.calls)
 
 
-def test_coordinator_set_access_control_changes_only_enable():
+def test_coordinator_set_access_control_refreshes_status():
     router = AccessControlRouter()
     coord = _live_coordinator(router)
     asyncio.run(coord.set_access_control(True))
     assert router.calls == [("set_access_control", True, None)]
+    assert coord.access_control.enable is True
+    coord.async_update_listeners.assert_called_once()
 
 
 def _switch_coordinator(blocked=None, access_control=None, devices=()):
@@ -308,6 +327,17 @@ def test_blocked_switch_turn_on_off_calls_coordinator():
     assert entity.is_on is True
     coordinator.blocked_devices = None
     assert entity.available is False
+
+
+def test_blocked_switch_prefers_library_mac_and_blacklist_name():
+    """Restored colon-form unique_id adopts the tracker MAC; offline block keeps blacklist name."""
+    coordinator = _switch_coordinator(blocked=[_blocked(PHONE, "phone")], devices=[])
+    entity = TPLinkBlockedDeviceSwitch(coordinator, "aa:bb:cc:dd:ee:01")
+    assert entity._mac == PHONE
+    assert entity.device_info["connections"] == {("mac", PHONE)}
+
+    asyncio.run(entity.async_turn_on())
+    coordinator.block_device.assert_awaited_once_with(PHONE, "phone")
 
 
 def test_access_control_switch_lists_mode_and_blocked_devices():

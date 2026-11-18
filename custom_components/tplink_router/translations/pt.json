@@ -52,20 +52,20 @@
   },
   "services": {
     "send_sms": {
-      "name": "Send SMS",
-      "description": "Send SMS",
+      "name": "Enviar SMS",
+      "description": "Enviar SMS",
       "fields": {
         "number": {
-          "name": "Phone",
-          "description": "Phone number"
+          "name": "Telefone",
+          "description": "Número de telefone"
         },
         "text": {
-          "name": "Message",
-          "description": "Text"
+          "name": "Mensagem",
+          "description": "Texto"
         },
         "device": {
           "name": "Router",
-          "description": "Select the TP-Link router to send sms"
+          "description": "Selecione o router TP-Link para enviar SMS"
         }
       }
     },
@@ -106,6 +106,38 @@
         "mac": {
           "name": "Endereço MAC",
           "description": "MAC da reserva a eliminar"
+        }
+      }
+    },
+    "block_device": {
+      "name": "Bloquear dispositivo",
+      "description": "Adiciona um dispositivo à lista negra do Access Control. Não liga o Access Control nem altera o modo.",
+      "fields": {
+        "device": {
+          "name": "Router",
+          "description": "Selecione o router TP-Link"
+        },
+        "mac": {
+          "name": "Endereço MAC",
+          "description": "MAC do dispositivo (dois pontos, hífen ou hex)"
+        },
+        "name": {
+          "name": "Nome",
+          "description": "Nome opcional guardado com a entrada da lista negra"
+        }
+      }
+    },
+    "unblock_device": {
+      "name": "Desbloquear dispositivo",
+      "description": "Remove um dispositivo da lista negra do Access Control.",
+      "fields": {
+        "device": {
+          "name": "Router",
+          "description": "Selecione o router TP-Link"
+        },
+        "mac": {
+          "name": "Endereço MAC",
+          "description": "MAC do dispositivo a desbloquear"
         }
       }
     }

@@ -52,20 +52,20 @@
   },
   "services": {
     "send_sms": {
-      "name": "Send SMS",
-      "description": "Send SMS",
+      "name": "SMSを送信",
+      "description": "SMSを送信",
       "fields": {
         "number": {
-          "name": "Phone",
-          "description": "Phone number"
+          "name": "電話",
+          "description": "電話番号"
         },
         "text": {
-          "name": "Message",
-          "description": "Text"
+          "name": "メッセージ",
+          "description": "本文"
         },
         "device": {
-          "name": "Router",
-          "description": "Select the TP-Link router to send sms"
+          "name": "ルーター",
+          "description": "SMSを送信するTP-Linkルーターを選択"
         }
       }
     },
@@ -106,6 +106,38 @@
         "mac": {
           "name": "MACアドレス",
           "description": "削除する予約のMACアドレス"
+        }
+      }
+    },
+    "block_device": {
+      "name": "デバイスをブロック",
+      "description": "Access Control のブラックリストにデバイスを追加します。Access Control のオン／オフやモードは変更しません。",
+      "fields": {
+        "device": {
+          "name": "ルーター",
+          "description": "TP-Link ルーターを選択"
+        },
+        "mac": {
+          "name": "MAC アドレス",
+          "description": "デバイスの MAC アドレス（コロン、ハイフン、または hex）"
+        },
+        "name": {
+          "name": "名前",
+          "description": "ブラックリスト項目に保存する任意の名前"
+        }
+      }
+    },
+    "unblock_device": {
+      "name": "デバイスのブロック解除",
+      "description": "Access Control のブラックリストからデバイスを削除します。",
+      "fields": {
+        "device": {
+          "name": "ルーター",
+          "description": "TP-Link ルーターを選択"
+        },
+        "mac": {
+          "name": "MAC アドレス",
+          "description": "ブロック解除するデバイスの MAC アドレス"
         }
       }
     }
