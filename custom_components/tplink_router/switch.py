@@ -8,11 +8,11 @@ from homeassistant.config_entries import ConfigEntry
 from homeassistant.const import EntityCategory
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
-from .const import DOMAIN
+from .const import DOMAIN, CONF_SUPPORT_TRACKER
 from homeassistant.helpers.update_coordinator import CoordinatorEntity
 from .coordinator import TPLinkRouterCoordinator
 from tplinkrouterc6u import VPN, Connection
-from . import vpn_client
+from . import access_control, vpn_client
 
 
 @dataclass
@@ -36,6 +36,11 @@ class TPLinkRouterVPNServerSwitchConfig(TPLinkRouterSwitchConfigBase):
 @dataclass
 class TPLinkRouterVPNClientSwitchConfig(TPLinkRouterSwitchConfigBase):
     coordinator_key: str = 'vpn_client_status'
+
+
+@dataclass
+class TPLinkRouterAccessControlSwitchConfig(TPLinkRouterSwitchConfigBase):
+    coordinator_key: str = 'access_control'
 
 
 @dataclass
@@ -245,6 +250,19 @@ WAN_SWITCH_TYPES = (
     ),
 )
 
+ACCESS_CONTROL_SWITCH_TYPES = (
+    TPLinkRouterAccessControlSwitchConfig(
+        property='enable',
+        method=lambda coordinator, value: coordinator.set_access_control(value),
+        description=SwitchEntityDescription(
+            key="access_control",
+            name="Access Control",
+            icon="mdi:shield-lock",
+            entity_category=EntityCategory.CONFIG,
+        ),
+    ),
+)
+
 LED_SWITCH_TYPES = (
     TPLinkRouterLedSwitchConfig(
         method=lambda coordinator, value: coordinator.set_led(value),
@@ -318,6 +336,14 @@ async def async_setup_entry(
     if coordinator.led_status is not None:
         for switch in LED_SWITCH_TYPES:
             switches.append(TPLinkRouterSwitch(coordinator, switch))
+
+    if coordinator.access_control is not None and hasattr(coordinator.router, "set_access_control"):
+        for switch in ACCESS_CONTROL_SWITCH_TYPES:
+            switches.append(TPLinkRouterSwitch(coordinator, switch))
+
+    # Per-client "Blocked" switches belong on the client devices the trackers create.
+    if coordinator.blocked_devices is not None and entry.data.get(CONF_SUPPORT_TRACKER, True):
+        access_control.setup_blocked_device_entities(coordinator, entry, async_add_entities)
 
     async_add_entities(switches, False)
 

@@ -127,6 +127,8 @@ def _led_coordinator(led_status=True):
     )
     coordinator.vpn_server_status = None
     coordinator.vpn_client_status = None
+    coordinator.access_control = None
+    coordinator.blocked_devices = None
     return coordinator
 
 

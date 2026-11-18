@@ -49,3 +49,31 @@ delete_reservation:
       required: true
       selector:
         text:
+
+block_device:
+  fields:
+    device:
+      required: true
+      selector:
+        device:
+          integration: tplink_router
+    mac:
+      required: true
+      selector:
+        text:
+    name:
+      required: false
+      selector:
+        text:
+
+unblock_device:
+  fields:
+    device:
+      required: true
+      selector:
+        device:
+          integration: tplink_router
+    mac:
+      required: true
+      selector:
+        text:
