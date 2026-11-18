@@ -379,9 +379,12 @@ To do that:
 - NE211-Outdoor v1.0
 - NX510v v1.0
 - NX600 v2.0
+- PGW2440 v1.0
+- RE235BE v1.0
 - RE305 4.0
 - RE315 1.0
 - RE330 v1
+- RE365 v1.0
 - RE505X v1.0
 - RE700X
 - RE705X v1.0

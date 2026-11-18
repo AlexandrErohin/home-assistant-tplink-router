@@ -1,15 +1,20 @@
 # Changelog
 
-## [UNRELEASED]
+## [2.47.0] - 2026-11-18
 
 ### Added
 
-- Access Control: an "Access Control" switch, a "Blocked" switch per client device (disabled by default) and the `block_device` / `unblock_device` services, on routers whose client has `get_blocked_devices`: Archer C80 / C24 and the C6U / SG family, once the next tplinkrouterc6u release (after 5.40.0) is pinned. Blocking only edits the blacklist and never turns Access Control on or changes its mode ([#417](https://github.com/AlexandrErohin/home-assistant-tplink-router/issues/417)) ([#452](https://github.com/AlexandrErohin/home-assistant-tplink-router/pull/452))
+- Access Control: an "Access Control" switch, a "Blocked" switch per client device (disabled by default) and the `block_device` / `unblock_device` services, on Archer C80 / C24 and the C6U / SG family (`tplinkrouterc6u` 5.41.0). Blocking only edits the blacklist and never turns Access Control on or changes its mode ([#417](https://github.com/AlexandrErohin/home-assistant-tplink-router/issues/417)) ([#452](https://github.com/AlexandrErohin/home-assistant-tplink-router/pull/452), [TP-Link-Archer-C6U#271](https://github.com/AlexandrErohin/TP-Link-Archer-C6U/pull/271), [#273](https://github.com/AlexandrErohin/TP-Link-Archer-C6U/pull/273), [#275](https://github.com/AlexandrErohin/TP-Link-Archer-C6U/pull/275))
+- WAN/LAN port link sensors via `get_port_status()` → `RouterPortStatus` on C6U / SG / V1_11 firmwares (e.g. Archer BE230) ([TP-Link-Archer-C6U#274](https://github.com/AlexandrErohin/TP-Link-Archer-C6U/pull/274))
+- Added support for TP-Link PGW2440 v1.0
+- Added support for TP-Link RE235BE v1.0
+- Added support for TP-Link RE365 v1.0
 
 ### Fixed
 
 - Provide `DeviceInfo` with MAC connection for client trackers (HA 2026.11 `ScannerEntity` changes); `tracker_as_device` now only nests clients under the router ([#440](https://github.com/AlexandrErohin/home-assistant-tplink-router/issues/440))
 - Complete missing `send_sms` service translations (`bg`, `cs`, `fr`, `it`, `ja`, `pt`, `sk`)
+- **EX EasyMesh:** restore Wi‑Fi/wired clients and LAN MAC/IP on controller firmwares where `DEV2_HOST_ENTRY` / `DEV2_ADT_LAN` are empty (e.g. VX231v); stop re-probing missing association OIDs on every poll (e.g. EX920) ([TP-Link-Archer-C6U#265](https://github.com/AlexandrErohin/TP-Link-Archer-C6U/pull/265), [#264](https://github.com/AlexandrErohin/TP-Link-Archer-C6U/pull/264))
 
 ## [2.46.0] - 2026-11-13
 
