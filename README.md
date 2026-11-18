@@ -45,8 +45,13 @@ If you forget to enable it back - it would be automatically enable after the con
  - E-WAN connect (for MR/EX-family routers with Ethernet WAN) — on = DHCP Renew, off = DHCP Release; useful to reset a stuck WAN link after reboot
  - LED Enable/Disable (for TL-SG family)
  - Per-profile internet access (Archer AX50 HomeCare only; see below)
+ - Access Control Enable/Disable (Archer C80 / C24 and the C6U / SG family, with a tplinkrouterc6u release that has Access Control; 5.40.0 does not) — turns the router's Access Control on or off and keeps its blacklist/whitelist mode as set on the router
+ - Blocked, one per client device (disabled by default; enable the ones you need on the client's device page) — on adds the device to the Access Control blacklist, off removes it. It only edits the blacklist: the router blocks listed devices while Access Control is on and in blacklist mode
 
-Wi‑Fi, VPN, DHCP, E-WAN, and LED switches are created only when the device supports them (status field / API method present).
+Wi‑Fi, VPN, DHCP, E-WAN, LED and Access Control switches are created only when the device supports them (status field / API method present). Access Control is checked once at setup: if the router does not answer it, the switches and services are not created. The Blocked switches need the device tracker (option "Support device tracker").
+
+> [!WARNING]
+> The Access Control switch keeps the router's mode. If the router is in whitelist mode, turning it on blocks every device that is not on the whitelist, which can include the Home Assistant host. A Blocked switch can also block the Home Assistant host itself, so the integration loses the router until you unblock it in the router's web page.
 
 > [!WARNING]
 > Disabling the LAN IPv4 DHCP server can leave clients without an IP address (including the Home Assistant host, if it uses DHCP). Prefer static addresses or another DHCP server before turning this switch off.
@@ -475,6 +480,8 @@ It will also fire Home Assistant event when a device connects to router
  - Send SMS message - Available only for MR LTE routers
  - Add DHCP Reservation (`tplink_router.add_reservation`) — available on c6u-family routers that implement `add_ipv4_reservation` (when enabled in options)
  - Delete DHCP Reservation (`tplink_router.delete_reservation`) — same routers with `delete_ipv4_reservation`
+ - Block device (`tplink_router.block_device`) — adds a MAC address (and an optional name) to the Access Control blacklist; it does not turn Access Control on or change its mode
+ - Unblock device (`tplink_router.unblock_device`) — removes a MAC address from the Access Control blacklist
 
 Many router models expose a read-only DHCP reservations sensor via `get_ipv4_reservations` even when add/delete actions are not supported. Disable "Include DHCP reservations..." in the integration options to skip polling and hide the sensor/services.
 ### Notification

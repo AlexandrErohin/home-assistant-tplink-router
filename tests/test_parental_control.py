@@ -64,7 +64,7 @@ def coordinator(client=None):
     coord.status = None
     for key in (
         "lte_status", "serving_cells", "vpn_server_status", "vpn_client_status",
-        "port_status", "reservations", "mesh_nodes", "led_status",
+        "port_status", "reservations", "mesh_nodes", "led_status", "access_control", "blocked_devices",
     ):
         setattr(coord, key, None)
     coord.retries = 1
@@ -235,6 +235,26 @@ def test_unsupported_polling_does_not_request_profiles():
     result = collect_status(client, None, None, None, None, None, None, LOGGER)
     assert result[-1] is None
     client.request.assert_not_called()
+
+
+def test_parental_and_access_control_polling_share_one_authenticated_cycle():
+    coord = coordinator()
+    access = SimpleNamespace(enable=True, mode="blacklist")
+    blocked = [SimpleNamespace(macaddr="AA:BB:CC:DD:EE:01", hostname="Example")]
+    coord.access_control = SimpleNamespace(enable=False, mode="blacklist")
+    coord.blocked_devices = []
+    coord.router.get_access_control = Mock(return_value=access)
+    coord.router.get_blocked_devices = Mock(return_value=blocked)
+
+    asyncio.run(coord._async_update_data())
+
+    assert coord.parental_status.profiles["0"].internet_blocked is False
+    assert coord.access_control is access
+    assert coord.blocked_devices is blocked
+    coord.router.get_access_control.assert_called_once_with()
+    coord.router.get_blocked_devices.assert_called_once_with()
+    coord.router.authorize.assert_called_once_with()
+    coord.router.logout.assert_called_once_with()
 
 
 @pytest.mark.parametrize("enabled", [True, False])

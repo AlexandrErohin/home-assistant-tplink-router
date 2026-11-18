@@ -31,7 +31,12 @@ from .const import (
     DEFAULT_OFFLINE_TIMEOUT,
 )
 import logging
-from .coordinator import TPLinkRouterCoordinator, collect_mesh_nodes, supports_led_control
+from .coordinator import (
+    TPLinkRouterCoordinator,
+    collect_mesh_nodes,
+    supports_access_control,
+    supports_led_control,
+)
 from .parental_control import collect_parental_status, supports_parental_control
 from .parental_services import PARENTAL_SERVICES, register_parental_services
 from .network import setup_network_panel, unload_network_panel
@@ -68,6 +73,20 @@ DELETE_RESERVATION_SCHEMA = vol.Schema(
         vol.Required("mac"): vol.All(cv.string, _vol_mac),
     }
 )
+BLOCK_DEVICE_SCHEMA = vol.Schema(
+    {
+        vol.Required("device"): cv.string,
+        vol.Required("mac"): vol.All(cv.string, _vol_mac),
+        vol.Optional("name", default=""): cv.string,
+    }
+)
+UNBLOCK_DEVICE_SCHEMA = vol.Schema(
+    {
+        vol.Required("device"): cv.string,
+        vol.Required("mac"): vol.All(cv.string, _vol_mac),
+    }
+)
+SERVICES = ("send_sms", "add_reservation", "delete_reservation", "block_device", "unblock_device")
 PLATFORMS: list[Platform] = [
     Platform.DEVICE_TRACKER,
     Platform.SENSOR,
@@ -213,6 +232,23 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
                         client.__class__.__name__,
                         err,
                     )
+            # Probe Access Control once: a client class shared by many models may
+            # have the methods while this firmware has no Access Control page.
+            access_control = None
+            blocked_devices = None
+            if supports_access_control(client):
+                try:
+                    blocked_devices = client.get_blocked_devices()
+                    if hasattr(client, "get_access_control"):
+                        access_control = client.get_access_control()
+                except Exception as err:
+                    access_control = None
+                    blocked_devices = None
+                    _LOGGER.debug(
+                        "TP-Link router %s: Access Control failed: %s",
+                        client.__class__.__name__,
+                        err,
+                    )
             return (
                 firm,
                 stat,
@@ -225,6 +261,8 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
                 reservations,
                 mesh_nodes,
                 led_status,
+                access_control,
+                blocked_devices,
                 parental_status,
             )
 
@@ -240,6 +278,8 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
             reservations,
             mesh_nodes,
             led_status,
+            access_control,
+            blocked_devices,
             parental_status,
         ) = await hass.async_add_executor_job(
             TPLinkRouterCoordinator.request, client, callback
@@ -269,6 +309,8 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
                                           support_dhcp_reservations=support_dhcp_reservations,
                                           mesh_nodes=mesh_nodes,
                                           led_status=led_status,
+                                          access_control=access_control,
+                                          blocked_devices=blocked_devices,
                                           parental_status=parental_status)
 
     if sms_list is not None:
@@ -314,7 +356,7 @@ async def async_unload_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
         hass.data[DOMAIN].pop(entry.entry_id)
         if not hass.data[DOMAIN]:
             unload_network_panel(hass)
-            for svc in ("send_sms", "add_reservation", "delete_reservation", *PARENTAL_SERVICES):
+            for svc in (*SERVICES, *PARENTAL_SERVICES):
                 if hass.services.has_service(DOMAIN, svc):
                     hass.services.async_remove(DOMAIN, svc)
     return unload_ok
@@ -355,6 +397,14 @@ def get_coordinator_for_device(
     if method_name in ("add_ipv4_reservation", "delete_ipv4_reservation") and not getattr(
         coordinator, "support_dhcp_reservations", True
     ):
+        _LOGGER.error(
+            'TplinkRouter Integration Exception - This device does not support %s',
+            method_name,
+        )
+        return None
+    if method_name in ("block_device", "unblock_device") and getattr(
+        coordinator, "blocked_devices", None
+    ) is None:
         _LOGGER.error(
             'TplinkRouter Integration Exception - This device does not support %s',
             method_name,
@@ -418,6 +468,32 @@ def register_services(hass: HomeAssistant, coord: TPLinkRouterCoordinator) -> No
                 'delete_reservation',
                 delete_reservation_service,
                 schema=DELETE_RESERVATION_SCHEMA,
+            )
+
+    if coord.blocked_devices is not None:
+        async def block_device_service(service: ServiceCall) -> None:
+            coordinator = get_coordinator_for_device(
+                hass, service.data.get("device"), "block_device"
+            )
+            if coordinator is None:
+                return
+            await coordinator.block_device(service.data["mac"], service.data.get("name", ""))
+
+        async def unblock_device_service(service: ServiceCall) -> None:
+            coordinator = get_coordinator_for_device(
+                hass, service.data.get("device"), "unblock_device"
+            )
+            if coordinator is None:
+                return
+            await coordinator.unblock_device(service.data["mac"])
+
+        if not hass.services.has_service(DOMAIN, 'block_device'):
+            hass.services.async_register(
+                DOMAIN, 'block_device', block_device_service, schema=BLOCK_DEVICE_SCHEMA
+            )
+        if not hass.services.has_service(DOMAIN, 'unblock_device'):
+            hass.services.async_register(
+                DOMAIN, 'unblock_device', unblock_device_service, schema=UNBLOCK_DEVICE_SCHEMA
             )
 
 
