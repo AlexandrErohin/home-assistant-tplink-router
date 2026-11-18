@@ -343,7 +343,7 @@ async def async_setup_entry(
 
     # Per-client "Blocked" switches belong on the client devices the trackers create.
     if coordinator.blocked_devices is not None and entry.data.get(CONF_SUPPORT_TRACKER, True):
-        access_control.setup_blocked_device_entities(coordinator, entry, async_add_entities)
+        access_control.setup_blocked_device_entities(hass, coordinator, entry, async_add_entities)
 
     async_add_entities(switches, False)
 

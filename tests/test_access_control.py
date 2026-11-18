@@ -5,15 +5,21 @@ from unittest.mock import AsyncMock, Mock, patch
 
 import pytest
 import voluptuous as vol
+from homeassistant.helpers import device_registry as dr, entity_registry as er
+from pytest_homeassistant.common import MockConfigEntry, MockEntityPlatform
 
 from custom_components.tplink_router import (
     BLOCK_DEVICE_SCHEMA,
     UNBLOCK_DEVICE_SCHEMA,
     async_setup_entry as async_setup_integration,
+    async_unload_entry,
     get_coordinator_for_device,
     register_services,
 )
-from custom_components.tplink_router.access_control import TPLinkBlockedDeviceSwitch
+from custom_components.tplink_router.access_control import (
+    TPLinkBlockedDeviceSwitch,
+    setup_blocked_device_entities,
+)
 from custom_components.tplink_router.const import DOMAIN
 from custom_components.tplink_router.coordinator import (
     TPLinkRouterCoordinator,
@@ -230,7 +236,10 @@ def _setup_switches(coordinator, **entry_data):
     entry.entry_id = "entry-1"
     entry.data = {"support_tracker": True, **entry_data}
     added = []
-    asyncio.run(async_setup_switches(hass, entry, lambda entities, update=False: added.extend(entities)))
+    with patch(
+        "custom_components.tplink_router.access_control.er.async_entries_for_config_entry", return_value=[]
+    ), patch("custom_components.tplink_router.access_control.er.async_get"):
+        asyncio.run(async_setup_switches(hass, entry, lambda entities, update=False: added.extend(entities)))
     return added, entry
 
 
@@ -255,6 +264,7 @@ def test_switches_added_when_access_control_supported():
     assert blocked[PHONE].entity_registry_enabled_default is False
     assert blocked[PHONE].unique_id == f"entry-1_{DOMAIN}_blocked_aa:bb:cc:dd:ee:01"
     assert blocked[PHONE].device_info["connections"] == {("mac", PHONE)}
+    assert blocked[PHONE].device_info["name"] == "phone"
 
 
 def test_switches_skipped_without_access_control():
@@ -429,3 +439,75 @@ def test_setup_skips_access_control_without_client_support():
     coordinator = _run_setup(PlainClient())
     assert coordinator.blocked_devices is None
     assert coordinator.access_control is None
+
+
+async def _add_blocked_switches(hass, coordinator):
+    """Run the real setup against Home Assistant's device and entity registries."""
+    entry = MockConfigEntry(domain=DOMAIN, entry_id="entry-1", title="Archer C6")
+    entry.add_to_hass(hass)
+    platform = MockEntityPlatform(hass, domain="switch", platform_name=DOMAIN)
+    platform.config_entry = entry
+    collected = []
+    setup_blocked_device_entities(hass, coordinator, entry, collected.extend)
+    await platform.async_add_entities(collected)
+    return entry, collected
+
+
+async def test_blocked_switch_devices_are_named_after_the_client(hass):
+    coordinator = _switch_coordinator(blocked=[_blocked(TV, "tv")], devices=[_client(PHONE, "phone")])
+    entry, _ = await _add_blocked_switches(hass, coordinator)
+
+    devices = dr.async_get(hass)
+    found = {}
+    for reg_entry in er.async_entries_for_config_entry(er.async_get(hass), entry.entry_id):
+        found[reg_entry.entity_id] = (devices.async_get(reg_entry.device_id).name, reg_entry.disabled_by)
+    # A connected client takes its hostname; a blocked offline device its blacklist name.
+    # Never the router's name (a device with no name is named after the config entry).
+    assert found == {
+        "switch.phone_blocked": ("phone", er.RegistryEntryDisabler.INTEGRATION),
+        "switch.tv_blocked": ("tv", er.RegistryEntryDisabler.INTEGRATION),
+    }
+
+
+async def test_blocked_switch_keeps_existing_device_name(hass):
+    coordinator = _switch_coordinator(blocked=[_blocked(TV)], devices=[])
+    entry = MockConfigEntry(domain=DOMAIN, entry_id="entry-1", title="Archer C6")
+    entry.add_to_hass(hass)
+    dr.async_get(hass).async_get_or_create(
+        config_entry_id=entry.entry_id, connections={(dr.CONNECTION_NETWORK_MAC, TV)}, name="living room tv"
+    )
+    entity = TPLinkBlockedDeviceSwitch(coordinator, TV)
+    entity.hass = hass
+    assert entity.device_info["name"] == "living room tv"
+
+
+async def test_blocked_switches_restored_for_offline_clients(hass):
+    coordinator = _switch_coordinator(blocked=[], devices=[_client(PHONE)])
+    entry = MockConfigEntry(domain=DOMAIN, entry_id="entry-1", title="Archer C6")
+    entry.add_to_hass(hass)
+    registry = er.async_get(hass)
+    registry.async_get_or_create("switch", DOMAIN, f"entry-1_{DOMAIN}_blocked_aa:bb:cc:dd:ee:09", config_entry=entry)
+    # Same client as the connected one: must not be added twice.
+    registry.async_get_or_create("switch", DOMAIN, f"entry-1_{DOMAIN}_blocked_aa:bb:cc:dd:ee:01", config_entry=entry)
+    # Other switches of the entry are not Blocked switches.
+    registry.async_get_or_create("switch", DOMAIN, f"entry-1_{DOMAIN}_led", config_entry=entry)
+
+    collected = []
+    setup_blocked_device_entities(hass, coordinator, entry, collected.extend)
+    assert [e._mac for e in collected] == [PHONE, "aa:bb:cc:dd:ee:09"]
+    assert collected[1].is_on is False
+
+
+def test_unload_removes_block_services():
+    coordinator = Mock()
+    hass = Mock()
+    hass.data = {DOMAIN: {"entry-1": coordinator}}
+    hass.config_entries.async_unload_platforms = AsyncMock(return_value=True)
+    hass.services.has_service.return_value = True
+    entry = Mock()
+    entry.entry_id = "entry-1"
+    entry.data = {}
+    assert asyncio.run(async_unload_entry(hass, entry)) is True
+    removed = [call.args[1] for call in hass.services.async_remove.call_args_list]
+    assert "block_device" in removed
+    assert "unblock_device" in removed
