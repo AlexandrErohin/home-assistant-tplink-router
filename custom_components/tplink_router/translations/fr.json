@@ -61,11 +61,11 @@
         },
         "text": {
           "name": "Message",
-          "description": "Text"
+          "description": "Texte"
         },
         "device": {
-          "name": "Router",
-          "description": "Select the TP-Link router to send sms"
+          "name": "Routeur",
+          "description": "Sélectionnez le routeur TP-Link pour envoyer un SMS"
         }
       }
     },

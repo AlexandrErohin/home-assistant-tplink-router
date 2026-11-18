@@ -56,7 +56,7 @@
       "description": "Pošlite SMS",
       "fields": {
         "number": {
-          "name": "Phone",
+          "name": "Telefón",
           "description": "Telefónne číslo"
         },
         "text": {

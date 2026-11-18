@@ -52,20 +52,20 @@
   },
   "services": {
     "send_sms": {
-      "name": "Send SMS",
-      "description": "Send SMS",
+      "name": "Odeslat SMS",
+      "description": "Odeslat SMS",
       "fields": {
         "number": {
-          "name": "Phone",
-          "description": "Phone number"
+          "name": "Telefon",
+          "description": "Telefonní číslo"
         },
         "text": {
-          "name": "Message",
+          "name": "Zpráva",
           "description": "Text"
         },
         "device": {
           "name": "Router",
-          "description": "Select the TP-Link router to send sms"
+          "description": "Vyberte router TP-Link pro odeslání SMS"
         }
       }
     },

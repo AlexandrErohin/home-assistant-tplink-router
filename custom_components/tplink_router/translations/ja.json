@@ -52,20 +52,20 @@
   },
   "services": {
     "send_sms": {
-      "name": "Send SMS",
-      "description": "Send SMS",
+      "name": "SMSを送信",
+      "description": "SMSを送信",
       "fields": {
         "number": {
-          "name": "Phone",
-          "description": "Phone number"
+          "name": "電話",
+          "description": "電話番号"
         },
         "text": {
-          "name": "Message",
-          "description": "Text"
+          "name": "メッセージ",
+          "description": "本文"
         },
         "device": {
-          "name": "Router",
-          "description": "Select the TP-Link router to send sms"
+          "name": "ルーター",
+          "description": "SMSを送信するTP-Linkルーターを選択"
         }
       }
     },

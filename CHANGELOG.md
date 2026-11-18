@@ -9,6 +9,7 @@
 ### Fixed
 
 - Provide `DeviceInfo` with MAC connection for client trackers (HA 2026.11 `ScannerEntity` changes); `tracker_as_device` now only nests clients under the router ([#440](https://github.com/AlexandrErohin/home-assistant-tplink-router/issues/440))
+- Complete missing `send_sms` service translations (`bg`, `cs`, `fr`, `it`, `ja`, `pt`, `sk`)
 
 ## [2.46.0] - 2026-11-13
 

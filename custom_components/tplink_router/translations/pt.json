@@ -52,20 +52,20 @@
   },
   "services": {
     "send_sms": {
-      "name": "Send SMS",
-      "description": "Send SMS",
+      "name": "Enviar SMS",
+      "description": "Enviar SMS",
       "fields": {
         "number": {
-          "name": "Phone",
-          "description": "Phone number"
+          "name": "Telefone",
+          "description": "Número de telefone"
         },
         "text": {
-          "name": "Message",
-          "description": "Text"
+          "name": "Mensagem",
+          "description": "Texto"
         },
         "device": {
           "name": "Router",
-          "description": "Select the TP-Link router to send sms"
+          "description": "Selecione o router TP-Link para enviar SMS"
         }
       }
     },
