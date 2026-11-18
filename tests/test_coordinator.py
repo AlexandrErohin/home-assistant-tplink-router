@@ -98,6 +98,7 @@ def _bare_coordinator(**overrides):
     coord.led_status = None
     coord.access_control = None
     coord.blocked_devices = None
+    coord._access_control_poll_count = 0
     coord.support_dhcp_reservations = True
     coord.logger = logging.getLogger("test")
     coord.async_update_listeners = Mock()
