@@ -177,6 +177,8 @@ All available fields in `trigger.event.data`:
 - sender
 - content
 - received_at
+- device_id: the router that received it, the same id the `send_sms` service takes as `device`
+- config_entry_id: the config entry of that router
 
 ### Send SMS only for MR LTE routers
 To send SMS add following lines to your automation in yaml:

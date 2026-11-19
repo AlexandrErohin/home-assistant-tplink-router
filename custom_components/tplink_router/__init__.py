@@ -494,6 +494,11 @@ def _async_add_listeners(hass: HomeAssistant, coord: TPLinkRouterCoordinator) ->
 
 
 def _fire_sms_event(hass: HomeAssistant, coord: TPLinkRouterCoordinator) -> None:
+    # Identify the receiving router, so automations on a multi-router setup can
+    # tell the events apart. device_id is the same value the send_sms service takes.
+    router_device = device_registry.async_get(hass).async_get_device(
+        identifiers=coord.device_info["identifiers"]
+    )
     for sms in coord.new_sms:
         hass.bus.fire(
             EVENT_NEW_SMS,
@@ -501,6 +506,8 @@ def _fire_sms_event(hass: HomeAssistant, coord: TPLinkRouterCoordinator) -> None
                 'sender': sms.sender,
                 'content': sms.content,
                 'received_at': sms.received_at.isoformat(),
+                'device_id': router_device.id if router_device else None,
+                'config_entry_id': coord.unique_id,
             },
         )
     coord.new_sms = []
