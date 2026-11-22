@@ -1,5 +1,11 @@
 # Changelog
 
+## [2.48.0] - 2026-11-22
+
+### Fixed
+
+- Mercusys Halo H60XR (Deco SG firmware): bump `tplinkrouterc6u` to 5.42.0 for `TplinkDecoSGRouter` (login + WAN status). Requires [TP-Link-Archer-C6U#278](https://github.com/AlexandrErohin/TP-Link-Archer-C6U/pull/278) on PyPI ([#437](https://github.com/AlexandrErohin/home-assistant-tplink-router/issues/437)).
+
 ## [2.47.0] - 2026-11-18
 
 ### Added
