@@ -1,6 +1,8 @@
 DEFAULT_NAME = "TP-Link Router"
 DOMAIN = "tplink_router"
 CONF_CLIENT_CLASS = "client_class"
+CONF_DECO_TMP_USERNAME = "deco_tmp_username"
+CONF_DECO_TMP_HOST_KEY_SHA256 = "deco_tmp_host_key_sha256"
 CONF_SUPPORT_VPN = "support_vpn"
 CONF_SUPPORT_TRACKER = "support_tracker"
 CONF_TRACKER_AS_DEVICE = "tracker_as_device"

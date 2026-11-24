@@ -10,7 +10,7 @@ from homeassistant.core import HomeAssistant
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 from .const import DOMAIN, CONF_SUPPORT_TRACKER
 from homeassistant.helpers.update_coordinator import CoordinatorEntity
-from .coordinator import TPLinkRouterCoordinator
+from .coordinator import TPLinkRouterCoordinator, is_verified_deco_wifi_client
 from tplinkrouterc6u import VPN, Connection
 from . import access_control, vpn_client
 
@@ -390,6 +390,9 @@ class TPLinkRouterSwitch(
     async def async_turn_on(self, **kwargs: Any) -> None:
         """Turn the entity on."""
         await self.switch.method(self.coordinator, True)
+        if self._uses_verified_wifi:
+            self.async_write_ha_state()
+            return
         if self.switch.property:
             setattr(self.coordinator_attr, self.switch.property, True)
         else:
@@ -399,11 +402,22 @@ class TPLinkRouterSwitch(
     async def async_turn_off(self, **kwargs: Any) -> None:
         """Turn the entity off."""
         await self.switch.method(self.coordinator, False)
+        if self._uses_verified_wifi:
+            self.async_write_ha_state()
+            return
         if self.switch.property:
             setattr(self.coordinator_attr, self.switch.property, False)
         else:
             setattr(self.coordinator, self.switch.coordinator_key, False)
         self.async_write_ha_state()
+
+    @property
+    def _uses_verified_wifi(self) -> bool:
+        """Deco Wi-Fi switches retain the coordinator's observed state."""
+        return (
+            is_verified_deco_wifi_client(self.coordinator.router)
+            and self.switch in STATUS_SWITCH_TYPES + MLO_SWITCH_TYPES
+        )
 
 
 class TPLinkRouterAccessControlSwitch(TPLinkRouterSwitch):

@@ -1,3 +1,7 @@
+import base64
+import binascii
+import re
+
 from homeassistant.const import (
     CONF_HOST,
     CONF_PASSWORD,
@@ -17,6 +21,8 @@ from .const import (
     DEFAULT_USER,
     EVENT_NEW_SMS,
     CONF_CLIENT_CLASS,
+    CONF_DECO_TMP_USERNAME,
+    CONF_DECO_TMP_HOST_KEY_SHA256,
     CONF_SUPPORT_VPN,
     CONF_SUPPORT_TRACKER,
     CONF_SUPPORT_DHCP_RESERVATIONS,
@@ -36,6 +42,7 @@ from .coordinator import (
     collect_mesh_nodes,
     supports_access_control,
     supports_led_control,
+    is_verified_deco_wifi_client,
 )
 from .utils import validate_ipv4_address, validate_mac_address, is_retryable_error
 from homeassistant.helpers import device_registry
@@ -93,6 +100,45 @@ PLATFORMS: list[Platform] = [
 ]
 
 _LOGGER = logging.getLogger(__name__)
+_TMP_CONFIG_ERROR = "Deco app control requires a valid account SHA-1 and host-key fingerprint"
+
+
+class DecoTmpConfigurationError(ValueError):
+    """An invalid local Deco app-control configuration, without private values."""
+
+
+def validate_deco_tmp_config(data: dict) -> dict[str, str] | None:
+    """Validate both optional app-control fields without contacting the router."""
+    username = data.get(CONF_DECO_TMP_USERNAME)
+    pin = data.get(CONF_DECO_TMP_HOST_KEY_SHA256)
+    if username in (None, "") and pin in (None, ""):
+        return None
+    if not isinstance(username, str) or not re.fullmatch(r"[0-9a-fA-F]{40}", username):
+        raise DecoTmpConfigurationError(_TMP_CONFIG_ERROR)
+    if not isinstance(pin, str) or not re.fullmatch(r"SHA256:[A-Za-z0-9+/]{43}", pin):
+        raise DecoTmpConfigurationError(_TMP_CONFIG_ERROR)
+    try:
+        digest = base64.b64decode(pin[7:] + "=", validate=True)
+    except (binascii.Error, ValueError):
+        raise DecoTmpConfigurationError(_TMP_CONFIG_ERROR) from None
+    canonical = "SHA256:" + base64.b64encode(digest).decode().rstrip("=")
+    if len(digest) != 32 or canonical != pin:
+        raise DecoTmpConfigurationError(_TMP_CONFIG_ERROR)
+    return {"username_sha1": username.lower(), "host_key_sha256": pin}
+
+
+def configure_deco_tmp_wifi(client, data: dict) -> None:
+    """Bind optional app control locally; setup never opens a TMP connection."""
+    settings = validate_deco_tmp_config(data)
+    if settings is None:
+        return
+    configure = getattr(client, "configure_tmp_wifi", None)
+    if not is_verified_deco_wifi_client(client) or not callable(configure):
+        raise DecoTmpConfigurationError("Deco app control is not supported by this router client")
+    try:
+        configure(**settings)
+    except ValueError:
+        raise DecoTmpConfigurationError(_TMP_CONFIG_ERROR) from None
 
 
 async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
@@ -106,6 +152,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     support_serving_cells = entry.data.get(CONF_SUPPORT_SERVING_CELLS, True)
 
     try:
+        validate_deco_tmp_config(entry.data)
         client_class = entry.data.get(CONF_CLIENT_CLASS)
         if not client_class:
             client = await TPLinkRouterCoordinator.get_client(
@@ -130,6 +177,8 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
                 logger=_LOGGER,
                 verify_ssl=verify_ssl
             )
+
+        configure_deco_tmp_wifi(client, entry.data)
 
         def callback():
             firm = client.get_firmware()
@@ -275,6 +324,9 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
         ) = await hass.async_add_executor_job(
             TPLinkRouterCoordinator.request, client, callback
         )
+    except DecoTmpConfigurationError as error:
+        _LOGGER.error("TPLink Router app-control configuration failed: %s", error)
+        return False
     except Exception as error:
         if is_retryable_error(error):
             raise ConfigEntryNotReady(

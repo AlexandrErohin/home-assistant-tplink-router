@@ -7,12 +7,18 @@
           "host": "Host",
           "username": "Login",
           "password": "Password",
+          "deco_tmp_username": "Deco app account ID (SHA-1, optional)",
+          "deco_tmp_host_key_sha256": "Deco app server fingerprint (SHA256:, optional)",
           "scan_interval": "Scan interval for updates in seconds",
           "scan_retries": "Number of attempts for each data update",
           "scan_backoff": "Seconds between retries",
           "scan_pause": "Minutes before data fetching re-enables automatically (0 = never)",
           "offline_timeout": "Seconds a missing device stays 'home' before going offline (0 = immediate)",
           "verify_ssl": "Verify SSL for https connection"
+        },
+        "data_description": {
+          "deco_tmp_username": "Advanced: SHA-1 of the TP-Link account email. Configure together with the server fingerprint; leave both empty for web control.",
+          "deco_tmp_host_key_sha256": "Advanced: the previously verified SSH server fingerprint. Uses the same account password entered above."
         }
       },
       "custom": {
@@ -25,6 +31,9 @@
           "support_serving_cells": "Include LTE serving cells sensors"
         }
       }
+    },
+    "error": {
+      "invalid_deco_tmp_config": "Provide both a valid Deco account SHA-1 and a verified SHA256 server fingerprint for a supported Deco client. Leave both empty to use web control."
     }
   },
   "options": {
@@ -35,6 +44,8 @@
           "host": "Host",
           "username": "Login",
           "password": "Password",
+          "deco_tmp_username": "Deco app account ID (SHA-1, optional)",
+          "deco_tmp_host_key_sha256": "Deco app server fingerprint (SHA256:, optional)",
           "scan_interval": "Scan interval for updates in seconds",
           "scan_retries": "Number of attempts for each data update",
           "scan_backoff": "Seconds between retries",
@@ -46,8 +57,15 @@
           "tracker_as_device": "Nest each tracked client under the router device (off by default; clients always get a device linked by MAC)",
           "support_dhcp_reservations": "Include DHCP reservations sensor and add/delete services",
           "support_serving_cells": "Include LTE serving cells sensors"
+        },
+        "data_description": {
+          "deco_tmp_username": "Advanced: SHA-1 of the TP-Link account email. Configure together with the server fingerprint; leave both empty for web control.",
+          "deco_tmp_host_key_sha256": "Advanced: the previously verified SSH server fingerprint. Uses the same account password entered above."
         }
       }
+    },
+    "error": {
+      "invalid_deco_tmp_config": "Provide both a valid Deco account SHA-1 and a verified SHA256 server fingerprint for a supported Deco client. Leave both empty to use web control."
     }
   },
   "services": {

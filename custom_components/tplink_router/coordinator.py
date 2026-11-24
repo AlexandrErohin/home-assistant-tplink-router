@@ -4,7 +4,7 @@ import asyncio
 import logging
 from datetime import timedelta, datetime
 from logging import Logger
-from collections.abc import Callable
+from collections.abc import Callable, Mapping
 from typing import Any, Type
 from homeassistant.helpers.update_coordinator import DataUpdateCoordinator
 from tplinkrouterc6u import (
@@ -22,6 +22,7 @@ from tplinkrouterc6u import (
     PortStatus,
     RouterPortStatus,
     IPv4Reservation,
+    TPLinkDecoClient,
 )
 
 try:
@@ -49,8 +50,25 @@ def supports_led_control(router: AbstractRouter) -> bool:
     return hasattr(router, "led_status") and hasattr(router, "set_led")
 
 
+def is_verified_deco_wifi_client(router: AbstractRouter) -> bool:
+    """Select Deco clients whose transport supports verified WLAN writes."""
+    return (
+        isinstance(router, TPLinkDecoClient)
+        and getattr(router, "supports_verified_wifi", True) is True
+    )
+
+
 # get_access_control() is two HTTP reads; refresh enable/mode less often than the blacklist.
 ACCESS_CONTROL_STATUS_POLL_EVERY = 3
+
+DECO_WIFI_STATUS_PROPERTIES = {
+    Connection.HOST_2G: "wifi_2g_enable",
+    Connection.HOST_5G: "wifi_5g_enable",
+    Connection.HOST_6G: "wifi_6g_enable",
+    Connection.GUEST_2G: "guest_2g_enable",
+    Connection.GUEST_5G: "guest_5g_enable",
+    Connection.GUEST_6G: "guest_6g_enable",
+}
 
 
 def supports_access_control(router: AbstractRouter) -> bool:
@@ -265,10 +283,42 @@ class TPLinkRouterCoordinator(DataUpdateCoordinator):
         await self._run_router_request(self.router.reboot)
 
     async def set_wifi(self, wifi: Connection, enable: bool) -> None:
+        if is_verified_deco_wifi_client(self.router):
+            verifier = getattr(self.router, "set_wifi_verified", None)
+            if not callable(verifier):
+                raise RuntimeError("The Deco client does not support verified Wi-Fi writes")
+
+            async with self._lock:
+                try:
+                    result = await self.hass.async_add_executor_job(
+                        TPLinkRouterCoordinator.request,
+                        self.router,
+                        lambda: verifier(wifi, enable),
+                    )
+                except Exception as error:
+                    if self._apply_deco_wifi_states(getattr(error, "latest_states", None)):
+                        self.async_update_listeners()
+                    raise
+                if self._apply_deco_wifi_states(result.states):
+                    self.async_update_listeners()
+            return
+
         def callback():
             self.router.set_wifi(wifi, enable)
 
         await self._run_router_request(callback)
+
+    def _apply_deco_wifi_states(self, states: Mapping[Connection, bool] | None) -> bool:
+        """Apply only strict Wi-Fi values observed by the Deco verifier."""
+        if not isinstance(states, Mapping):
+            return False
+        updated = False
+        for wifi, field in DECO_WIFI_STATUS_PROPERTIES.items():
+            value = states.get(wifi)
+            if type(value) is bool:
+                setattr(self.status, field, value)
+                updated = True
+        return updated
 
     async def set_vpn_server(self, kind: VPN, enable: bool) -> None:
         def callback():
