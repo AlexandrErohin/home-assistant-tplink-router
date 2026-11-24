@@ -7,12 +7,18 @@
           "host": "Host",
           "username": "Utilizador",
           "password": "Palavra-passe",
+          "deco_tmp_username": "ID da conta do aplicativo Deco (SHA-1, opcional)",
+          "deco_tmp_host_key_sha256": "Impressão digital do servidor Deco (SHA256:, opcional)",
           "scan_interval": "Intervalo de verificação para atualizações em segundos",
           "verify_ssl": "Verificar SSL para a conexão https",
           "scan_retries": "Número de tentativas para cada atualização de dados",
           "scan_backoff": "Segundos entre tentativas",
           "scan_pause": "Minutos antes da recolha de dados ser reativada automaticamente (0 = nunca)",
           "offline_timeout": "Segundos em que um dispositivo em falta permanece 'home' antes de offline (0 = imediato)"
+        },
+        "data_description": {
+          "deco_tmp_username": "Avançado: SHA-1 do e-mail da conta TP-Link. Configure junto com a impressão digital do servidor; deixe ambos vazios para usar o controle web.",
+          "deco_tmp_host_key_sha256": "Avançado: impressão digital SSH do servidor, verificada previamente. Usa a mesma senha da conta informada acima."
         }
       },
       "custom": {
@@ -25,6 +31,9 @@
           "support_serving_cells": "Incluir sensores LTE serving cells"
         }
       }
+    },
+    "error": {
+      "invalid_deco_tmp_config": "Informe o SHA-1 válido da conta Deco e a impressão digital SHA256 verificada do servidor para um cliente Deco compatível. Deixe ambos vazios para usar o controle web."
     }
   },
   "options": {
@@ -35,6 +44,8 @@
           "host": "Host",
           "username": "Utilizador",
           "password": "Palavra-passe",
+          "deco_tmp_username": "ID da conta do aplicativo Deco (SHA-1, opcional)",
+          "deco_tmp_host_key_sha256": "Impressão digital do servidor Deco (SHA256:, opcional)",
           "scan_interval": "Intervalo de verificação para atualizações em segundos",
           "verify_ssl": "Verificar SSL para a conexão https",
           "support_vpn": "Incluir suporte para servidor e cliente VPN",
@@ -46,8 +57,15 @@
           "tracker_as_device": "Aninhar cada cliente monitorizado sob o dispositivo do router (desativado por predefinição; os clientes têm sempre um dispositivo ligado por MAC)",
           "support_dhcp_reservations": "Incluir sensor de reservas DHCP e serviços de adicionar/eliminar",
           "support_serving_cells": "Incluir sensores LTE serving cells"
+        },
+        "data_description": {
+          "deco_tmp_username": "Avançado: SHA-1 do e-mail da conta TP-Link. Configure junto com a impressão digital do servidor; deixe ambos vazios para usar o controle web.",
+          "deco_tmp_host_key_sha256": "Avançado: impressão digital SSH do servidor, verificada previamente. Usa a mesma senha da conta informada acima."
         }
       }
+    },
+    "error": {
+      "invalid_deco_tmp_config": "Informe o SHA-1 válido da conta Deco e a impressão digital SHA256 verificada do servidor para um cliente Deco compatível. Deixe ambos vazios para usar o controle web."
     }
   },
   "services": {

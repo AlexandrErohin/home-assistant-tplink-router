@@ -1,2 +1,3 @@
 pytest-homeassistant==2026.11.1
-tplinkrouterc6u==5.41.0
+tplinkrouterc6u@git+https://github.com/lucaspascoal/TP-Link-Archer-C6U.git@9299dd0fa6897e858a189549c5e677bb35c51a6d
+paramiko==3.5.0

@@ -7,6 +7,7 @@ import homeassistant.helpers.config_validation as cv
 from homeassistant.data_entry_flow import AbortFlow, FlowResult
 from .const import (
     DOMAIN, DEFAULT_USER, DEFAULT_HOST, CONF_CLIENT_CLASS,
+    CONF_DECO_TMP_USERNAME, CONF_DECO_TMP_HOST_KEY_SHA256,
     CONF_SUPPORT_VPN, CONF_SUPPORT_TRACKER, CONF_TRACKER_AS_DEVICE,
     CONF_SUPPORT_DHCP_RESERVATIONS, CONF_SUPPORT_SERVING_CELLS,
     CONF_SCAN_RETRIES, CONF_SCAN_BACKOFF,
@@ -14,6 +15,7 @@ from .const import (
     DEFAULT_SCAN_PAUSE, DEFAULT_OFFLINE_TIMEOUT, MAX_SCAN_RETRIES, MAX_SCAN_BACKOFF,
     MAX_SCAN_PAUSE, MAX_OFFLINE_TIMEOUT,
 )
+from . import DecoTmpConfigurationError, configure_deco_tmp_wifi, validate_deco_tmp_config
 from .coordinator import TPLinkRouterCoordinator
 from homeassistant.const import (
     CONF_HOST,
@@ -53,6 +55,10 @@ def _user_schema(data: dict[str, Any] | None = None) -> vol.Schema:
                 default=data.get(CONF_USERNAME, DEFAULT_USER),
             ): str,
             vol.Required(CONF_PASSWORD): cv.string,
+            vol.Optional(CONF_DECO_TMP_USERNAME, default=data.get(CONF_DECO_TMP_USERNAME, "")): cv.string,
+            vol.Optional(
+                CONF_DECO_TMP_HOST_KEY_SHA256, default=data.get(CONF_DECO_TMP_HOST_KEY_SHA256, "")
+            ): cv.string,
             vol.Required(
                 CONF_SCAN_INTERVAL,
                 default=data.get(CONF_SCAN_INTERVAL, 30),
@@ -94,6 +100,7 @@ class ConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
         errors = {}
         if user_input is not None:
             try:
+                validate_deco_tmp_config(user_input)
                 router = await TPLinkRouterCoordinator.get_client(
                     hass=self.hass,
                     host=user_input[CONF_HOST],
@@ -102,6 +109,7 @@ class ConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
                     logger=_LOGGER,
                     verify_ssl=user_input[CONF_VERIFY_SSL],
                 )
+                configure_deco_tmp_wifi(router, user_input)
 
                 def authorize_and_status():
                     return TPLinkRouterCoordinator.request(router, router.get_status)
@@ -115,6 +123,8 @@ class ConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
                 return await self.async_step_custom()
             except AbortFlow:
                 raise
+            except DecoTmpConfigurationError:
+                errors["base"] = "invalid_deco_tmp_config"
             except Exception as error:
                 _LOGGER.error("TplinkRouter Integration Exception - %s", error)
                 errors["base"] = str(error)
@@ -170,10 +180,12 @@ class OptionsFlow(config_entries.OptionsFlowWithConfigEntry):
 
     async def async_step_init(self, user_input: dict[str, Any] | None = None) -> FlowResult:
         errors = {}
-        data = user_input or self.config_entry.data
+        data = {**self.config_entry.data, **(user_input or {})}
 
         if user_input is not None:
             try:
+                user_input = dict(data)
+                validate_deco_tmp_config(user_input)
                 router = await TPLinkRouterCoordinator.get_client(
                     hass=self.hass,
                     host=user_input[CONF_HOST],
@@ -182,6 +194,7 @@ class OptionsFlow(config_entries.OptionsFlowWithConfigEntry):
                     logger=_LOGGER,
                     verify_ssl=user_input[CONF_VERIFY_SSL],
                 )
+                configure_deco_tmp_wifi(router, user_input)
                 await self.hass.async_add_executor_job(
                     TPLinkRouterCoordinator.request, router, router.get_status
                 )
@@ -190,6 +203,8 @@ class OptionsFlow(config_entries.OptionsFlowWithConfigEntry):
                 return self.async_create_entry(title=user_input[CONF_HOST], data=user_input)
             except AbortFlow:
                 raise
+            except DecoTmpConfigurationError:
+                errors["base"] = "invalid_deco_tmp_config"
             except Exception as error:
                 _LOGGER.error("TplinkRouter Integration Exception - %s", error)
                 errors["base"] = str(error)
@@ -199,6 +214,10 @@ class OptionsFlow(config_entries.OptionsFlowWithConfigEntry):
                 vol.Required(CONF_HOST, default=data.get(CONF_HOST)): cv.string,
                 vol.Required(CONF_USERNAME, default=data.get(CONF_USERNAME, DEFAULT_USER)): cv.string,
                 vol.Required(CONF_PASSWORD, default=data.get(CONF_PASSWORD)): cv.string,
+                vol.Optional(CONF_DECO_TMP_USERNAME, default=data.get(CONF_DECO_TMP_USERNAME, "")): cv.string,
+                vol.Optional(
+                    CONF_DECO_TMP_HOST_KEY_SHA256, default=data.get(CONF_DECO_TMP_HOST_KEY_SHA256, "")
+                ): cv.string,
                 vol.Required(CONF_SCAN_INTERVAL, default=data.get(CONF_SCAN_INTERVAL)): int,
                 vol.Optional(
                     CONF_SCAN_RETRIES,
