@@ -282,8 +282,9 @@ def test_switches_added_when_access_control_supported():
     assert blocked[PHONE].is_on is False
     assert blocked[PHONE].entity_registry_enabled_default is False
     assert blocked[PHONE].unique_id == f"entry-1_{DOMAIN}_blocked_aa:bb:cc:dd:ee:01"
-    assert blocked[PHONE].device_info["connections"] == {("mac", PHONE)}
-    assert blocked[PHONE].device_info["name"] == "phone"
+    assert blocked[PHONE].device_info == dr.DeviceInfo(
+        connections={("mac", PHONE)}, name="phone"
+    )
 
 
 def test_switches_skipped_without_access_control():
@@ -333,7 +334,7 @@ def test_blocked_switch_prefers_library_mac_and_blacklist_name():
     coordinator = _switch_coordinator(blocked=[_blocked(PHONE, "phone")], devices=[])
     entity = TPLinkBlockedDeviceSwitch(coordinator, "aa:bb:cc:dd:ee:01")
     assert entity._mac == PHONE
-    assert entity.device_info["connections"] == {("mac", PHONE)}
+    assert entity.device_info == dr.DeviceInfo(connections={("mac", PHONE)}, name="phone")
 
     asyncio.run(entity.async_turn_on())
     coordinator.block_device.assert_awaited_once_with(PHONE, "phone")
@@ -527,7 +528,9 @@ async def test_blocked_switch_keeps_existing_device_name(hass):
     )
     entity = TPLinkBlockedDeviceSwitch(coordinator, TV)
     entity.hass = hass
-    assert entity.device_info["name"] == "living room tv"
+    assert entity.device_info == dr.DeviceInfo(
+        connections={("mac", TV)}, name="living room tv"
+    )
 
 
 async def test_blocked_switches_restored_for_offline_clients(hass):

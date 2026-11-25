@@ -204,16 +204,19 @@ class TPLinkRouterCoordinator(DataUpdateCoordinator):
         self.access_control: AccessControlStatus | None = access_control
         self.blocked_devices: list[BlockedDevice] | None = blocked_devices
         self._access_control_poll_count = 0
-        self.device_info = DeviceInfo(
-            configuration_url=router.host,
-            connections={(CONNECTION_NETWORK_MAC, self.status.lan_macaddr)},
-            identifiers={(DOMAIN, self.status.lan_macaddr)},
-            manufacturer="TPLink",
-            model=firmware.model,
-            name=DEFAULT_NAME,
-            sw_version=firmware.firmware_version,
-            hw_version=firmware.hardware_version,
-        )
+        # Plain keyword arguments to register the device at setup: reading a
+        # DeviceInfo as a dict is deprecated since it became a dataclass.
+        self.device_info_kwargs: dict[str, Any] = {
+            "configuration_url": router.host,
+            "connections": {(CONNECTION_NETWORK_MAC, self.status.lan_macaddr)},
+            "identifiers": {(DOMAIN, self.status.lan_macaddr)},
+            "manufacturer": "TPLink",
+            "model": firmware.model,
+            "name": DEFAULT_NAME,
+            "sw_version": firmware.firmware_version,
+            "hw_version": firmware.hardware_version,
+        }
+        self.device_info = DeviceInfo(**self.device_info_kwargs)
 
         self.vpn_server_status = vpn_server_status
         self.vpn_client_status = vpn_client_status
