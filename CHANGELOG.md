@@ -1,5 +1,21 @@
 # Changelog
 
+## [UNRELEASED]
+
+### Added
+
+- Added LTE info for Archer MR515 1.0 ([HA #437](https://github.com/AlexandrErohin/home-assistant-tplink-router/issues/437)).
+- Added support for new firmware  for Archer MR600 v5 ([#281](https://github.com/AlexandrErohin/TP-Link-Archer-C6U/pull/281)).
+- Added Archer NX500 v2.0 to the support list
+
+### Fixed
+
+- Build `DeviceInfo` without dict-style access (HA 2026.11 dataclass / deprecation in 2026.12) ([#461](https://github.com/AlexandrErohin/home-assistant-tplink-router/pull/461))
+- Fixes support for Mercusys MR60X v2.0 ([#460](https://github.com/AlexandrErohin/home-assistant-tplink-router/pull/460))
+- Fixes for worker thread ([#459](https://github.com/AlexandrErohin/home-assistant-tplink-router/pull/459))
+- Fix for Deco X50-5G Periodic unavailable entities ([#458](https://github.com/AlexandrErohin/home-assistant-tplink-router/pull/458))
+- **C6U / SG:** when merging `smart_network` / `game_accelerator` onto a client already present in the primary access-device lists, `onlineTime` / `online_time` of `0` sets `Device.active = False` (stale wired rows after disconnect via AP, e.g. Archer AX53). ([HA #449](https://github.com/AlexandrErohin/home-assistant-tplink-router/issues/449)).
+
 ## [2.48.0] - 2026-11-22
 
 ### Fixed
