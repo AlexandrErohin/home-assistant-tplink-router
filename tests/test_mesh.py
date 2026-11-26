@@ -2,6 +2,7 @@ from unittest.mock import Mock
 
 from macaddress import EUI48
 from ipaddress import IPv4Address
+from homeassistant.helpers.device_registry import DeviceInfo
 from tplinkrouterc6u import MeshNode
 
 from custom_components.tplink_router.const import DOMAIN
@@ -66,7 +67,9 @@ def test_mesh_device_info_satellite_links_by_identifier_only():
     """The node tracker owns the device's name, model and parent; sensors only link to it."""
     node = _node(SLAVE_MAC, "Kids", "slave", ip="192.168.71.250")
 
-    assert mesh_device_info(_coordinator([node]), node) == {"identifiers": {(DOMAIN, SLAVE_MAC)}}
+    assert mesh_device_info(_coordinator([node]), node) == DeviceInfo(
+        identifiers={(DOMAIN, SLAVE_MAC)}
+    )
 
 
 def test_update_mesh_sensor_items_tracks_node_and_metric_separately():
