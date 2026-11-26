@@ -1,0 +1,145 @@
+{
+  "config": {
+    "step": {
+      "user": {
+        "description": "Konfiguracja integracji",
+        "data": {
+          "host": "Adres routera (URL)",
+          "username": "Nazwa użytkownika",
+          "password": "Hasło",
+          "scan_interval": "Interwał odświeżania danych (sekundy)",
+          "scan_retries": "Liczba ponowień przy jednej aktualizacji",
+          "scan_backoff": "Odstęp między ponowieniami (sekundy)",
+          "scan_pause": "Minuty do automatycznego wznowienia pobierania danych (0 = bez wznowienia)",
+          "offline_timeout": "Czas, przez który brakujące urządzenie pozostaje „w domu” przed „poza domem” (sekundy; 0 = natychmiast)",
+          "verify_ssl": "Weryfikuj certyfikat SSL (połączenie HTTPS)"
+        }
+      },
+      "custom": {
+        "description": "Dodatkowe funkcje",
+        "data": {
+          "support_vpn": "Obsługa serwera i klienta VPN",
+          "support_tracker": "Śledzenie urządzeń (wyłącz na routerach AP, aby uniknąć duplikatów)",
+          "tracker_as_device": "Urządzenia pod routerem w drzewie (domyślnie wyłączone, klient i tak ma encję powiązaną przez MAC)",
+          "support_dhcp_reservations": "Rezerwacje DHCP (czujnik i usługi dodaj/usuń)",
+          "support_serving_cells": "Czujniki komórek LTE (serving cells)"
+        }
+      }
+    }
+  },
+  "options": {
+    "step": {
+      "init": {
+        "description": "Edycja parametrów routera.",
+        "data": {
+          "host": "Adres routera (URL)",
+          "username": "Nazwa użytkownika",
+          "password": "Hasło",
+          "scan_interval": "Interwał odświeżania danych (sekundy)",
+          "scan_retries": "Liczba ponowień przy jednej aktualizacji",
+          "scan_backoff": "Odstęp między ponowieniami (sekundy)",
+          "scan_pause": "Minuty do automatycznego wznowienia pobierania danych (0 = bez wznowienia)",
+          "offline_timeout": "Czas, przez który brakujące urządzenie pozostaje „w domu” przed „poza domem” (sekundy; 0 = natychmiast)",
+          "verify_ssl": "Weryfikuj certyfikat SSL (połączenie HTTPS)",
+          "support_vpn": "Obsługa serwera i klienta VPN",
+          "support_tracker": "Śledzenie urządzeń (wyłącz na routerach AP, aby uniknąć duplikatów)",
+          "tracker_as_device": "Urządzenia pod routerem w drzewie (domyślnie wyłączone, klient i tak ma encję powiązaną przez MAC)",
+          "support_dhcp_reservations": "Rezerwacje DHCP (czujnik i usługi dodaj/usuń)",
+          "support_serving_cells": "Czujniki komórek LTE (serving cells)"
+        }
+      }
+    }
+  },
+  "services": {
+    "send_sms": {
+      "name": "Wyślij SMS",
+      "description": "Wyślij SMS przez router LTE.",
+      "fields": {
+        "number": {
+          "name": "Numer telefonu",
+          "description": "Numer odbiorcy"
+        },
+        "text": {
+          "name": "Treść",
+          "description": "Tekst wiadomości"
+        },
+        "device": {
+          "name": "Router",
+          "description": "Router TP-Link, z którego wysłano SMS"
+        }
+      }
+    },
+    "add_reservation": {
+      "name": "Dodaj rezerwację DHCP",
+      "description": "Przypisz stały adres IPv4 urządzeniu w routerze.",
+      "fields": {
+        "device": {
+          "name": "Router",
+          "description": "Wybierz router TP-Link"
+        },
+        "mac": {
+          "name": "Adres MAC",
+          "description": "MAC urządzenia (dwukropki, myślniki lub sama hex)"
+        },
+        "ip": {
+          "name": "Adres IP",
+          "description": "Statyczny adres IPv4"
+        },
+        "comment": {
+          "name": "Opis",
+          "description": "Opcjonalna nazwa lub komentarz"
+        },
+        "enable": {
+          "name": "Włączona",
+          "description": "Włącz lub wyłącz tę rezerwację"
+        }
+      }
+    },
+    "delete_reservation": {
+      "name": "Usuń rezerwację DHCP",
+      "description": "Usuń stałą rezerwację IPv4 z routera.",
+      "fields": {
+        "device": {
+          "name": "Router",
+          "description": "Wybierz router TP-Link"
+        },
+        "mac": {
+          "name": "Adres MAC",
+          "description": "MAC rezerwacji do usunięcia"
+        }
+      }
+    },
+    "block_device": {
+      "name": "Zablokuj urządzenie",
+      "description": "Dodaj urządzenie do czarnej listy kontroli dostępu. Nie włącza kontroli dostępu ani nie zmienia jej trybu.",
+      "fields": {
+        "device": {
+          "name": "Router",
+          "description": "Wybierz router TP-Link"
+        },
+        "mac": {
+          "name": "Adres MAC",
+          "description": "MAC urządzenia (dwukropki, myślniki lub sama hex)"
+        },
+        "name": {
+          "name": "Nazwa",
+          "description": "Opcjonalna nazwa wpisu na czarnej liście"
+        }
+      }
+    },
+    "unblock_device": {
+      "name": "Odblokuj urządzenie",
+      "description": "Usuń urządzenie z czarnej listy kontroli dostępu.",
+      "fields": {
+        "device": {
+          "name": "Router",
+          "description": "Wybierz router TP-Link"
+        },
+        "mac": {
+          "name": "Adres MAC",
+          "description": "MAC urządzenia do odblokowania"
+        }
+      }
+    }
+  }
+}
