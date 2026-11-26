@@ -2,6 +2,8 @@ import logging
 from datetime import datetime
 from unittest.mock import Mock, patch
 
+from homeassistant.helpers.device_registry import DeviceInfo
+
 from custom_components.tplink_router.device_tracker import (
     TPLinkMeshTracker,
     TPLinkTracker,
@@ -80,10 +82,10 @@ def test_device_info_always_includes_mac_when_as_device_disabled():
     tracker._last_hostname = "phone"
     tracker.hass = tracker.coordinator.hass
 
-    info = tracker.device_info
-    assert info["connections"] == {(CONNECTION_NETWORK_MAC, "AA:BB:CC:DD:EE:FF")}
-    assert info["name"] == "phone"
-    assert "via_device_id" not in info
+    assert tracker.device_info == DeviceInfo(
+        connections={(CONNECTION_NETWORK_MAC, "AA:BB:CC:DD:EE:FF")},
+        name="phone",
+    )
 
 
 def test_device_info_uses_via_device_id_when_router_is_registered():
@@ -109,11 +111,11 @@ def test_device_info_uses_via_device_id_when_router_is_registered():
             == "router-device-id"
         )
 
-    assert info is not None
-    assert info["connections"] == {(CONNECTION_NETWORK_MAC, "AA:BB:CC:DD:EE:FF")}
-    assert info["name"] == "phone"
-    assert info["via_device_id"] == "router-device-id"
-    assert "via_device" not in info
+    assert info == DeviceInfo(
+        connections={(CONNECTION_NETWORK_MAC, "AA:BB:CC:DD:EE:FF")},
+        name="phone",
+        via_device_id="router-device-id",
+    )
 
 
 def test_device_info_omits_via_when_parent_not_registered():
@@ -131,9 +133,7 @@ def test_device_info_omits_via_when_parent_not_registered():
     ):
         info = tracker.device_info
 
-    assert info is not None
-    assert "via_device_id" not in info
-    assert "via_device" not in info
+    assert info == DeviceInfo(connections={("mac", "AA:BB:CC:DD:EE:FF")}, name="phone")
 
 
 def test_device_info_uses_existing_registry_name_when_hostname_unknown():
@@ -152,7 +152,7 @@ def test_device_info_uses_existing_registry_name_when_hostname_unknown():
     ):
         info = tracker.device_info
 
-    assert info["name"] == "Oklyn"
+    assert info == DeviceInfo(connections={("mac", "AA:BB:CC:DD:EE:FF")}, name="Oklyn")
     registry.async_get_devices.assert_called_once_with(
         connections={("mac", "AA:BB:CC:DD:EE:FF")},
         config_entry_id="entry-1",
@@ -171,7 +171,9 @@ def test_device_info_falls_back_to_mac_for_new_device_without_hostname():
     ):
         info = tracker.device_info
 
-    assert info["name"] == "AA:BB:CC:DD:EE:FF"
+    assert info == DeviceInfo(
+        connections={("mac", "AA:BB:CC:DD:EE:FF")}, name="AA:BB:CC:DD:EE:FF"
+    )
 
 
 def test_maybe_rename_device_updates_registry_when_hostname_changes():
@@ -589,13 +591,14 @@ def test_mesh_tracker_satellite_gets_its_own_device_linked_to_its_parent():
     ):
         info = tracker.device_info
 
-    assert info["identifiers"] == {("tplink_router", "24-00-00-00-00-02")}
-    assert info["connections"] == {("mac", "24-00-00-00-00-02")}
-    assert info["name"] == "Satellite AX55"
-    assert info["model"] == "Archer AX55"
-    assert info["manufacturer"] == "TP-Link"
-    assert info["via_device_id"] == "parent-device-id"
-    assert "via_device" not in info
+    assert info == DeviceInfo(
+        identifiers={("tplink_router", "24-00-00-00-00-02")},
+        connections={("mac", "24-00-00-00-00-02")},
+        name="Satellite AX55",
+        model="Archer AX55",
+        manufacturer="TP-Link",
+        via_device_id="parent-device-id",
+    )
 
 
 def test_mesh_tracker_multi_hop_parent_is_the_uplink_node_not_the_router():
@@ -614,7 +617,13 @@ def test_mesh_tracker_multi_hop_parent_is_the_uplink_node_not_the_router():
     ):
         info = tracker.device_info
 
-    assert info["via_device_id"] == "uplink-sat-id"
+    assert info == DeviceInfo(
+        identifiers={("tplink_router", "24-00-00-00-00-03")},
+        connections={("mac", "24-00-00-00-00-03")},
+        name="Satellite RE330",
+        manufacturer="TP-Link",
+        via_device_id="uplink-sat-id",
+    )
     registry.async_get_device_by_identifier.assert_any_call(
         ("tplink_router", "24-00-00-00-00-02"), "entry-1"
     )
@@ -638,9 +647,14 @@ def test_mesh_tracker_device_survives_the_node_dropping_out():
     ):
         info = tracker.device_info
 
-    assert info["name"] == "Satellite AX55"
-    assert info["model"] == "Archer AX55"
-    assert info["via_device_id"] == "parent-device-id"
+    assert info == DeviceInfo(
+        identifiers={("tplink_router", "24-00-00-00-00-02")},
+        connections={("mac", "24-00-00-00-00-02")},
+        name="Satellite AX55",
+        model="Archer AX55",
+        manufacturer="TP-Link",
+        via_device_id="parent-device-id",
+    )
     assert tracker.is_connected is False
 
 

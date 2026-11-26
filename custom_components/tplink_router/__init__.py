@@ -312,15 +312,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     # Register the router device before platforms so client/mesh via_device_id
     # lookups can resolve the parent (via_device tuples are deprecated).
     device_registry.async_get(hass).async_get_or_create(
-        config_entry_id=entry.entry_id,
-        identifiers=coordinator.device_info["identifiers"],
-        connections=coordinator.device_info.get("connections"),
-        manufacturer=coordinator.device_info.get("manufacturer"),
-        model=coordinator.device_info.get("model"),
-        name=coordinator.device_info.get("name"),
-        sw_version=coordinator.device_info.get("sw_version"),
-        hw_version=coordinator.device_info.get("hw_version"),
-        configuration_url=coordinator.device_info.get("configuration_url"),
+        config_entry_id=entry.entry_id, **coordinator.device_info_kwargs
     )
 
     platforms = list(PLATFORMS)

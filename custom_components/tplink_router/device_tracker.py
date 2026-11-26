@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from datetime import datetime, timedelta
-from typing import TypeAlias
+from typing import Any, TypeAlias
 from homeassistant.components.device_tracker import ScannerEntity
 from homeassistant.components.device_tracker.const import SourceType
 from homeassistant.config_entries import ConfigEntry
@@ -306,23 +306,24 @@ class TPLinkMeshTracker(CoordinatorEntity, RestoreEntity, ScannerEntity):
         if self._is_main_router:
             return self.coordinator.device_info
 
-        info = DeviceInfo(
+        optional: dict[str, Any] = {}
+        if self._model:
+            optional["model"] = self._model
+        if self._vendor:
+            optional["manufacturer"] = self._vendor
+        via_id = resolve_via_device_id(
+            self.hass, self.coordinator.unique_id, self._parent_macaddr
+        )
+        if via_id:
+            optional["via_device_id"] = via_id
+        return DeviceInfo(
             identifiers={(DOMAIN, self._mac)},
             # Match coordinator / client trackers: use the library MAC string as-is
             # (EUI48 hyphen form), not format_mac().
             connections={(CONNECTION_NETWORK_MAC, self._mac)},
             name=self._name,
+            **optional,
         )
-        if self._model:
-            info["model"] = self._model
-        if self._vendor:
-            info["manufacturer"] = self._vendor
-        via_id = resolve_via_device_id(
-            self.hass, self.coordinator.unique_id, self._parent_macaddr
-        )
-        if via_id:
-            info["via_device_id"] = via_id
-        return info
 
     @property
     def is_connected(self) -> bool:
@@ -525,11 +526,9 @@ class TPLinkTracker(CoordinatorEntity, RestoreEntity, ScannerEntity):
         2027.11. CONF_TRACKER_AS_DEVICE only nests the client under the router
         via via_device_id.
         """
-        info = DeviceInfo(
-            connections={(CONNECTION_NETWORK_MAC, self._mac)},
-        )
+        optional: dict[str, Any] = {}
         if (name := self._device_name_for_info()) is not None:
-            info["name"] = name
+            optional["name"] = name
         if self._as_device:
             via_id = resolve_via_device_id(
                 self.hass,
@@ -537,8 +536,8 @@ class TPLinkTracker(CoordinatorEntity, RestoreEntity, ScannerEntity):
                 self.coordinator.status.lan_macaddr,
             )
             if via_id:
-                info["via_device_id"] = via_id
-        return info
+                optional["via_device_id"] = via_id
+        return DeviceInfo(connections={(CONNECTION_NETWORK_MAC, self._mac)}, **optional)
 
     @property
     def icon(self) -> str:
