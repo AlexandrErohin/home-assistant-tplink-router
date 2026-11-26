@@ -8,7 +8,7 @@ from homeassistant.exceptions import ConfigEntryNotReady
 import requests
 from tplinkrouterc6u import AuthorizeError, ClientException, TPLinkSG108EClient
 
-from custom_components.tplink_router import async_setup_entry
+from custom_components.tplink_router import async_setup_entry, async_unload_entry
 from custom_components.tplink_router.const import DOMAIN
 from custom_components.tplink_router.coordinator import TPLinkRouterCoordinator
 
@@ -211,3 +211,27 @@ def test_async_setup_entry_skips_led_without_set_led():
     client.led_status.assert_not_called()
     coordinator = hass.data[DOMAIN][entry.entry_id]
     assert coordinator.led_status is None
+
+
+def test_async_unload_entry_stops_coordinator_before_platforms():
+    call_order: list[str] = []
+
+    async def _stop():
+        call_order.append("stop")
+
+    async def _unload_platforms(*_args, **_kwargs):
+        call_order.append("unload_platforms")
+        return True
+
+    coordinator = Mock()
+    coordinator.async_stop = AsyncMock(side_effect=_stop)
+    hass = FakeHass()
+    hass.data = {DOMAIN: {"entry-1": coordinator}}
+    hass.config_entries.async_unload_platforms = AsyncMock(side_effect=_unload_platforms)
+    hass.services = Mock()
+    hass.services.has_service.return_value = False
+    entry = _entry()
+
+    assert asyncio.run(async_unload_entry(hass, entry)) is True
+    assert call_order == ["stop", "unload_platforms"]
+    assert "entry-1" not in hass.data[DOMAIN]

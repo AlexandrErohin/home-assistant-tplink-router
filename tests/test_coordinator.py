@@ -1,7 +1,7 @@
 import asyncio
 import logging
 from datetime import datetime, timedelta
-from unittest.mock import Mock, patch
+from unittest.mock import AsyncMock, Mock, patch
 
 import pytest
 from tplinkrouterc6u import TPLinkSG108EClient
@@ -87,6 +87,7 @@ def _bare_coordinator(**overrides):
     coord.scan_pause_minutes = DEFAULT_SCAN_PAUSE
     coord._lock = asyncio.Lock()
     coord.scan_stopped_at = None
+    coord._shutting_down = False
     coord.status = Mock()
     coord.lte_status = None
     coord.serving_cells = None
@@ -178,6 +179,23 @@ def test_scan_pause_expires_and_resumes_fetching():
         asyncio.run(coord._async_update_data())
     assert router.authorize.call_count == 1
     assert coord.scan_stopped_at is None
+
+
+def test_async_stop_skips_further_polls():
+    coord, router = _bare_coordinator()
+    coord.async_shutdown = AsyncMock()
+    asyncio.run(coord.async_stop())
+    assert coord._shutting_down is True
+    coord.async_shutdown.assert_awaited_once()
+    assert asyncio.run(coord._async_update_data()) is None
+    assert router.authorize.call_count == 0
+
+
+def test_async_update_skips_when_hass_is_stopping():
+    coord, router = _bare_coordinator()
+    coord.hass.is_stopping = True
+    assert asyncio.run(coord._async_update_data()) is None
+    assert router.authorize.call_count == 0
 
 
 def test_collect_status_reads_reservations():

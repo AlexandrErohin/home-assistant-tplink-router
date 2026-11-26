@@ -549,6 +549,7 @@ async def test_blocked_switches_restored_for_offline_clients(hass):
 
 def test_unload_removes_block_services():
     coordinator = Mock()
+    coordinator.async_stop = AsyncMock()
     hass = Mock()
     hass.data = {DOMAIN: {"entry-1": coordinator}}
     hass.config_entries.async_unload_platforms = AsyncMock(return_value=True)
@@ -557,6 +558,7 @@ def test_unload_removes_block_services():
     entry.entry_id = "entry-1"
     entry.data = {}
     assert asyncio.run(async_unload_entry(hass, entry)) is True
+    coordinator.async_stop.assert_awaited_once()
     removed = [call.args[1] for call in hass.services.async_remove.call_args_list]
     assert "block_device" in removed
     assert "unblock_device" in removed

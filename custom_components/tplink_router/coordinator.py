@@ -225,6 +225,9 @@ class TPLinkRouterCoordinator(DataUpdateCoordinator):
         self._sms_hashes: set[str] = set()
         self.new_sms: list[SMS] = []
         self._lock = asyncio.Lock()
+        # Set by async_stop() on unload/reload so in-flight polls skip new
+        # authorize/request cycles and retries instead of blocking shutdown.
+        self._shutting_down = False
 
         super().__init__(
             hass,
@@ -232,6 +235,14 @@ class TPLinkRouterCoordinator(DataUpdateCoordinator):
             name=DOMAIN,
             update_interval=timedelta(seconds=update_interval),
         )
+
+    def _should_stop_polling(self) -> bool:
+        return self._shutting_down or bool(getattr(self.hass, "is_stopping", False))
+
+    async def async_stop(self) -> None:
+        """Stop scheduled polls and skip further router requests (unload/reload)."""
+        self._shutting_down = True
+        await self.async_shutdown()
 
     @staticmethod
     async def get_client(hass: HomeAssistant, host: str, password: str, username: str, logger: Logger,
@@ -391,10 +402,14 @@ class TPLinkRouterCoordinator(DataUpdateCoordinator):
             )
 
         for attempt in range(retries):
+            if self._should_stop_polling():
+                return
             try:
                 # Hold the router lock only for the authorize/request/logout cycle,
                 # not for inter-attempt backoff, so switch/reboot/SMS can proceed.
                 async with self._lock:
+                    if self._should_stop_polling():
+                        return
                     if self.scan_stopped_at is not None:
                         # scan_pause_minutes == 0 keeps fetching paused until turned
                         # back on manually (no automatic re-enable).
@@ -438,6 +453,8 @@ class TPLinkRouterCoordinator(DataUpdateCoordinator):
                     error,
                 )
                 if attempt < retries - 1:
+                    if self._should_stop_polling():
+                        return
                     await asyncio.sleep(self.backoff_seconds * (attempt + 1))
 
         if last_error is not None:

@@ -336,13 +336,19 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
 
 
 async def async_unload_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
+    # Stop polling before platforms unload so we do not start a new
+    # authorize/request cycle (or retry) while HA is shutting down/reloading.
+    coordinator = hass.data.get(DOMAIN, {}).get(entry.entry_id)
+    if coordinator is not None:
+        await coordinator.async_stop()
+
     platforms = list(PLATFORMS)
     if not entry.data.get(CONF_SUPPORT_TRACKER, True):
         platforms.remove(Platform.DEVICE_TRACKER)
     unload_ok = await hass.config_entries.async_unload_platforms(entry, platforms)
 
     if unload_ok:
-        hass.data[DOMAIN].pop(entry.entry_id)
+        hass.data[DOMAIN].pop(entry.entry_id, None)
         if not hass.data[DOMAIN]:
             for svc in SERVICES:
                 if hass.services.has_service(DOMAIN, svc):
