@@ -333,7 +333,7 @@ LTE_SENSOR_TYPES = (
             name="LTE RSRQ",
             icon="mdi:sim-outline",
             state_class=SensorStateClass.MEASUREMENT,
-            native_unit_of_measurement=SIGNAL_STRENGTH_DECIBELS_MILLIWATT,
+            native_unit_of_measurement="dB",
         ),
     ),
     TPLinkRouterLTESensorConfig(
@@ -343,7 +343,7 @@ LTE_SENSOR_TYPES = (
             name="LTE SNR",
             icon="mdi:sim-outline",
             state_class=SensorStateClass.MEASUREMENT,
-            native_unit_of_measurement=SIGNAL_STRENGTH_DECIBELS_MILLIWATT,
+            native_unit_of_measurement="dB",
         ),
     ),
     TPLinkRouterLTESensorConfig(
