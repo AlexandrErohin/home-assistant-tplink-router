@@ -19,8 +19,8 @@
         "description": "Dodatkowe funkcje",
         "data": {
           "support_vpn": "Obsługa serwera i klienta VPN",
-          "support_tracker": "Śledzenie urządzeń (wyłącz na routerach AP, aby uniknąć duplikatów)",
-          "tracker_as_device": "Urządzenia pod routerem w drzewie (domyślnie wyłączone, klient i tak ma encję powiązaną przez MAC)",
+          "support_tracker": "Śledzenie urządzeń (wyłącz na routerach, które nie są punktami dostępowymi, aby uniknąć duplikatów)",
+          "tracker_as_device": "Umieść każdego śledzonego klienta pod urządzeniem routera (domyślnie wyłączone; klienci i tak otrzymują urządzenie powiązane przez MAC)",
           "support_dhcp_reservations": "Rezerwacje DHCP (czujnik i usługi dodaj/usuń)",
           "support_serving_cells": "Czujniki komórek LTE (serving cells)"
         }
@@ -42,8 +42,8 @@
           "offline_timeout": "Czas, przez który brakujące urządzenie pozostaje „w domu” przed „poza domem” (sekundy; 0 = natychmiast)",
           "verify_ssl": "Weryfikuj certyfikat SSL (połączenie HTTPS)",
           "support_vpn": "Obsługa serwera i klienta VPN",
-          "support_tracker": "Śledzenie urządzeń (wyłącz na routerach AP, aby uniknąć duplikatów)",
-          "tracker_as_device": "Urządzenia pod routerem w drzewie (domyślnie wyłączone, klient i tak ma encję powiązaną przez MAC)",
+          "support_tracker": "Śledzenie urządzeń (wyłącz na routerach, które nie są punktami dostępowymi, aby uniknąć duplikatów)",
+          "tracker_as_device": "Umieść każdego śledzonego klienta pod urządzeniem routera (domyślnie wyłączone; klienci i tak otrzymują urządzenie powiązane przez MAC)",
           "support_dhcp_reservations": "Rezerwacje DHCP (czujnik i usługi dodaj/usuń)",
           "support_serving_cells": "Czujniki komórek LTE (serving cells)"
         }
@@ -65,7 +65,7 @@
         },
         "device": {
           "name": "Router",
-          "description": "Router TP-Link, z którego wysłano SMS"
+          "description": "Wybierz router TP-Link do wysyłania SMS"
         }
       }
     },

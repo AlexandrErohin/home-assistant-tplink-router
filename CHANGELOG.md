@@ -1,15 +1,17 @@
 # Changelog
 
-## [UNRELEASED]
+## [2.49.0] - 2026-11-26
 
 ### Added
 
+- Polish (`pl`) UI translations for config flow, options, and services ([#462](https://github.com/AlexandrErohin/home-assistant-tplink-router/pull/462))
 - Added LTE info for Archer MR515 1.0 ([HA #437](https://github.com/AlexandrErohin/home-assistant-tplink-router/issues/437)).
 - Added support for new firmware  for Archer MR600 v5 ([#281](https://github.com/AlexandrErohin/TP-Link-Archer-C6U/pull/281)).
 - Added Archer NX500 v2.0 to the support list
 
 ### Fixed
 
+- LTE RSRQ and SNR units are dB (not dBm); same for serving-cell RSRQ ([#464](https://github.com/AlexandrErohin/home-assistant-tplink-router/pull/464))
 - Build `DeviceInfo` without dict-style access (HA 2026.11 dataclass / deprecation in 2026.12) ([#461](https://github.com/AlexandrErohin/home-assistant-tplink-router/pull/461))
 - Fixes support for Mercusys MR60X v2.0 ([#460](https://github.com/AlexandrErohin/home-assistant-tplink-router/pull/460))
 - Fixes for worker thread ([#459](https://github.com/AlexandrErohin/home-assistant-tplink-router/pull/459))
