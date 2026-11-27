@@ -19,6 +19,7 @@ from .const import (
     CONF_CLIENT_CLASS,
     CONF_SUPPORT_VPN,
     CONF_SUPPORT_TRACKER,
+    CONF_SUPPORT_MESH_CLIENTS,
     CONF_SUPPORT_DHCP_RESERVATIONS,
     CONF_SUPPORT_SERVING_CELLS,
     CONF_SCAN_RETRIES,
@@ -102,6 +103,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
         host = "http://{}".format(host)
     verify_ssl = entry.data[CONF_VERIFY_SSL] if CONF_VERIFY_SSL in entry.data else False
     support_vpn = entry.data.get(CONF_SUPPORT_VPN, True)
+    support_mesh_clients = entry.data.get(CONF_SUPPORT_MESH_CLIENTS, False)
     support_dhcp_reservations = entry.data.get(CONF_SUPPORT_DHCP_RESERVATIONS, True)
     support_serving_cells = entry.data.get(CONF_SUPPORT_SERVING_CELLS, True)
 
@@ -216,6 +218,13 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
             # Probe EasyMesh once so node trackers exist before the first poll.
             # None = unsupported (stop asking); a list (even empty) keeps polling.
             mesh_nodes = collect_mesh_nodes(client, _LOGGER)
+            mesh_ap_list = None
+            if support_mesh_clients and hasattr(client, "get_mesh_clients"):
+                try:
+                    mesh_ap_list = client.get_mesh_clients()
+                except Exception as err:
+                    mesh_ap_list = None
+
             led_status = None
             if supports_led_control(client):
                 try:
@@ -253,6 +262,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
                 sms_list,
                 reservations,
                 mesh_nodes,
+                mesh_ap_list,
                 led_status,
                 access_control,
                 blocked_devices,
@@ -269,6 +279,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
             sms_list,
             reservations,
             mesh_nodes,
+            mesh_ap_list,
             led_status,
             access_control,
             blocked_devices,
@@ -299,6 +310,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
                                           reservations=reservations,
                                           support_dhcp_reservations=support_dhcp_reservations,
                                           mesh_nodes=mesh_nodes,
+                                          mesh_ap_list=mesh_ap_list,
                                           led_status=led_status,
                                           access_control=access_control,
                                           blocked_devices=blocked_devices)

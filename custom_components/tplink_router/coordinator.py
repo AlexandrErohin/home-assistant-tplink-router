@@ -25,7 +25,7 @@ from tplinkrouterc6u import (
 )
 
 try:
-    from tplinkrouterc6u import MeshNode
+    from tplinkrouterc6u import MeshNode, MeshClient, MeshApClient
 except ImportError:  # pragma: no cover - older tplinkrouterc6u without mesh
     MeshNode = Any  # type: ignore[misc, assignment]
 try:
@@ -98,13 +98,14 @@ def collect_status(
         reservations: list[IPv4Reservation] | None,
         logger: Logger,
         mesh_nodes: list[MeshNode] | None = None,
+        mesh_ap_list: list[MeshApClient] | None = None,
         led_status: bool | None = None,
         access_control: AccessControlStatus | None = None,
         blocked_devices: list[BlockedDevice] | None = None,
         poll_access_control_status: bool = True,
 ) -> tuple[Status, LTEStatus | None, list[ServingCell] | None, VPNStatus | None,
            VpnClientStatus | None, list[PortStatus | RouterPortStatus] | None, list[SMS] | None,
-           list[IPv4Reservation] | None, list[MeshNode] | None, bool | None,
+           list[IPv4Reservation] | None, list[MeshNode] | None, list[MeshApClient] | None, bool | None,
            AccessControlStatus | None, list[BlockedDevice] | None]:
     """Gather all status data from the router; a failing SMS fetch must not break the update."""
     status = router.get_status()
@@ -121,6 +122,17 @@ def collect_status(
         port_status = router.get_port_status()
     if mesh_nodes is not None:
         mesh_nodes = collect_mesh_nodes(router, logger)
+        if mesh_ap_list is not None:
+            mesh_ap_list = router.get_mesh_clients()
+            devices_by_mac = {device.macaddr: device for device in status.devices}
+            for ap in mesh_ap_list:
+                for client in ap.clients:
+                    mesh_client_device = devices_by_mac.get(client.macaddr)
+                    if not mesh_client_device:
+                        continue
+                    mesh_client_device.ap_name = ap.name
+                    if client.signal is not None:
+                        mesh_client_device.signal = client.signal
     if hasattr(router, "get_sms") and lte_status is not None:
         sms_list = safe_call(router.get_sms, logger, "fetch SMS")
     if reservations is not None:
@@ -151,6 +163,7 @@ def collect_status(
         sms_list,
         reservations,
         mesh_nodes,
+        mesh_ap_list,
         led_status,
         access_control,
         blocked_devices,
@@ -179,6 +192,7 @@ class TPLinkRouterCoordinator(DataUpdateCoordinator):
             reservations: list[IPv4Reservation] | None = None,
             support_dhcp_reservations: bool = True,
             mesh_nodes: list[MeshNode] | None = None,
+            mesh_ap_list: list[MeshApClient] | None = None,
             led_status: bool | None = None,
             access_control: AccessControlStatus | None = None,
             blocked_devices: list[BlockedDevice] | None = None,
@@ -199,6 +213,7 @@ class TPLinkRouterCoordinator(DataUpdateCoordinator):
         # list (incl. []) means "ask each poll"; None means the client cannot provide
         # a node list. Setup probes once so entities exist before the first interval.
         self.mesh_nodes: list[MeshNode] | None = mesh_nodes
+        self.mesh_ap_list: list[MeshApClient] | None = mesh_ap_list
         self.led_status: bool | None = led_status
         # None means the client has no Access Control support (no entities, no polling).
         self.access_control: AccessControlStatus | None = access_control
@@ -397,6 +412,7 @@ class TPLinkRouterCoordinator(DataUpdateCoordinator):
                     self.reservations,
                     self.logger,
                     self.mesh_nodes,
+                    self.mesh_ap_list,
                     self.led_status,
                     self.access_control,
                     self.blocked_devices,
@@ -436,6 +452,7 @@ class TPLinkRouterCoordinator(DataUpdateCoordinator):
                         sms_list,
                         self.reservations,
                         self.mesh_nodes,
+                        self.mesh_ap_list,
                         self.led_status,
                         self.access_control,
                         self.blocked_devices,

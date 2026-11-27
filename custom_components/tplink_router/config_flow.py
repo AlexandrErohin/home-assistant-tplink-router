@@ -7,7 +7,7 @@ import homeassistant.helpers.config_validation as cv
 from homeassistant.data_entry_flow import AbortFlow, FlowResult
 from .const import (
     DOMAIN, DEFAULT_USER, DEFAULT_HOST, CONF_CLIENT_CLASS,
-    CONF_SUPPORT_VPN, CONF_SUPPORT_TRACKER, CONF_TRACKER_AS_DEVICE,
+    CONF_SUPPORT_VPN, CONF_SUPPORT_TRACKER, CONF_TRACKER_AS_DEVICE, CONF_SUPPORT_MESH_CLIENTS,
     CONF_SUPPORT_DHCP_RESERVATIONS, CONF_SUPPORT_SERVING_CELLS,
     CONF_SCAN_RETRIES, CONF_SCAN_BACKOFF,
     CONF_SCAN_PAUSE, CONF_OFFLINE_TIMEOUT, DEFAULT_SCAN_RETRIES, DEFAULT_SCAN_BACKOFF,
@@ -148,6 +148,10 @@ class ConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
                         default=self.data_initial.get(CONF_TRACKER_AS_DEVICE, False),
                     ): cv.boolean,
                     vol.Required(
+                        CONF_SUPPORT_MESH_CLIENTS,
+                        default=self.data_initial.get(CONF_SUPPORT_MESH_CLIENTS, False),
+                    ): cv.boolean,
+                    vol.Required(
                         CONF_SUPPORT_DHCP_RESERVATIONS,
                         default=self.data_initial.get(CONF_SUPPORT_DHCP_RESERVATIONS, True),
                     ): cv.boolean,
@@ -221,6 +225,10 @@ class OptionsFlow(config_entries.OptionsFlowWithConfigEntry):
                 vol.Required(CONF_SUPPORT_TRACKER, default=data.get(CONF_SUPPORT_TRACKER, True)): cv.boolean,
                 vol.Required(
                     CONF_TRACKER_AS_DEVICE, default=data.get(CONF_TRACKER_AS_DEVICE, False)
+                ): cv.boolean,
+                vol.Required(
+                    CONF_SUPPORT_MESH_CLIENTS,
+                    default=self.data_initial.get(CONF_SUPPORT_MESH_CLIENTS, False),
                 ): cv.boolean,
                 vol.Required(
                     CONF_SUPPORT_DHCP_RESERVATIONS,
