@@ -13,6 +13,7 @@ from tplinkrouterc6u import (
     AbstractRouter,
     Firmware,
     Status,
+    RepeaterStatus,
     Connection,
     LTEStatus,
     SMS,
@@ -88,6 +89,14 @@ def collect_mesh_nodes(router: AbstractRouter, logger: Logger) -> list[MeshNode]
         return []
 
 
+def collect_repeater_status(router: AbstractRouter, logger: Logger) -> RepeaterStatus | None:
+    """Read backhaul data for clients that provide the extender API."""
+    getter = getattr(router, "get_repeater_status", None)
+    if getter is None:
+        return None
+    return safe_call(getter, logger, "fetch repeater backhaul", level=logging.DEBUG)
+
+
 def collect_status(
         router: AbstractRouter,
         lte_status: LTEStatus | None,
@@ -105,7 +114,7 @@ def collect_status(
 ) -> tuple[Status, LTEStatus | None, list[ServingCell] | None, VPNStatus | None,
            VpnClientStatus | None, list[PortStatus | RouterPortStatus] | None, list[SMS] | None,
            list[IPv4Reservation] | None, list[MeshNode] | None, bool | None,
-           AccessControlStatus | None, list[BlockedDevice] | None]:
+           AccessControlStatus | None, list[BlockedDevice] | None, RepeaterStatus | None]:
     """Gather all status data from the router; a failing SMS fetch must not break the update."""
     status = router.get_status()
     sms_list = None
@@ -154,6 +163,7 @@ def collect_status(
         led_status,
         access_control,
         blocked_devices,
+        collect_repeater_status(router, logger),
     )
 
 
@@ -182,6 +192,7 @@ class TPLinkRouterCoordinator(DataUpdateCoordinator):
             led_status: bool | None = None,
             access_control: AccessControlStatus | None = None,
             blocked_devices: list[BlockedDevice] | None = None,
+            repeater_status: RepeaterStatus | None = None,
     ) -> None:
         self.router = router
         # ConfigEntry.entry_id (not the flow unique_id / LAN MAC). Used in entity
@@ -199,6 +210,7 @@ class TPLinkRouterCoordinator(DataUpdateCoordinator):
         # list (incl. []) means "ask each poll"; None means the client cannot provide
         # a node list. Setup probes once so entities exist before the first interval.
         self.mesh_nodes: list[MeshNode] | None = mesh_nodes
+        self.repeater_status = repeater_status
         self.led_status: bool | None = led_status
         # None means the client has no Access Control support (no entities, no polling).
         self.access_control: AccessControlStatus | None = access_control
@@ -439,6 +451,7 @@ class TPLinkRouterCoordinator(DataUpdateCoordinator):
                         self.led_status,
                         self.access_control,
                         self.blocked_devices,
+                        self.repeater_status,
                     ) = await self.hass.async_add_executor_job(update_once)
 
                 if sms_list is not None:

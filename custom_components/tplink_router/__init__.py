@@ -34,6 +34,7 @@ import logging
 from .coordinator import (
     TPLinkRouterCoordinator,
     collect_mesh_nodes,
+    collect_repeater_status,
     supports_access_control,
     supports_led_control,
 )
@@ -256,6 +257,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
                 led_status,
                 access_control,
                 blocked_devices,
+                collect_repeater_status(client, _LOGGER),
             )
 
         (
@@ -272,6 +274,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
             led_status,
             access_control,
             blocked_devices,
+            repeater_status,
         ) = await hass.async_add_executor_job(
             TPLinkRouterCoordinator.request, client, callback
         )
@@ -301,7 +304,8 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
                                           mesh_nodes=mesh_nodes,
                                           led_status=led_status,
                                           access_control=access_control,
-                                          blocked_devices=blocked_devices)
+                                          blocked_devices=blocked_devices,
+                                          repeater_status=repeater_status)
 
     if sms_list is not None:
         coordinator._process_sms_list(sms_list)

@@ -1,6 +1,7 @@
 from dataclasses import dataclass
 from collections.abc import Callable
 from functools import partial
+from operator import attrgetter
 from typing import Any
 from homeassistant.components.sensor import (
     SensorDeviceClass,
@@ -26,7 +27,7 @@ from homeassistant.helpers.update_coordinator import CoordinatorEntity
 from .coordinator import TPLinkRouterCoordinator
 from .port import find_port_status, update_port_items
 from .mesh import find_mesh_node, mesh_device_info, update_mesh_sensor_items
-from tplinkrouterc6u import Status, LTEStatus, VPNStatus, ServingCell
+from tplinkrouterc6u import Status, LTEStatus, VPNStatus, ServingCell, RepeaterStatus
 try:
     from tplinkrouterc6u import MeshNode
 except ImportError:  # pragma: no cover - older tplinkrouterc6u without mesh
@@ -673,6 +674,58 @@ MESH_NODE_SENSOR_TYPES = (
 )
 
 
+REPEATER_SENSOR_TYPES = (
+    *(
+        TPLinkRouterSensorConfigBase[RepeaterStatus](
+            sensor_type="repeater_status",
+            value=attrgetter(f"{direction}_rate_{band}"),
+            description=SensorEntityDescription(
+                key=f"backhaul_{band}_{direction}_rate",
+                name=f"Backhaul {label} {direction.upper()} link rate",
+                device_class=SensorDeviceClass.DATA_RATE,
+                native_unit_of_measurement=UnitOfDataRate.MEGABITS_PER_SECOND,
+                state_class=SensorStateClass.MEASUREMENT,
+                entity_category=EntityCategory.DIAGNOSTIC,
+            ),
+        )
+        for band, label in (("2g", "2.4 GHz"), ("5g", "5 GHz"))
+        for direction in ("rx", "tx")
+    ),
+    *(
+        TPLinkRouterSensorConfigBase[RepeaterStatus](
+            sensor_type="repeater_status",
+            value=attrgetter(f"rssi_{band}"),
+            description=SensorEntityDescription(
+                key=f"repeater_{band}_rssi",
+                name=f"Repeater {label} backhaul RSSI",
+                device_class=SensorDeviceClass.SIGNAL_STRENGTH,
+                native_unit_of_measurement=SIGNAL_STRENGTH_DECIBELS_MILLIWATT,
+                state_class=SensorStateClass.MEASUREMENT,
+                entity_category=EntityCategory.DIAGNOSTIC,
+            ),
+        )
+        for band, label in (("2g", "2.4 GHz"), ("5g", "5 GHz"))
+    ),
+)
+
+
+@callback
+def _update_repeater_sensors(
+    coordinator: TPLinkRouterCoordinator, async_add_entities: AddEntitiesCallback, tracked: set[str]
+) -> None:
+    status = coordinator.repeater_status
+    if status is None:
+        return
+    new_entities = []
+    for config in REPEATER_SENSOR_TYPES:
+        key = config.description.key
+        if key not in tracked and config.value(status) is not None:
+            tracked.add(key)
+            new_entities.append(TPLinkRouterRepeaterSensor(coordinator, config))
+    if new_entities:
+        async_add_entities(new_entities)
+
+
 def _status_sensor_types(status) -> tuple[TPLinkRouterSensorConfig, ...]:
     """Return status sensors whose value is reported (not None) for this device."""
     return tuple(sensor for sensor in SENSOR_TYPES if sensor.value(status) is not None)
@@ -707,6 +760,7 @@ async def async_setup_entry(
 
     tracked: set[int] = set()
     tracked_mesh: set[tuple[str, str]] = set()
+    tracked_repeater: set[str] = set()
     # Mesh backhaul sensors attach to the node devices that the tracker platform
     # owns; skip them when trackers are disabled to avoid sparse orphan devices.
     support_mesh_sensors = entry.data.get(CONF_SUPPORT_TRACKER, True)
@@ -719,6 +773,7 @@ async def async_setup_entry(
             tracked,
             TPLinkRouterPortLinkSpeedSensor,
         )
+        _update_repeater_sensors(coordinator, async_add_entities, tracked_repeater)
         if support_mesh_sensors:
             for config in MESH_NODE_SENSOR_TYPES:
                 update_mesh_sensor_items(
@@ -759,6 +814,17 @@ class TPLinkRouterSensor(CoordinatorEntity[TPLinkRouterCoordinator], SensorEntit
     def available(self) -> bool:
         """Return True if entity is available."""
         return self.native_value is not None
+
+
+class TPLinkRouterRepeaterSensor(TPLinkRouterSensor):
+    @property
+    def native_value(self):
+        status = self.coordinator.repeater_status
+        return self.sensor.value(status) if status is not None else None
+
+    @property
+    def available(self) -> bool:
+        return self.coordinator.last_update_success and super().available
 
 
 class TPLinkRouterPortLinkSpeedSensor(CoordinatorEntity[TPLinkRouterCoordinator], SensorEntity):
