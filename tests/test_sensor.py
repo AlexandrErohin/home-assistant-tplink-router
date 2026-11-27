@@ -1,8 +1,12 @@
 from types import SimpleNamespace
 
-from tplinkrouterc6u import PortStatus, RouterPortStatus
+from tplinkrouterc6u import PortStatus, RepeaterStatus, RouterPortStatus
 
-from custom_components.tplink_router.sensor import TPLinkRouterPortLinkSpeedSensor, _status_sensor_types
+from custom_components.tplink_router.sensor import (
+    TPLinkRouterPortLinkSpeedSensor,
+    _status_sensor_types,
+    _update_repeater_sensors,
+)
 
 
 def _status(**overrides):
@@ -95,3 +99,32 @@ def test_port_link_speed_sensor_switch_port():
         "rx_good_packets": 20,
         "rx_bad_packets": 0,
     }
+
+
+def test_repeater_sensors_discover_each_reported_metric_and_clear_missing_values():
+    coordinator = SimpleNamespace(
+        unique_id="extender", device_info=None, last_update_success=True,
+        repeater_status=RepeaterStatus(rssi_5g=-69, rx_rate_5g=648),
+    )
+    entities = []
+    tracked = set()
+    _update_repeater_sensors(coordinator, entities.extend, tracked)
+    sensors = {entity.entity_description.key: entity for entity in entities}
+    assert {key: entity.native_value for key, entity in sensors.items()} == {
+        "backhaul_5g_rx_rate": 648,
+        "repeater_5g_rssi": -69,
+    }
+    assert sensors["backhaul_5g_rx_rate"].unique_id == "extender_tplink_router_backhaul_5g_rx_rate"
+
+    coordinator.repeater_status = RepeaterStatus(rssi_2g=0)
+    _update_repeater_sensors(coordinator, entities.extend, tracked)
+    assert len(entities) == 3
+    assert entities[-1].native_value == 0
+    assert not sensors["backhaul_5g_rx_rate"].available
+    coordinator.last_update_success = False
+    assert not entities[-1].available
+
+    coordinator.repeater_status = None
+    assert entities[-1].native_value is None
+    _update_repeater_sensors(coordinator, entities.extend, tracked)
+    assert len(entities) == 3

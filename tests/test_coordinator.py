@@ -459,3 +459,23 @@ def test_coordinator_set_led_calls_api_without_updating_local_state():
     asyncio.run(coord.set_led(False))
     assert router.set_led_calls == [True, False]
     assert coord.led_status is False
+
+
+def test_collect_status_reads_repeater_backhaul_in_existing_session():
+    router = FakeRouter()
+    calls = Mock()
+    router.authorize = calls.authorize
+    router.get_repeater_status = calls.get_repeater_status
+    router.logout = calls.logout
+    logger = logging.getLogger("test")
+
+    def update():
+        return collect_status(router, None, None, None, None, None, None, logger)
+
+    assert TPLinkRouterCoordinator.request(router, update)[-1] is calls.get_repeater_status.return_value
+    assert [call[0] for call in calls.mock_calls] == ["authorize", "get_repeater_status", "logout"]
+
+    router.get_repeater_status.side_effect = OSError("transient connection failure")
+    status = TPLinkRouterCoordinator.request(router, update)
+    assert status[0] == "STATUS_OK"
+    assert status[-1] is None
