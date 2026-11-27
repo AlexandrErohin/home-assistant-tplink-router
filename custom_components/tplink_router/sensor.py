@@ -22,6 +22,7 @@ from homeassistant.const import (
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import HomeAssistant, callback
 from .const import DOMAIN, CONF_SUPPORT_TRACKER
+from .ax73_sensor import AX73WifiClientsSensor, update_ax73_client_sensors
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 from homeassistant.helpers.update_coordinator import CoordinatorEntity
 from .coordinator import TPLinkRouterCoordinator
@@ -756,8 +757,12 @@ async def async_setup_entry(
     if coordinator.reservations is not None:
         sensors.append(TPLinkRouterReservationsSensor(coordinator))
 
+    is_ax73 = str(coordinator.device_info_kwargs.get("model", "")).startswith("Archer AX73")
+    if is_ax73:
+        sensors.append(AX73WifiClientsSensor(coordinator))
     async_add_entities(sensors, False)
 
+    tracked_ax73: set[tuple[str, str]] = set()
     tracked: set[int] = set()
     tracked_mesh: set[tuple[str, str]] = set()
     tracked_repeater: set[str] = set()
@@ -775,6 +780,8 @@ async def async_setup_entry(
         )
         _update_repeater_sensors(coordinator, async_add_entities, tracked_repeater)
         if support_mesh_sensors:
+            if is_ax73:
+                update_ax73_client_sensors(coordinator, async_add_entities, tracked_ax73)
             for config in MESH_NODE_SENSOR_TYPES:
                 update_mesh_sensor_items(
                     coordinator,
